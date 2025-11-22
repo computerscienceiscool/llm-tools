@@ -1,0 +1,60 @@
+2025-11-22T10:42:30-08:00|session:1763836950410700991|open|README.md|success|
+2025-11-22T10:42:30-08:00|session:1763836950431930796|open|README.md|success|
+2025-11-22T10:42:30-08:00|session:1763836950431930796|open|src/main.go|success|
+2025-11-22T10:42:30-08:00|session:1763836950431930796|open|docs/architecture.md|success|
+2025-11-22T10:42:30-08:00|session:1763836950438766423|open|.env|failed|PATH_SECURITY: path is in excluded list: .env
+2025-11-22T10:42:30-08:00|session:1763836950438766423|open|.git/config|failed|PATH_SECURITY: path is in excluded directory: .git
+2025-11-22T10:42:30-08:00|session:1763836950438766423|open|private.key|failed|PATH_SECURITY: path is in excluded list: private.key
+2025-11-22T10:42:30-08:00|session:1763836950460807571|open|../../etc/passwd|failed|PATH_SECURITY: path traversal detected: ../../etc/passwd
+2025-11-22T10:42:30-08:00|session:1763836950460807571|open|../../../etc/hosts|failed|PATH_SECURITY: path traversal detected: ../../../etc/hosts
+2025-11-22T10:42:30-08:00|session:1763836950481129032|open|config.yaml|failed|FILE_NOT_FOUND: config.yaml
+2025-11-22T10:42:58-08:00|session:1763836978488249453|open|safe.txt|success|
+2025-11-22T10:42:58-08:00|session:1763836978518941786|open|src/main.go|success|
+2025-11-22T10:42:58-08:00|session:1763836978548172462|open|.git/config|failed|PATH_SECURITY: path is in excluded directory: .git
+2025-11-22T10:42:58-08:00|session:1763836978599843966|open|.env|failed|PATH_SECURITY: path is in excluded list: .env
+2025-11-22T10:42:58-08:00|session:1763836978669077405|open|private.key|failed|PATH_SECURITY: path is in excluded list: private.key
+2025-11-22T10:42:58-08:00|session:1763836978715900596|open|cert.pem|failed|PATH_SECURITY: path is in excluded list: cert.pem
+2025-11-22T10:42:58-08:00|session:1763836978789663435|open|../sensitive/secret.txt|failed|PATH_SECURITY: path traversal detected: ../sensitive/secret.txt
+2025-11-22T10:42:58-08:00|session:1763836978863490068|open|../../etc/passwd|failed|PATH_SECURITY: path traversal detected: ../../etc/passwd
+2025-11-22T10:42:58-08:00|session:1763836978917379580|open|/etc/passwd|failed|PATH_SECURITY: path traversal detected: /etc/passwd
+2025-11-22T10:42:58-08:00|session:1763836978960843882|open|/tmp/test-system-file.txt|failed|PATH_SECURITY: path traversal detected: /tmp/test-system-file.txt
+2025-11-22T10:42:59-08:00|session:1763836979020027674|open|symlink-attack|failed|PATH_SECURITY: path traversal detected: ../../../etc/passwd
+2025-11-22T10:42:59-08:00|session:1763836979058546752|open|symlink-sensitive|failed|PATH_SECURITY: path traversal detected: ../sensitive/secret.txt
+2025-11-22T10:42:59-08:00|session:1763836979129358624|open|safe.txt\x00.sh|failed|FILE_NOT_FOUND: safe.txt\x00.sh
+2025-11-22T10:42:59-08:00|session:1763836979184797783|open|sa​fe.txt|failed|FILE_NOT_FOUND: sa​fe.txt
+2025-11-22T10:42:59-08:00|session:1763836979228718616|open|a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/|failed|FILE_NOT_FOUND: a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/
+2025-11-22T10:42:59-08:00|session:1763836979278691397|open|"file with spaces.txt"|failed|FILE_NOT_FOUND: "file with spaces.txt"
+2025-11-22T10:42:59-08:00|session:1763836979323141946|open|.hidden|success|
+2025-11-22T10:42:59-08:00|session:1763836979347033335|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979347033335|open|src/main.go|success|
+2025-11-22T10:42:59-08:00|session:1763836979376433633|open|Safe.txt|failed|FILE_NOT_FOUND: Safe.txt
+2025-11-22T10:42:59-08:00|session:1763836979501087904|open|large.bin|failed|RESOURCE_LIMIT: file too large (2097152 bytes, max 1048576)
+2025-11-22T10:42:59-08:00|session:1763836979554816099|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979557886732|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979592441081|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979605815445|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979615567767|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979627021918|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979638783125|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979641846033|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979657866814|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979660707884|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979667981386|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979692707294|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979707091324|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979719072413|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979728782735|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979738297286|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979748290074|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979755732332|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979759975525|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979763891756|open|safe.txt|success|
+2025-11-22T10:42:59-08:00|session:1763836979810038725|open|safe.txt; cat /etc/passwd|failed|FILE_NOT_FOUND: safe.txt; cat /etc/passwd
+2025-11-22T10:42:59-08:00|session:1763836979832228208|open|`cat /etc/passwd`|failed|FILE_NOT_FOUND: `cat /etc/passwd`
+2025-11-22T10:42:59-08:00|session:1763836979854148754|open|$(cat /etc/passwd)|failed|FILE_NOT_FOUND: $(cat /etc/passwd)
+2025-11-22T10:48:03-08:00|session:1763837283276361061|open|small.txt|success|
+2025-11-22T10:48:03-08:00|session:1763837283276361061|open|large.txt|failed|RESOURCE_LIMIT: file too large (2097152 bytes, max 1048576)
+2025-11-22T10:48:03-08:00|session:1763837283276361061|open|missing.txt|failed|FILE_NOT_FOUND: missing.txt
+2025-11-22T10:48:03-08:00|session:1763837283276361061|open|../../../etc/passwd|failed|PATH_SECURITY: path traversal detected: ../../../etc/passwd
+2025-11-22T10:48:03-08:00|session:1763837283277528023|open|hello.txt|success|
+2025-11-22T10:48:03-08:00|session:1763837283277528023|open|missing.txt|failed|FILE_NOT_FOUND: missing.txt

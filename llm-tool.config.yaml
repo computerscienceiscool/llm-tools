@@ -1,0 +1,84 @@
+# LLM Tool Configuration
+# This file configures the behavior of the LLM file access tool
+
+repository:
+  # Root directory of the repository to explore
+  root: "."
+  
+  # Paths and patterns to exclude from access
+  excluded_paths:
+    - ".git"
+    - ".env"
+    - ".env.local"
+    - "*.key"
+    - "*.pem"
+    - "*.p12"
+    - "*.pfx"
+    - "node_modules"
+    - "__pycache__"
+    - ".DS_Store"
+    - "*.sqlite"
+    - "*.db"
+    - "secrets"
+    - "credentials"
+
+commands:
+  # Open command configuration
+  open:
+    enabled: true
+    max_file_size: 1048576  # 1MB
+    
+  # Future command configurations (not yet implemented)
+  search:
+    enabled: false
+    vector_db_path: "./embeddings.db"
+    max_results: 10
+    
+  write:
+    enabled: false
+    max_file_size: 102400  # 100KB
+    require_confirmation: true
+    backup_before_write: true
+    
+  exec:
+    enabled: false
+    container_image: "ubuntu:22.04"
+    timeout_seconds: 30
+    memory_limit: "512m"
+    cpu_limit: 2
+    network_enabled: false
+    whitelist:
+      - "go test"
+      - "go build"
+      - "go run"
+      - "npm test"
+      - "npm run build"
+      - "python -m pytest"
+      - "make"
+      - "cargo build"
+      - "cargo test"
+
+security:
+  # Maximum operations per minute
+  rate_limit_per_minute: 100
+  
+  # Enable audit logging
+  log_all_operations: true
+  audit_log_path: "./audit.log"
+  
+  # Additional security settings
+  follow_symlinks: true
+  allow_hidden_files: false
+  
+output:
+  # Output format settings
+  show_summaries: true
+  show_execution_time: true
+  truncate_large_outputs: true
+  max_output_lines: 1000
+  
+logging:
+  # Logging configuration
+  level: "info"  # debug, info, warn, error
+  file: "./llm-tool.log"
+  format: "json"  # json or text

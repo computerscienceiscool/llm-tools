@@ -1,0 +1,26 @@
+{
+  "name": "llm-file-access-tool",
+  "version": "1.0.0",
+  "description": "A tool that enables LLMs to autonomously explore and work with local repositories",
+  "main": "main.go",
+  "scripts": {
+    "setup": "bash setup.sh",
+    "build": "go build -o llm-tool main.go",
+    "test": "go test -v ./...",
+    "demo": "bash demo.sh",
+    "security-test": "bash security_test.sh"
+  },
+  "keywords": [
+    "llm",
+    "file-access",
+    "repository-exploration",
+    "ai-tools",
+    "golang"
+  ],
+  "author": "",
+  "license": "MIT",
+  "requirements": {
+    "go": ">=1.21"
+  },
+  "note": "This is a Go project. Run 'bash setup.sh' to build and install."
+}
