@@ -13,6 +13,12 @@ You can embed the following commands in your responses, and they will be execute
    - Paths are relative to the repository root
    - Example: `<open src/main.go>` or `<open README.md>`
 
+2. **Write/Create a file**: `<write filepath>content</write>`
+   - Use this to create new files or update existing ones
+   - All content between the tags will be written to the file
+   - Supports multi-line content with proper formatting
+   - Example: `<write src/new.go>package main\n\nfunc main() {}\n</write>`
+
 ### How to Use the Tool Effectively
 
 1. **Start with overview files**: Begin by reading README.md, package.json, go.mod, requirements.txt, or similar files to understand the project structure.

@@ -27,6 +27,20 @@ commands:
   open:
     enabled: true
     max_file_size: 1048576  # 1MB
+    require_confirmation: false
+    backup_before_write: true
+    allowed_extensions:
+      - ".go"
+      - ".py"
+      - ".js"
+      - ".md"
+      - ".txt"
+      - ".json"
+      - ".yaml"
+      - ".yml"
+      - ".toml"
+    format_code: true
+    atomic_writes: true
     
   # Future command configurations (not yet implemented)
   search:

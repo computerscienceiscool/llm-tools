@@ -55,6 +55,8 @@ clean:
 	@rm -f audit.log
 	@rm -f llm-tool.log
 	@echo "Clean complete"
+	@rm -f test_output.txt
+	@rm -f *.bak.*
 
 # Install binary to system
 install: build
@@ -103,6 +105,27 @@ example: build
 quick-test: build
 	@echo "Testing with simple command..."
 	@echo "Let me read the README: <open README.md>" | $(BINARY_PATH)
+
+# Test write functionality
+test-write: build
+	@echo "Testing write functionality..."
+	@echo "Creating test file: <write test_output.txt>\nThis is a test file created by the LLM tool.\nCurrent time: $$(date)\nWrite command is working!\n</write>" | $(BINARY_PATH)
+	@if [ -f test_output.txt ]; then echo "✓ Write test successful"; echo "File contents:"; cat test_output.txt; rm test_output.txt; else echo "✗ Write test failed"; fi
+
+# Test both read and write commands
+test-both: build
+	@echo "Testing both read and write commands..."
+	@echo "First read README: <open README.md>" > temp_input.txt
+	@echo "" >> temp_input.txt
+	@echo "Now create summary: <write README_SUMMARY.md>" >> temp_input.txt
+	@echo "# README Summary" >> temp_input.txt
+	@echo "" >> temp_input.txt
+	@echo "This is a summary of the LLM File Access Tool." >> temp_input.txt
+	@echo "Generated at: $$(date)" >> temp_input.txt
+	@echo "</write>" >> temp_input.txt
+	@$(BINARY_PATH) --input temp_input.txt
+	@rm -f temp_input.txt README_SUMMARY.md
+
 
 # Development mode - rebuild and run on file changes (requires entr)
 watch:
@@ -169,3 +192,5 @@ help:
 	@echo "  make build-all     - Build for multiple platforms"
 	@echo "  make release       - Create release tarball"
 	@echo "  make help          - Show this help message"
+	@echo "  make test-write    - Test write functionality specifically"
+	@echo "  make test-both     - Test both read and write commands"
