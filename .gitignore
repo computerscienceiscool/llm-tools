@@ -1,7 +1,7 @@
-
 # Logs
 audit.log
 audit.log.*
+llm-tool.log
 
 # Compiled binaries
 llm-tool
@@ -11,9 +11,20 @@ bin/
 build/
 dist/
 
-# test files
+# Test files and temporary outputs
 tests/
+test*.txt
+hello.txt
+*.bak.*
+*.tmp.*
+README_SUMMARY.md
 
+# Coverage reports
+coverage.out
+coverage.html
+
+# Release artifacts
+releases/
 
 # Node artifacts
 node_modules/
