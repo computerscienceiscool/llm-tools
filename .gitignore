@@ -1,6 +1,7 @@
 
 # Logs
 audit.log
+audit.log.*
 
 # Compiled binaries
 llm-tool
@@ -9,6 +10,10 @@ llm-tool
 bin/
 build/
 dist/
+
+# test files
+tests/
+
 
 # Node artifacts
 node_modules/
