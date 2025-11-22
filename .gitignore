@@ -1,2 +1,14 @@
+
+# Logs
 audit.log
 
+# Compiled binaries
+llm-tool
+
+# Go build cache
+bin/
+build/
+dist/
+
+# Node artifacts
+node_modules/
