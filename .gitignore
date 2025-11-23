@@ -27,6 +27,9 @@ hello.txt
 README_SUMMARY.md
 
 
+search-env/
+
+
 # Embedding indexes
 embeddings/
 embeddings.db
