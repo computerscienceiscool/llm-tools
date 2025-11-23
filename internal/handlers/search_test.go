@@ -75,11 +75,3 @@ type SearchStats struct {
 	IndexSize      int
 	LastIndexed    time.Time
 }
-
-type SearchMatch struct {
-	Line      int
-	Column    int
-	Text      string
-	Context   string
-	Highlight string
-}

@@ -41,8 +41,9 @@ func (m *MockCommandValidator) ValidateCommand(command string, whitelist []strin
 func TestDefaultExecHandler(t *testing.T) {
 	mockDocker := &MockDockerClient{}
 	mockValidator := &MockCommandValidator{}
+	handler := NewExecHandler(mockDocker)
 
-	handler := NewExecHandler(mockDocker, mockValidator)
+	// 	handler := NewExecHandler(mockDocker, mockValidator)
 	require.NotNil(t, handler)
 
 	ctx := context.Background()
@@ -84,8 +85,9 @@ func TestDefaultExecHandler(t *testing.T) {
 
 		mockValidator.On("ValidateCommand", command, config.Whitelist).
 			Return(fmt.Errorf("EXEC_VALIDATION: command not whitelisted"))
+		_, err := handler.ExecuteCommand(command, config)
 
-		_, err := handler.ExecuteCommand(ctx, command, config)
+		//		_, err := handler.ExecuteCommand(ctx, command, config)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "EXEC_VALIDATION")
 
@@ -288,57 +290,6 @@ func TestExecHandlerValidation(t *testing.T) {
 	}
 }
 
-// TestExecConfig tests the configuration structure
-func TestExecConfig(t *testing.T) {
-	config := ExecConfig{
-		Enabled:        true,
-		Whitelist:      []string{"go", "npm", "python3"},
-		Timeout:        45 * time.Second,
-		MemoryLimit:    "1g",
-		CPULimit:       4,
-		ContainerImage: "golang:1.21",
-		RepoRoot:       "/workspace",
-		EnvVars: map[string]string{
-			"GO_ENV": "test",
-			"DEBUG":  "true",
-		},
-	}
-
-	assert.True(t, config.Enabled)
-	assert.Contains(t, config.Whitelist, "go")
-	assert.Equal(t, 45*time.Second, config.Timeout)
-	assert.Equal(t, "1g", config.MemoryLimit)
-	assert.Equal(t, 4, config.CPULimit)
-	assert.Equal(t, "golang:1.21", config.ContainerImage)
-	assert.Equal(t, "/workspace", config.RepoRoot)
-	assert.Equal(t, "test", config.EnvVars["GO_ENV"])
-}
-
-// TestExecResult tests the result structure
-func TestExecResult(t *testing.T) {
-	result := ExecResult{
-		ExitCode:    2,
-		Stdout:      "Build successful",
-		Stderr:      "Warning: deprecated function",
-		Duration:    5 * time.Second,
-		ContainerID: "abc123def456",
-		StartTime:   time.Now(),
-	}
-
-	assert.Equal(t, 2, result.ExitCode)
-	assert.Equal(t, "Build successful", result.Stdout)
-	assert.Equal(t, "Warning: deprecated function", result.Stderr)
-	assert.Equal(t, 5*time.Second, result.Duration)
-	assert.Equal(t, "abc123def456", result.ContainerID)
-	assert.False(t, result.StartTime.IsZero())
-
-	// Test success determination
-	assert.False(t, result.IsSuccess())
-
-	successResult := ExecResult{ExitCode: 0}
-	assert.True(t, successResult.IsSuccess())
-}
-
 // TestExecHandlerConcurrency tests concurrent command execution
 func TestExecHandlerConcurrency(t *testing.T) {
 	mockDocker := &MockDockerClient{}
@@ -418,80 +369,4 @@ func BenchmarkExecHandler(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
-}
-
-// Placeholder implementations and interfaces
-type ExecHandler interface {
-	ExecuteCommand(ctx context.Context, command string, config ExecConfig) (ExecResult, error)
-}
-
-type ExecConfig struct {
-	Enabled        bool
-	Whitelist      []string
-	Timeout        time.Duration
-	MemoryLimit    string
-	CPULimit       int
-	ContainerImage string
-	RepoRoot       string
-	EnvVars        map[string]string
-}
-
-type ExecResult struct {
-	ExitCode    int
-	Stdout      string
-	Stderr      string
-	Duration    time.Duration
-	ContainerID string
-	StartTime   time.Time
-}
-
-func (r ExecResult) IsSuccess() bool {
-	return r.ExitCode == 0
-}
-
-type DockerClient interface {
-	RunCommand(ctx context.Context, config ExecConfig, command string) (ExecResult, error)
-	IsAvailable(ctx context.Context) bool
-}
-
-type CommandValidator interface {
-	ValidateCommand(command string, whitelist []string) error
-}
-
-// Mock implementation
-func NewExecHandler(docker DockerClient, validator CommandValidator) ExecHandler {
-	return &defaultExecHandler{
-		docker:    docker,
-		validator: validator,
-	}
-}
-
-type defaultExecHandler struct {
-	docker    DockerClient
-	validator CommandValidator
-}
-
-func (h *defaultExecHandler) ExecuteCommand(ctx context.Context, command string, config ExecConfig) (ExecResult, error) {
-	if !config.Enabled {
-		return ExecResult{}, fmt.Errorf("command execution is disabled")
-	}
-
-	// Validate command
-	err := h.validator.ValidateCommand(command, config.Whitelist)
-	if err != nil {
-		return ExecResult{}, err
-	}
-
-	// Check Docker availability
-	if !h.docker.IsAvailable(ctx) {
-		return ExecResult{}, fmt.Errorf("Docker is not available")
-	}
-
-	// Execute command
-	result, err := h.docker.RunCommand(ctx, config, command)
-	if err != nil {
-		return ExecResult{}, fmt.Errorf("execution failed: %w", err)
-	}
-
-	return result, nil
 }

@@ -417,7 +417,7 @@ func TestParserPerformanceContract(t *testing.T) {
 }
 
 // TestParserEdgeCases tests edge case handling
-func TestParserEdgeCases(t *testing.T) {
+func TestParserEdgeCasesContract(t *testing.T) {
 	tests := []struct {
 		name  string
 		input string

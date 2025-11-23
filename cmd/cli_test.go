@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/computerscienceiscool/llm-tools/internal/core"
-	"github.com/computerscienceiscool/llm-tools/internal/parser"
+	parserPkg "github.com/computerscienceiscool/llm-tools/internal/parser"
 )
 
 // MockConfigLoader for testing
@@ -58,9 +58,9 @@ type MockCommandParser struct {
 	mock.Mock
 }
 
-func (m *MockCommandParser) ParseCommands(text string) []parser.ParsedCommand {
+func (m *MockCommandParser) ParseCommands(text string) []parserPkg.ParsedCommand {
 	args := m.Called(text)
-	return args.Get(0).([]parser.ParsedCommand)
+	return args.Get(0).([]parserPkg.ParsedCommand)
 }
 
 // TestNewCLIApp tests CLI app creation
@@ -106,7 +106,7 @@ func TestCLIAppExecute(t *testing.T) {
 				m.On("ExecuteOpen", "test.txt").Return(result)
 			},
 			parserSetup: func(m *MockCommandParser) {
-				commands := []parser.ParsedCommand{
+				commands := []parserPkg.ParsedCommand{
 					{
 						Type:     "open",
 						Argument: "test.txt",
@@ -194,7 +194,7 @@ func TestRunPipeMode(t *testing.T) {
 	executor.On("ExecuteOpen", "test.txt").Return(result)
 
 	parser := &MockCommandParser{}
-	commands := []parser.ParsedCommand{
+	commands := []parserPkg.ParsedCommand{
 		{
 			Type:     "open",
 			Argument: "test.txt",
@@ -227,7 +227,7 @@ func TestRunInteractiveMode(t *testing.T) {
 
 	executor := &MockCommandExecutor{}
 	parser := &MockCommandParser{}
-	parser.On("ParseCommands", mock.AnythingOfType("string")).Return([]parser.ParsedCommand{})
+	parser.On("ParseCommands", mock.AnythingOfType("string")).Return([]parserPkg.ParsedCommand{})
 
 	app := NewCLIApp(configLoader, executor, parser)
 
@@ -243,21 +243,21 @@ func TestProcessText(t *testing.T) {
 	tests := []struct {
 		name          string
 		input         string
-		commands      []parser.ParsedCommand
+		commands      []parserPkg.ParsedCommand
 		execResults   map[string]core.ExecutionResult
 		expectedParts []string
 	}{
 		{
 			name:          "no commands",
 			input:         "Plain text without commands",
-			commands:      []parser.ParsedCommand{},
+			commands:      []parserPkg.ParsedCommand{},
 			execResults:   map[string]core.ExecutionResult{},
 			expectedParts: []string{"Plain text without commands"},
 		},
 		{
 			name:  "single open command",
 			input: "Read file <open test.txt>",
-			commands: []parser.ParsedCommand{
+			commands: []parserPkg.ParsedCommand{
 				{
 					Type:     "open",
 					Argument: "test.txt",
@@ -278,7 +278,7 @@ func TestProcessText(t *testing.T) {
 		{
 			name:  "write command",
 			input: "Create file <write output.txt>Hello</write>",
-			commands: []parser.ParsedCommand{
+			commands: []parserPkg.ParsedCommand{
 				{
 					Type:     "write",
 					Argument: "output.txt",
@@ -311,7 +311,7 @@ func TestProcessText(t *testing.T) {
 			parser := &MockCommandParser{}
 
 			config := &core.Config{RepositoryRoot: "/tmp"}
-			configLoader.On("LoadConfig", "").Return(config, nil)
+			//	configLoader.On("LoadConfig", "").Return(config, nil)
 			parser.On("ParseCommands", tt.input).Return(tt.commands)
 
 			// Set up executor expectations based on commands
@@ -436,7 +436,7 @@ func TestCLIAppErrorHandling(t *testing.T) {
 
 		executor := &MockCommandExecutor{}
 		parser := &MockCommandParser{}
-		parser.On("ParseCommands", mock.AnythingOfType("string")).Return([]parser.ParsedCommand{})
+		parser.On("ParseCommands", mock.AnythingOfType("string")).Return([]parserPkg.ParsedCommand{})
 
 		app := NewCLIApp(configLoader, executor, parser)
 
@@ -455,7 +455,7 @@ func BenchmarkCLIAppProcessText(b *testing.B) {
 	config := &core.Config{RepositoryRoot: "/tmp"}
 	configLoader.On("LoadConfig", "").Return(config, nil)
 
-	commands := []parser.ParsedCommand{
+	commands := []parserPkg.ParsedCommand{
 		{Type: "open", Argument: "test.txt", StartPos: 0, EndPos: 15, Original: "<open test.txt>"},
 	}
 	parser.On("ParseCommands", mock.AnythingOfType("string")).Return(commands)

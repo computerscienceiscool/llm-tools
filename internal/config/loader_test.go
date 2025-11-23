@@ -514,7 +514,7 @@ func TestConcurrentConfigLoad(t *testing.T) {
 }
 
 // BenchmarkConfigLoad benchmarks config loading performance
-func BenchmarkConfigLoad(b *testing.B) {
+func BenchmarkConfigLoaderLoad(b *testing.B) {
 	tempDir, err := os.MkdirTemp("", "benchmark-test")
 	if err != nil {
 		b.Fatal(err)
