@@ -26,6 +26,12 @@ hello.txt
 *.tmp.*
 README_SUMMARY.md
 
+
+# Embedding indexes
+embeddings/
+embeddings.db
+
+
 # Coverage reports
 coverage.out
 coverage.html
