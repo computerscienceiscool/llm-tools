@@ -1,4 +1,17 @@
 # Makefile for LLM File Access Tool
+export PATH := $(HOME)/.goenv/shims:$(PATH)
+
+
+# Makefile for LLM File Access Tool
+
+# Go parameters
+GOCMD=go
+GOBUILD=$(GOCMD) build
+GOTEST=$(GOCMD) test
+
+
+
+export PATH := $(HOME)/.goenv/versions/1.22.1/bin:$(PATH)
 
 # Go parameters
 GOCMD=go
@@ -19,7 +32,7 @@ INSTALL_PATH=/usr/local/bin
 # Build flags
 LDFLAGS=-ldflags "-s -w"
 
-.PHONY: all build test clean install uninstall fmt vet deps run demo example
+.PHONY: all build test clean install uninstall fmt vet deps run demo example exec-demo
 
 # Default target
 all: test build
@@ -101,6 +114,12 @@ example: build
 	@chmod +x example_usage.sh
 	./example_usage.sh
 
+# Run the exec command demo
+exec-demo: build
+	@echo "Running exec command demonstration..."
+	@chmod +x exec_demo.sh
+	./exec_demo.sh
+
 # Quick test with a simple command
 quick-test: build
 	@echo "Testing with simple command..."
@@ -111,6 +130,15 @@ test-write: build
 	@echo "Testing write functionality..."
 	@echo "Creating test file: <write test_output.txt>\nThis is a test file created by the LLM tool.\nCurrent time: $$(date)\nWrite command is working!\n</write>" | $(BINARY_PATH)
 	@if [ -f test_output.txt ]; then echo "✓ Write test successful"; echo "File contents:"; cat test_output.txt; rm test_output.txt; else echo "✗ Write test failed"; fi
+
+# Test exec functionality (requires Docker)
+test-exec: build
+	@echo "Testing exec functionality..."
+	@if command -v docker >/dev/null 2>&1; then \
+		echo "Testing exec command: <exec echo 'Hello from Docker'>" | $(BINARY_PATH) --exec-enabled; \
+	else \
+		echo "Docker not available - exec test skipped"; \
+	fi
 
 # Test both read and write commands
 test-both: build
@@ -126,6 +154,16 @@ test-both: build
 	@$(BINARY_PATH) --input temp_input.txt
 	@rm -f temp_input.txt README_SUMMARY.md
 
+# Test all command types
+test-all-commands: build
+	@echo "Testing all command types..."
+	@if command -v docker >/dev/null 2>&1; then \
+		echo "Testing read, write, and exec: <open README.md> <write test.txt>Test content</write> <exec echo 'All commands work'>" | $(BINARY_PATH) --exec-enabled; \
+		rm -f test.txt; \
+	else \
+		echo "Testing read and write only: <open README.md> <write test.txt>Test content</write>" | $(BINARY_PATH); \
+		rm -f test.txt; \
+	fi
 
 # Development mode - rebuild and run on file changes (requires entr)
 watch:
@@ -168,8 +206,40 @@ release: clean build test
 		SYSTEM_PROMPT.md \
 		llm-tool.config.yaml \
 		demo.sh \
-		example_usage.sh
+		example_usage.sh \
+		exec_demo.sh \
+		write_demo.sh
 	@echo "Release created: releases/$(BINARY_NAME)-$(shell date +%Y%m%d).tar.gz"
+
+# Check Docker availability
+check-docker:
+	@if command -v docker >/dev/null 2>&1; then \
+		echo "✓ Docker is available"; \
+		docker version --format '{{.Server.Version}}' 2>/dev/null | sed 's/^/  Version: /' || echo "  (Could not get version)"; \
+	else \
+		echo "✗ Docker not found"; \
+		echo "  Install Docker to use exec commands:"; \
+		echo "  - Linux: curl -fsSL https://get.docker.com | sh"; \
+		echo "  - macOS: brew install docker"; \
+		echo "  - Windows: Download from docker.com"; \
+	fi
+
+# Comprehensive test suite
+test-suite: build check-docker
+	@echo "Running comprehensive test suite..."
+	@echo "1. Unit tests..."
+	@$(GOTEST) -v ./...
+	@echo "2. Basic functionality..."
+	@$(MAKE) test-write
+	@echo "3. Security tests..."
+	@chmod +x security_test.sh && ./security_test.sh
+	@if command -v docker >/dev/null 2>&1; then \
+		echo "4. Exec functionality..."; \
+		$(MAKE) test-exec; \
+	else \
+		echo "4. Exec functionality... SKIPPED (Docker not available)"; \
+	fi
+	@echo "Test suite complete!"
 
 # Show help
 help:
@@ -187,10 +257,35 @@ help:
 	@echo "  make run           - Run tool in interactive mode"
 	@echo "  make demo          - Run the demo script"
 	@echo "  make example       - Run the example usage"
+	@echo "  make exec-demo     - Run the exec command demo"
 	@echo "  make quick-test    - Quick test with README"
+	@echo "  make test-write    - Test write functionality"
+	@echo "  make test-exec     - Test exec functionality (requires Docker)"
+	@echo "  make test-both     - Test both read and write commands"
+	@echo "  make test-all-commands - Test all command types"
+	@echo "  make test-suite    - Run comprehensive test suite"
 	@echo "  make quality       - Run all quality checks"
 	@echo "  make build-all     - Build for multiple platforms"
 	@echo "  make release       - Create release tarball"
+	@echo "  make check-docker  - Check Docker availability"
 	@echo "  make help          - Show this help message"
-	@echo "  make test-write    - Test write functionality specifically"
-	@echo "  make test-both     - Test both read and write commands"
+
+
+
+# Commit using grok and push to current branch
+commit:
+	@echo "Staging modified tracked files..."
+	@git add -u
+
+	@echo "Generating commit message with grok..."
+	@grok commit | git commit -F - || { echo "Nothing to commit."; exit 1; }
+
+	@echo "Pushing to current branch..."
+	@git push origin $$(git rev-parse --abbrev-ref HEAD)
+
+	@echo "✓ Commit and push complete."
+
+debug-path:
+	@echo "PATH is: $$PATH"
+	@which grok || echo "grok still not found"
+

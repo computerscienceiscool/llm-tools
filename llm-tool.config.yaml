@@ -42,20 +42,16 @@ commands:
     format_code: true
     atomic_writes: true
     
-  # Future command configurations (not yet implemented)
-  search:
-    enabled: false
-    vector_db_path: "./embeddings.db"
-    max_results: 10
-    
+  # Write command configuration
   write:
-    enabled: false
+    enabled: true
     max_file_size: 102400  # 100KB
-    require_confirmation: true
+    require_confirmation: false
     backup_before_write: true
     
+  # Exec command configuration
   exec:
-    enabled: false
+    enabled: true
     container_image: "ubuntu:22.04"
     timeout_seconds: 30
     memory_limit: "512m"
@@ -63,14 +59,37 @@ commands:
     network_enabled: false
     whitelist:
       - "go test"
-      - "go build"
+      - "go build" 
       - "go run"
       - "npm test"
       - "npm run build"
       - "python -m pytest"
+      - "python3 -m pytest"
+      - "python3"
+      - "python"
       - "make"
+      - "make test"
+      - "make build"
       - "cargo build"
       - "cargo test"
+      - "cargo run"
+      - "node"
+      - "npm install"
+      - "pip install"
+      - "pip3 install"
+      - "ls"
+      - "cat"
+      - "grep"
+      - "find"
+      - "head"
+      - "tail"
+      - "wc"
+    
+  # Future command configurations (not yet implemented)  
+  search:
+    enabled: false
+    vector_db_path: "./embeddings.db"
+    max_results: 10
 
 security:
   # Maximum operations per minute
@@ -96,3 +115,4 @@ logging:
   level: "info"  # debug, info, warn, error
   file: "./llm-tool.log"
   format: "json"  # json or text
+

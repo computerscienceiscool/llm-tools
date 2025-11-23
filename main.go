@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"flag"
@@ -10,6 +11,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -32,6 +34,13 @@ type Config struct {
 	BackupBeforeWrite   bool
 	AllowedExtensions   []string
 	ForceWrite          bool
+	ExecEnabled         bool
+	ExecWhitelist       []string
+	ExecTimeout         time.Duration
+	ExecMemoryLimit     string
+	ExecCPULimit        int
+	ExecContainerImage  string
+	ExecNetworkEnabled  bool
 }
 
 // Command represents a parsed command from LLM output
@@ -54,6 +63,10 @@ type ExecutionResult struct {
 	BytesWritten  int64
 	BackupFile    string
 	Action        string
+	ExitCode      int
+	Stdout        string
+	Stderr        string
+	ContainerID   string
 }
 
 // Session manages a tool execution session
@@ -105,6 +118,7 @@ func ParseCommands(text string) []Command {
 			commands = append(commands, cmd)
 		}
 	}
+
 	// Pattern for <write filepath>content</write> commands
 	writePattern := regexp.MustCompile(`<write\s+([^>]+)>\s*(.*?)</write>`)
 
@@ -117,6 +131,23 @@ func ParseCommands(text string) []Command {
 				Type:     "write",
 				Argument: strings.TrimSpace(text[match[2]:match[3]]),
 				Content:  content,
+				StartPos: match[0],
+				EndPos:   match[1],
+				Original: text[match[0]:match[1]],
+			}
+			commands = append(commands, cmd)
+		}
+	}
+
+	// Pattern for <exec command arguments> commands
+	execPattern := regexp.MustCompile(`<exec\s+([^>]+)>`)
+
+	execMatches := execPattern.FindAllStringSubmatchIndex(text, -1)
+	for _, match := range execMatches {
+		if len(match) >= 4 {
+			cmd := Command{
+				Type:     "exec",
+				Argument: strings.TrimSpace(text[match[2]:match[3]]),
 				StartPos: match[0],
 				EndPos:   match[1],
 				Original: text[match[0]:match[1]],
@@ -214,6 +245,68 @@ func (s *Session) ValidatePath(requestedPath string) (string, error) {
 	return realPath, nil
 }
 
+// ValidateExecCommand checks if the command is whitelisted
+func (s *Session) ValidateExecCommand(command string) error {
+	if !s.Config.ExecEnabled {
+		return fmt.Errorf("exec command is disabled")
+	}
+
+	if len(s.Config.ExecWhitelist) == 0 {
+		return fmt.Errorf("no commands are whitelisted")
+	}
+
+	commandParts := strings.Fields(command)
+	if len(commandParts) == 0 {
+		return fmt.Errorf("empty command")
+	}
+
+	baseCommand := commandParts[0]
+
+	// Check against whitelist
+	for _, allowed := range s.Config.ExecWhitelist {
+		if allowed == baseCommand || strings.HasPrefix(command, allowed) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("command not in whitelist: %s", baseCommand)
+}
+
+// CheckDockerAvailability verifies Docker is installed and accessible
+func CheckDockerAvailability() error {
+	cmd := exec.Command("docker", "version")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("Docker not available: %w", err)
+	}
+	return nil
+}
+
+// PullDockerImage ensures the required image is available
+func (s *Session) PullDockerImage() error {
+	if s.Config.Verbose {
+		fmt.Fprintf(os.Stderr, "Checking Docker image: %s\n", s.Config.ExecContainerImage)
+	}
+
+	// Check if image exists locally first
+	cmd := exec.Command("docker", "image", "inspect", s.Config.ExecContainerImage)
+	if err := cmd.Run(); err == nil {
+		return nil // Image exists
+	}
+
+	if s.Config.Verbose {
+		fmt.Fprintf(os.Stderr, "Pulling Docker image: %s\n", s.Config.ExecContainerImage)
+	}
+
+	// Pull the image
+	cmd = exec.Command("docker", "pull", s.Config.ExecContainerImage)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to pull Docker image: %w\n%s", err, output)
+	}
+
+	return nil
+}
+
 // ValidateWriteExtension checks if the file extension is allowed for writing
 func (s *Session) ValidateWriteExtension(filepath string) error {
 	if len(s.Config.AllowedExtensions) == 0 {
@@ -282,6 +375,134 @@ func (s *Session) FormatContent(filepath, content string) (string, error) {
 func CalculateContentHash(content string) string {
 	hash := sha256.Sum256([]byte(content))
 	return fmt.Sprintf("%x", hash)
+}
+
+// ExecuteExec handles the "exec" command
+func (s *Session) ExecuteExec(command string) ExecutionResult {
+	startTime := time.Now()
+	result := ExecutionResult{
+		Command: Command{Type: "exec", Argument: command},
+	}
+
+	// Validate command
+	if err := s.ValidateExecCommand(command); err != nil {
+		result.Success = false
+		result.Error = fmt.Errorf("EXEC_VALIDATION: %w", err)
+		result.ExecutionTime = time.Since(startTime)
+		s.LogAudit("exec", command, false, result.Error.Error())
+		return result
+	}
+
+	// Check Docker availability
+	if err := CheckDockerAvailability(); err != nil {
+		result.Success = false
+		result.Error = fmt.Errorf("DOCKER_UNAVAILABLE: %w", err)
+		result.ExecutionTime = time.Since(startTime)
+		s.LogAudit("exec", command, false, result.Error.Error())
+		return result
+	}
+
+	// Pull Docker image if needed
+	if err := s.PullDockerImage(); err != nil {
+		result.Success = false
+		result.Error = fmt.Errorf("DOCKER_IMAGE: %w", err)
+		result.ExecutionTime = time.Since(startTime)
+		s.LogAudit("exec", command, false, result.Error.Error())
+		return result
+	}
+
+	// Create temporary directory for container writes
+	tempDir, err := os.MkdirTemp("", "llm-exec-")
+	if err != nil {
+		result.Success = false
+		result.Error = fmt.Errorf("TEMP_DIR: %w", err)
+		result.ExecutionTime = time.Since(startTime)
+		s.LogAudit("exec", command, false, result.Error.Error())
+		return result
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Prepare Docker command
+	dockerArgs := []string{
+		"run",
+		"--rm",              // Remove container when done
+		"--network", "none", // No network access
+		"--workdir", "/workspace", // Set working directory
+		"--memory", s.Config.ExecMemoryLimit, // Memory limit
+		"--cpus", fmt.Sprintf("%d", s.Config.ExecCPULimit), // CPU limit
+		"-v", fmt.Sprintf("%s:/workspace:ro", s.Config.RepositoryRoot), // Mount repo read-only
+		"-v", fmt.Sprintf("%s:/tmp/workspace:rw", tempDir), // Mount temp for writes
+		"--user", "1000:1000", // Run as non-root
+	}
+
+	// Add security options
+	dockerArgs = append(dockerArgs,
+		"--cap-drop", "ALL", // Drop all capabilities
+		"--security-opt", "no-new-privileges", // Prevent privilege escalation
+		"--read-only",     // Make root filesystem read-only
+		"--tmpfs", "/tmp", // Temporary filesystem for /tmp
+	)
+
+	// Add image and command
+	dockerArgs = append(dockerArgs, s.Config.ExecContainerImage)
+	dockerArgs = append(dockerArgs, "sh", "-c", command)
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), s.Config.ExecTimeout)
+	defer cancel()
+
+	// Execute command
+	cmd := exec.CommandContext(ctx, "docker", dockerArgs...)
+
+	var stdout, stderr strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err = cmd.Run()
+
+	result.Stdout = stdout.String()
+	result.Stderr = stderr.String()
+	result.ExecutionTime = time.Since(startTime)
+
+	if ctx.Err() == context.DeadlineExceeded {
+		result.Success = false
+		result.Error = fmt.Errorf("EXEC_TIMEOUT: command timed out after %v", s.Config.ExecTimeout)
+		result.ExitCode = 124 // Standard timeout exit code
+	} else if err != nil {
+		result.Success = false
+		// Try to get exit code
+		if exitError, ok := err.(*exec.ExitError); ok {
+			result.ExitCode = exitError.ExitCode()
+			result.Error = fmt.Errorf("EXEC_FAILED: command exited with code %d", result.ExitCode)
+		} else {
+			result.Error = fmt.Errorf("EXEC_ERROR: %w", err)
+		}
+	} else {
+		result.Success = true
+		result.ExitCode = 0
+	}
+
+	// Combine stdout and stderr for result
+	if result.Stdout != "" && result.Stderr != "" {
+		result.Result = fmt.Sprintf("STDOUT:\n%s\n\nSTDERR:\n%s", result.Stdout, result.Stderr)
+	} else if result.Stdout != "" {
+		result.Result = result.Stdout
+	} else if result.Stderr != "" {
+		result.Result = result.Stderr
+	}
+
+	// Enhanced audit logging for exec commands
+	auditMsg := fmt.Sprintf("exit_code:%d,duration:%.3fs", result.ExitCode, result.ExecutionTime.Seconds())
+	if result.Success {
+		auditMsg += ",status:completed"
+	} else {
+		auditMsg += ",status:failed"
+	}
+
+	s.LogAudit("exec", command, result.Success, auditMsg)
+	s.CommandsRun++
+
+	return result
 }
 
 // ExecuteWrite handles the "write" command
@@ -497,7 +718,6 @@ func (s *Session) LogAudit(command, argument string, success bool, errorMsg stri
 }
 
 // ProcessText processes LLM output and executes commands
-// ProcessText processes LLM output and executes commands
 func (s *Session) ProcessText(text string) string {
 	var output strings.Builder
 
@@ -530,6 +750,8 @@ func (s *Session) ProcessText(text string) string {
 			result = s.ExecuteOpen(cmd.Argument)
 		case "write":
 			result = s.ExecuteWrite(cmd.Argument, cmd.Content)
+		case "exec":
+			result = s.ExecuteExec(cmd.Argument)
 		default:
 			result = ExecutionResult{
 				Command: cmd,
@@ -556,11 +778,29 @@ func (s *Session) ProcessText(text string) string {
 					output.WriteString(fmt.Sprintf("Backup: %s\n", filepath.Base(result.BackupFile)))
 				}
 				output.WriteString("=== END WRITE ===\n")
+			} else if cmd.Type == "exec" {
+				output.WriteString(fmt.Sprintf("=== EXEC SUCCESSFUL: %s ===\n", cmd.Argument))
+				output.WriteString(fmt.Sprintf("Exit code: %d\n", result.ExitCode))
+				output.WriteString(fmt.Sprintf("Duration: %.3fs\n", result.ExecutionTime.Seconds()))
+				if result.Result != "" {
+					output.WriteString("Output:\n")
+					output.WriteString(result.Result)
+					if !strings.HasSuffix(result.Result, "\n") {
+						output.WriteString("\n")
+					}
+				}
+				output.WriteString("=== END EXEC ===\n")
 			}
 		} else {
 			output.WriteString(fmt.Sprintf("=== ERROR: %s ===\n", strings.Split(result.Error.Error(), ":")[0]))
 			output.WriteString(fmt.Sprintf("Message: %s\n", result.Error.Error()))
 			output.WriteString(fmt.Sprintf("Command: %s\n", cmd.Original))
+			if cmd.Type == "exec" && result.ExitCode != 0 {
+				output.WriteString(fmt.Sprintf("Exit code: %d\n", result.ExitCode))
+				if result.Stderr != "" {
+					output.WriteString(fmt.Sprintf("Stderr: %s\n", result.Stderr))
+				}
+			}
 			output.WriteString("=== END ERROR ===\n")
 		}
 		output.WriteString("=== END COMMAND ===\n")
@@ -589,7 +829,7 @@ func (s *Session) InteractiveMode() {
 
 	fmt.Fprintln(os.Stderr, "LLM Tool - Interactive Mode")
 	fmt.Fprintln(os.Stderr, "Waiting for input (send EOF with Ctrl+D to process)...")
-	fmt.Fprintln(os.Stderr, "Supports commands: <open filepath>, <write filepath>content</write>")
+	fmt.Fprintln(os.Stderr, "Supports commands: <open filepath>, <write filepath>content</write>, <exec command args>")
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -597,7 +837,7 @@ func (s *Session) InteractiveMode() {
 		buffer.WriteString("\n")
 
 		// Check if line contains a command
-		if strings.Contains(line, "<open") || strings.Contains(line, "<write") {
+		if strings.Contains(line, "<open") || strings.Contains(line, "<write") || strings.Contains(line, "<exec") {
 			// Process accumulated text
 			result := s.ProcessText(buffer.String())
 			fmt.Print(result)
@@ -629,13 +869,31 @@ func main() {
 	flag.BoolVar(&config.RequireConfirmation, "require-confirmation", false, "Require confirmation for write operations")
 	flag.BoolVar(&config.BackupBeforeWrite, "backup", true, "Create backup before overwriting files")
 	flag.BoolVar(&config.ForceWrite, "force", false, "Force write even if conflicts exist")
+
+	flag.BoolVar(&config.ExecEnabled, "exec-enabled", false, "Enable exec command")
+	execTimeoutStr := flag.String("exec-timeout", "30s", "Timeout for exec commands")
+	flag.StringVar(&config.ExecMemoryLimit, "exec-memory", "512m", "Memory limit for containers")
+	flag.IntVar(&config.ExecCPULimit, "exec-cpu", 2, "CPU limit for containers")
+	flag.StringVar(&config.ExecContainerImage, "exec-image", "ubuntu:22.04", "Docker image for exec commands")
+	flag.BoolVar(&config.ExecNetworkEnabled, "exec-network", false, "Enable network access in containers")
+
 	allowedExts := flag.String("allowed-extensions", ".go,.py,.js,.md,.txt,.json,.yaml,.yml,.toml",
 		"Comma-separated list of allowed file extensions for writing")
+	execWhitelistStr := flag.String("exec-whitelist", "go test,go build,go run,npm test,npm run build,python -m pytest,make,cargo build,cargo test",
+		"Comma-separated list of allowed exec commands")
 
 	// Parse excluded paths
 	excludedPaths := flag.String("exclude", ".git,.env,*.key,*.pem", "Comma-separated list of excluded paths")
 
 	flag.Parse()
+
+	// Parse timeout
+	var err error
+	config.ExecTimeout, err = time.ParseDuration(*execTimeoutStr)
+	if err != nil {
+		log.Fatalf("Invalid exec timeout: %v", err)
+	}
+
 	// Set up allowed extensions
 	if *allowedExts != "" {
 		config.AllowedExtensions = strings.Split(*allowedExts, ",")
@@ -644,14 +902,31 @@ func main() {
 		}
 	}
 
+	// Set up exec whitelist
+	if *execWhitelistStr != "" {
+		config.ExecWhitelist = strings.Split(*execWhitelistStr, ",")
+		for i := range config.ExecWhitelist {
+			config.ExecWhitelist[i] = strings.TrimSpace(config.ExecWhitelist[i])
+		}
+	}
+
 	// Set up excluded paths
 	config.ExcludedPaths = strings.Split(*excludedPaths, ",")
 	for i := range config.ExcludedPaths {
 		config.ExcludedPaths[i] = strings.TrimSpace(config.ExcludedPaths[i])
 	}
-	fmt.Fprintf(os.Stderr, "Max write file size: %d bytes\n", config.MaxWriteSize)
-	fmt.Fprintf(os.Stderr, "Allowed extensions: %v\n", config.AllowedExtensions)
-	fmt.Fprintf(os.Stderr, "Backup enabled: %v\n", config.BackupBeforeWrite)
+
+	if config.Verbose {
+		fmt.Fprintf(os.Stderr, "Max write file size: %d bytes\n", config.MaxWriteSize)
+		fmt.Fprintf(os.Stderr, "Allowed extensions: %v\n", config.AllowedExtensions)
+		fmt.Fprintf(os.Stderr, "Backup enabled: %v\n", config.BackupBeforeWrite)
+		fmt.Fprintf(os.Stderr, "Exec enabled: %v\n", config.ExecEnabled)
+		if config.ExecEnabled {
+			fmt.Fprintf(os.Stderr, "Exec whitelist: %v\n", config.ExecWhitelist)
+			fmt.Fprintf(os.Stderr, "Exec timeout: %v\n", config.ExecTimeout)
+			fmt.Fprintf(os.Stderr, "Exec image: %s\n", config.ExecContainerImage)
+		}
+	}
 
 	// Resolve repository root to absolute path
 	absRoot, err := filepath.Abs(config.RepositoryRoot)
