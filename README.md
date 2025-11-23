@@ -1,4 +1,3 @@
-
 # LLM File Access Tool
 
 A secure tool that enables Large Language Models to autonomously explore and work with local repositories through embedded commands in their responses. Now includes secure command execution capabilities!
@@ -20,8 +19,8 @@ A secure tool that enables Large Language Models to autonomously explore and wor
 
 ### Build from source
 ```bash
-git clone <repository>
-cd llm-file-access-tool
+git clone https://github.com/computerscienceiscool/llm-tools.git
+cd llm-tools
 make build
 ```
 
@@ -365,6 +364,16 @@ security:
     - "secrets/"
 ```
 
+## Documentation
+
+For comprehensive documentation, see the [docs/](docs/) directory:
+
+- **[Installation Guide](docs/installation.md)** - Complete setup instructions
+- **[Configuration Reference](docs/configuration.md)** - All configuration options
+- **[Feature Guides](docs/)** - Detailed guides for each command type
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
+- **[FAQ](docs/faq.md)** - Frequently asked questions
+
 ## Troubleshooting
 
 ### Docker Issues
@@ -421,4 +430,14 @@ Planned features for future versions:
 4. Follow Go best practices
 5. Test with Docker security in mind
 
- 
+## License
+
+[License information]
+
+## Support
+
+- **Issues**: [Report bugs](https://github.com/computerscienceiscool/llm-tools/issues)
+- **Discussions**: [Community discussions](https://github.com/computerscienceiscool/llm-tools/discussions)
+- **Documentation**: [Complete docs](docs/)
+- **Quick Start Guides**: [Getting started](docs/quick-reference.md)
+- **Examples**: [Example projects](examples/) This will help users get started quickly and will be done in future updates.

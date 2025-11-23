@@ -1,5 +1,5 @@
 # Makefile for LLM File Access Tool
-export PATH := $(HOME)/.goenv/shims:$(PATH)
+# export PATH := $(HOME)/.goenv/shims:$(PATH)
 
 
 # Makefile for LLM File Access Tool
@@ -11,7 +11,6 @@ GOTEST=$(GOCMD) test
 
 
 
-export PATH := $(HOME)/.goenv/versions/1.22.1/bin:$(PATH)
 
 # Go parameters
 GOCMD=go
