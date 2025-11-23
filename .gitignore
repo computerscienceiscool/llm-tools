@@ -1,46 +1,79 @@
-# Logs
-audit.log
-audit.log.*
-llm-tool.log
-
-# Grok files
-*.aidda/
-*.grok
-*.grok.lock
-*.lock
-
-
 # Compiled binaries
+llm-tools
 llm-tool
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# Coverage files
+*.out
+coverage.html
 
 # Go build cache
 bin/
 build/
 dist/
 
-# Test files and temporary outputs
-tests/
-test*.txt
-hello.txt
+# Logs
+audit.log
+audit.log.*
+llm-tool.log
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
 *.bak.*
-*.tmp.*
-README_SUMMARY.md
 
-
-search-env/
-
-
-# Embedding indexes
+# Database files
+*.db
+*.sqlite
+*.sqlite3
 embeddings/
 embeddings.db
 
+# Environment files
+.env
+.env.local
+.env.*.local
 
-# Coverage reports
-coverage.out
-coverage.html
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Release artifacts
-releases/
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Node artifacts
+# Backup directory you just created
+old-search-files/
+
+# Test outputs
+test*.txt
+hello.txt
+output.txt
+README_SUMMARY.md
+
+# Search environment (if you have Python components)
+search-env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Node artifacts (if any)
 node_modules/
+npm-debug.log*
