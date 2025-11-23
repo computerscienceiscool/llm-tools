@@ -1,11 +1,11 @@
-# LLM Tool Configuration
-# This file configures the behavior of the LLM file access tool
+# LLM Tool Configuration with Search Support
+# This file configures the behavior of the LLM file access tool including the new search functionality
 
 repository:
   # Root directory of the repository to explore
   root: "."
   
-  # Paths and patterns to exclude from access
+  # Paths and patterns to exclude from access and indexing
   excluded_paths:
     - ".git"
     - ".env"
@@ -85,18 +85,68 @@ commands:
       - "tail"
       - "wc"
     
-  # Future command configurations   
+  # Search command configuration
   search:
+    # Enable/disable semantic search functionality
     enabled: true
+    
+    # Database path for storing embeddings
     vector_db_path: "./embeddings.db"
+    
+    # Embedding model to use (sentence-transformers model)
     embedding_model: "all-MiniLM-L6-v2"
+    
+    # Maximum number of search results to return
     max_results: 10
+    
+    # Minimum similarity score (0.0 to 1.0) to include in results
     min_similarity_score: 0.5
+    
+    # Maximum length of preview text for each result
     max_preview_length: 100
+    
+    # Chunk size for processing large files (in tokens)
     chunk_size: 1000
-    python_path: "/home/jj/lab/llm-tools/search-env/bin/python3"
-    index_extensions: [".go", ".py", ".js", ".md", ".txt"]
-    max_file_size: 1048576
+    
+    # Python interpreter path
+    python_path: "python3"
+    
+    # File extensions to index for search
+    index_extensions:
+      - ".go"
+      - ".py"
+      - ".js"
+      - ".ts"
+      - ".jsx"
+      - ".tsx"
+      - ".md"
+      - ".txt"
+      - ".yaml"
+      - ".yml"
+      - ".json"
+      - ".toml"
+      - ".rs"
+      - ".java"
+      - ".c"
+      - ".cpp"
+      - ".h"
+      - ".hpp"
+      - ".sh"
+      - ".bash"
+      - ".zsh"
+      - ".fish"
+      - ".sql"
+      - ".html"
+      - ".css"
+      - ".scss"
+      - ".less"
+      - ".xml"
+      - ".proto"
+      - ".dockerfile"
+      - ".makefile"
+    
+    # Maximum file size to index (in bytes)
+    max_file_size: 1048576  # 1MB
 
 security:
   # Maximum operations per minute
@@ -123,3 +173,31 @@ logging:
   file: "./llm-tool.log"
   format: "json"  # json or text
 
+# Search Setup Instructions:
+#
+# 1. Install Python dependencies:
+#    pip install sentence-transformers
+#
+# 2. Enable search by setting search.enabled: true above
+#
+# 3. Build initial search index:
+#    ./llm-tool --reindex
+#
+# 4. Test search functionality:
+#    echo "Find authentication code <search auth>" | ./llm-tool
+#
+# Search Command Examples for LLMs:
+# - <search authentication logic>
+# - <search database connection>  
+# - <search error handling>
+# - <search test cases>
+# - <search API endpoints>
+# - <search configuration>
+# - <search utility functions>
+#
+# Command Line Search Management:
+# - ./llm-tool --reindex              # Full reindex
+# - ./llm-tool --search-status        # Show index stats
+# - ./llm-tool --search-validate      # Validate index
+# - ./llm-tool --search-cleanup       # Clean deleted files
+# - ./llm-tool --check-python-setup   # Verify dependencies

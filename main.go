@@ -99,6 +99,7 @@ func NewSession(config *Config) *Session {
 }
 
 // ParseCommands extracts commands from LLM output
+// ParseCommands extracts commands from LLM output
 func ParseCommands(text string) []Command {
 	var commands []Command
 
@@ -147,6 +148,23 @@ func ParseCommands(text string) []Command {
 		if len(match) >= 4 {
 			cmd := Command{
 				Type:     "exec",
+				Argument: strings.TrimSpace(text[match[2]:match[3]]),
+				StartPos: match[0],
+				EndPos:   match[1],
+				Original: text[match[0]:match[1]],
+			}
+			commands = append(commands, cmd)
+		}
+	}
+
+	// Pattern for <search query terms> commands
+	searchPattern := regexp.MustCompile(`<search\s+([^>]+)>`)
+
+	searchMatches := searchPattern.FindAllStringSubmatchIndex(text, -1)
+	for _, match := range searchMatches {
+		if len(match) >= 4 {
+			cmd := Command{
+				Type:     "search",
 				Argument: strings.TrimSpace(text[match[2]:match[3]]),
 				StartPos: match[0],
 				EndPos:   match[1],
@@ -752,6 +770,8 @@ func (s *Session) ProcessText(text string) string {
 			result = s.ExecuteWrite(cmd.Argument, cmd.Content)
 		case "exec":
 			result = s.ExecuteExec(cmd.Argument)
+		case "search":
+			result = s.ExecuteSearch(cmd.Argument)
 		default:
 			result = ExecutionResult{
 				Command: cmd,
@@ -884,6 +904,12 @@ func main() {
 
 	// Parse excluded paths
 	excludedPaths := flag.String("exclude", ".git,.env,*.key,*.pem", "Comma-separated list of excluded paths")
+	reindex := flag.Bool("reindex", false, "Rebuild search index from scratch")
+	searchStatus := flag.Bool("search-status", false, "Show search index status")
+	searchValidate := flag.Bool("search-validate", false, "Validate search index")
+	searchCleanup := flag.Bool("search-cleanup", false, "Clean up search index")
+	searchUpdate := flag.Bool("search-update", false, "Update search index incrementally")
+	checkPythonSetup := flag.Bool("check-python-setup", false, "Check Python dependencies for search")
 
 	flag.Parse()
 
@@ -926,6 +952,50 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Exec timeout: %v\n", config.ExecTimeout)
 			fmt.Fprintf(os.Stderr, "Exec image: %s\n", config.ExecContainerImage)
 		}
+	}
+
+	// Handle search-related flags
+	if *checkPythonSetup {
+		if err := CheckPythonSetup(); err != nil {
+			os.Exit(1)
+		}
+		return
+	}
+
+	if *reindex || *searchStatus || *searchValidate || *searchCleanup || *searchUpdate {
+		session := NewSession(&config)
+		searchCommands, err := NewSearchCommands(session)
+		if err != nil {
+			log.Fatalf("Search not available: %v", err)
+		}
+		defer searchCommands.Close()
+
+		if *reindex {
+			if err := searchCommands.HandleReindex(config.Verbose); err != nil {
+				log.Fatalf("Reindex failed: %v", err)
+			}
+		}
+		if *searchStatus {
+			if err := searchCommands.HandleSearchStatus(); err != nil {
+				log.Fatalf("Status failed: %v", err)
+			}
+		}
+		if *searchValidate {
+			if err := searchCommands.HandleSearchValidate(); err != nil {
+				log.Fatalf("Validation failed: %v", err)
+			}
+		}
+		if *searchCleanup {
+			if err := searchCommands.HandleSearchCleanup(); err != nil {
+				log.Fatalf("Cleanup failed: %v", err)
+			}
+		}
+		if *searchUpdate {
+			if err := searchCommands.HandleSearchUpdate(config.Verbose); err != nil {
+				log.Fatalf("Update failed: %v", err)
+			}
+		}
+		return
 	}
 
 	// Resolve repository root to absolute path
