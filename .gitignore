@@ -77,3 +77,14 @@ __pycache__/
 # Node artifacts (if any)
 node_modules/
 npm-debug.log*
+
+
+
+# Grok files (AI assistant cache/config)
+.aidda/
+.grok
+.grok.lock
+.lock
+
+# Test directories and files
+tests/
