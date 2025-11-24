@@ -444,13 +444,6 @@ func TestDockerClientResourceUsage(t *testing.T) {
 	})
 }
 
-// Placeholder interfaces and types
-type DockerClient interface {
-	RunCommand(ctx context.Context, config ExecConfig, command string) (ExecResult, error)
-	IsAvailable(ctx context.Context) bool
-	PullImage(ctx context.Context, image string) error
-}
-
 type ExecConfig struct {
 	Image       string
 	MemoryLimit string
@@ -464,10 +457,6 @@ type ExecResult struct {
 	Stdout   string
 	Stderr   string
 	Duration time.Duration
-}
-
-func NewDockerClient() DockerClient {
-	return &defaultDockerClient{}
 }
 
 type defaultDockerClient struct{}

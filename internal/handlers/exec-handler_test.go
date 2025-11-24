@@ -22,9 +22,9 @@ func (m *MockDockerClient) RunCommand(ctx context.Context, config ExecConfig, co
 	return args.Get(0).(ExecResult), args.Error(1)
 }
 
-func (m *MockDockerClient) IsAvailable(ctx context.Context) bool {
-	args := m.Called(ctx)
-	return args.Bool(0)
+func (m *MockDockerClient) CheckAvailability() error {
+	args := m.Called()
+	return args.Error(0)
 }
 
 // MockCommandValidator for testing
@@ -41,12 +41,9 @@ func (m *MockCommandValidator) ValidateCommand(command string, whitelist []strin
 func TestDefaultExecHandler(t *testing.T) {
 	mockDocker := &MockDockerClient{}
 	mockValidator := &MockCommandValidator{}
-	handler := NewExecHandler(mockDocker)
-
-	// 	handler := NewExecHandler(mockDocker, mockValidator)
+	handler := NewExecHandler(mockDocker, mockValidator)
 	require.NotNil(t, handler)
 
-	ctx := context.Background()
 	config := ExecConfig{
 		Enabled:        true,
 		Whitelist:      []string{"go", "npm", "python"},
@@ -67,10 +64,10 @@ func TestDefaultExecHandler(t *testing.T) {
 		}
 
 		mockValidator.On("ValidateCommand", command, config.Whitelist).Return(nil)
-		mockDocker.On("IsAvailable", ctx).Return(true)
-		mockDocker.On("RunCommand", ctx, config, command).Return(expectedResult, nil)
+		mockDocker.On("CheckAvailability").Return(nil)
+		mockDocker.On("RunCommand", mock.AnythingOfType("*context.timerCtx"), config, command).Return(expectedResult, nil)
 
-		result, err := handler.ExecuteCommand(ctx, command, config)
+		result, err := handler.ExecuteCommand(command, config)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, result.ExitCode)
 		assert.Contains(t, result.Stdout, "ok")
@@ -87,7 +84,6 @@ func TestDefaultExecHandler(t *testing.T) {
 			Return(fmt.Errorf("EXEC_VALIDATION: command not whitelisted"))
 		_, err := handler.ExecuteCommand(command, config)
 
-		//		_, err := handler.ExecuteCommand(ctx, command, config)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "EXEC_VALIDATION")
 
@@ -102,9 +98,9 @@ func TestDefaultExecHandler(t *testing.T) {
 		command := "go version"
 
 		mockValidator.On("ValidateCommand", command, config.Whitelist).Return(nil)
-		mockDocker.On("IsAvailable", ctx).Return(false)
+		mockDocker.On("CheckAvailability").Return(fmt.Errorf("Docker not available"))
 
-		_, err := handler.ExecuteCommand(ctx, command, config)
+		_, err := handler.ExecuteCommand(command, config)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "Docker")
 
@@ -116,7 +112,7 @@ func TestDefaultExecHandler(t *testing.T) {
 		disabledConfig := config
 		disabledConfig.Enabled = false
 
-		_, err := handler.ExecuteCommand(ctx, "go test", disabledConfig)
+		_, err := handler.ExecuteCommand("go test", disabledConfig)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "disabled")
 	})
@@ -128,7 +124,6 @@ func TestExecHandlerErrors(t *testing.T) {
 	mockValidator := &MockCommandValidator{}
 	handler := NewExecHandler(mockDocker, mockValidator)
 
-	ctx := context.Background()
 	config := ExecConfig{
 		Enabled:   true,
 		Whitelist: []string{"go"},
@@ -146,10 +141,10 @@ func TestExecHandlerErrors(t *testing.T) {
 		}
 
 		mockValidator.On("ValidateCommand", command, config.Whitelist).Return(nil)
-		mockDocker.On("IsAvailable", ctx).Return(true)
-		mockDocker.On("RunCommand", ctx, config, command).Return(failedResult, nil)
+		mockDocker.On("CheckAvailability").Return(nil)
+		mockDocker.On("RunCommand", mock.AnythingOfType("*context.timerCtx"), config, command).Return(failedResult, nil)
 
-		result, err := handler.ExecuteCommand(ctx, command, config)
+		result, err := handler.ExecuteCommand(command, config)
 		assert.NoError(t, err) // Handler doesn't error, but command failed
 		assert.Equal(t, 1, result.ExitCode)
 		assert.Contains(t, result.Stderr, "no packages")
@@ -166,11 +161,11 @@ func TestExecHandlerErrors(t *testing.T) {
 		command := "go build"
 
 		mockValidator.On("ValidateCommand", command, config.Whitelist).Return(nil)
-		mockDocker.On("IsAvailable", ctx).Return(true)
-		mockDocker.On("RunCommand", ctx, config, command).
+		mockDocker.On("CheckAvailability").Return(nil)
+		mockDocker.On("RunCommand", mock.AnythingOfType("*context.timerCtx"), config, command).
 			Return(ExecResult{}, fmt.Errorf("docker: container failed to start"))
 
-		_, err := handler.ExecuteCommand(ctx, command, config)
+		_, err := handler.ExecuteCommand(command, config)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "docker")
 
@@ -188,11 +183,11 @@ func TestExecHandlerErrors(t *testing.T) {
 		shortConfig.Timeout = 100 * time.Millisecond
 
 		mockValidator.On("ValidateCommand", command, shortConfig.Whitelist).Return(nil)
-		mockDocker.On("IsAvailable", ctx).Return(true)
+		mockDocker.On("CheckAvailability").Return(nil)
 		mockDocker.On("RunCommand", mock.Anything, shortConfig, command).
 			Return(ExecResult{ExitCode: 124}, fmt.Errorf("execution timed out"))
 
-		_, err := handler.ExecuteCommand(ctx, command, shortConfig)
+		_, err := handler.ExecuteCommand(command, shortConfig)
 		assert.Error(t, err)
 		assert.Contains(t, strings.ToLower(err.Error()), "timeout")
 
@@ -206,8 +201,6 @@ func TestExecHandlerValidation(t *testing.T) {
 	mockDocker := &MockDockerClient{}
 	mockValidator := &MockCommandValidator{}
 	handler := NewExecHandler(mockDocker, mockValidator)
-
-	ctx := context.Background()
 
 	tests := []struct {
 		name      string
@@ -264,17 +257,17 @@ func TestExecHandlerValidation(t *testing.T) {
 				mockValidator.On("ValidateCommand", tt.command, tt.whitelist).
 					Return(fmt.Errorf("EXEC_VALIDATION: %s", tt.errorMsg))
 
-				_, err := handler.ExecuteCommand(ctx, tt.command, config)
+				_, err := handler.ExecuteCommand(tt.command, config)
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "EXEC_VALIDATION")
 			} else {
 				expectedResult := ExecResult{ExitCode: 0, Stdout: "success"}
 
 				mockValidator.On("ValidateCommand", tt.command, tt.whitelist).Return(nil)
-				mockDocker.On("IsAvailable", ctx).Return(true)
-				mockDocker.On("RunCommand", ctx, config, tt.command).Return(expectedResult, nil)
+				mockDocker.On("CheckAvailability").Return(nil)
+				mockDocker.On("RunCommand", mock.AnythingOfType("*context.timerCtx"), config, tt.command).Return(expectedResult, nil)
 
-				result, err := handler.ExecuteCommand(ctx, tt.command, config)
+				result, err := handler.ExecuteCommand(tt.command, config)
 				assert.NoError(t, err)
 				assert.Equal(t, 0, result.ExitCode)
 			}
@@ -296,7 +289,6 @@ func TestExecHandlerConcurrency(t *testing.T) {
 	mockValidator := &MockCommandValidator{}
 	handler := NewExecHandler(mockDocker, mockValidator)
 
-	ctx := context.Background()
 	config := ExecConfig{
 		Enabled:   true,
 		Whitelist: []string{"echo"},
@@ -311,8 +303,8 @@ func TestExecHandlerConcurrency(t *testing.T) {
 
 	// Setup mock expectations for concurrent calls
 	mockValidator.On("ValidateCommand", mock.AnythingOfType("string"), config.Whitelist).Return(nil)
-	mockDocker.On("IsAvailable", ctx).Return(true)
-	mockDocker.On("RunCommand", ctx, config, mock.AnythingOfType("string")).
+	mockDocker.On("CheckAvailability").Return(nil)
+	mockDocker.On("RunCommand", mock.AnythingOfType("*context.timerCtx"), config, mock.AnythingOfType("string")).
 		Return(ExecResult{ExitCode: 0, Stdout: "hello"}, nil)
 
 	// Run concurrent executions
@@ -321,7 +313,7 @@ func TestExecHandlerConcurrency(t *testing.T) {
 			defer func() { done <- true }()
 
 			command := fmt.Sprintf("echo 'test %d'", id)
-			result, err := handler.ExecuteCommand(ctx, command, config)
+			result, err := handler.ExecuteCommand(command, config)
 
 			results[id] = result
 			errors[id] = err
@@ -349,7 +341,6 @@ func BenchmarkExecHandler(b *testing.B) {
 	mockValidator := &MockCommandValidator{}
 	handler := NewExecHandler(mockDocker, mockValidator)
 
-	ctx := context.Background()
 	config := ExecConfig{
 		Enabled:   true,
 		Whitelist: []string{"echo"},
@@ -358,13 +349,13 @@ func BenchmarkExecHandler(b *testing.B) {
 	}
 
 	mockValidator.On("ValidateCommand", "echo test", config.Whitelist).Return(nil)
-	mockDocker.On("IsAvailable", ctx).Return(true)
-	mockDocker.On("RunCommand", ctx, config, "echo test").
+	mockDocker.On("CheckAvailability").Return(nil)
+	mockDocker.On("RunCommand", mock.AnythingOfType("*context.timerCtx"), config, "echo test").
 		Return(ExecResult{ExitCode: 0}, nil)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := handler.ExecuteCommand(ctx, "echo test", config)
+		_, err := handler.ExecuteCommand("echo test", config)
 		if err != nil {
 			b.Fatal(err)
 		}

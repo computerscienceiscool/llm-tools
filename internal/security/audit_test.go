@@ -621,16 +621,3 @@ func (e AuditEvent) ToLogLine() string {
 		e.Success,
 		e.ErrorMsg)
 }
-
-// Mock audit manager interface for testing
-type AuditManager interface {
-	LogEvent(event AuditEvent) error
-	GetEvents(sessionID string, limit int) ([]AuditEvent, error)
-	RotateLog() error
-	Close() error
-}
-
-// Placeholder for actual implementation
-func NewAuditManager(logFile string) AuditManager {
-	return &MockAuditManager{}
-}

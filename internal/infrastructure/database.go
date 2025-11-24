@@ -17,7 +17,6 @@ type Database interface {
 	Execute(query string, args ...interface{}) error
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
-	// Add missing methods that tests expect
 	Initialize() error
 	LogAuditEvent(sessionID, command, argument string, success bool, errorMsg string) error
 	GetAuditLogs(sessionID string, limit int) ([]AuditLog, error)
@@ -135,4 +134,11 @@ func (d *SQLiteDatabase) GetAuditLogs(sessionID string, limit int) ([]AuditLog, 
 	}
 
 	return logs, nil
+}
+
+// NewSQLiteDatabase creates a new SQLite database instance
+func NewSQLiteDatabase(dbPath string) Database {
+	db := &SQLiteDatabase{}
+	db.Connect(dbPath)
+	return db
 }

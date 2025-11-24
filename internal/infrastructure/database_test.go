@@ -19,6 +19,26 @@ type MockDatabase struct {
 	mock.Mock
 }
 
+func (m *MockDatabase) Connect(dbPath string) error {
+	args := m.Called(dbPath)
+	return args.Error(0)
+}
+
+func (m *MockDatabase) Execute(query string, args ...interface{}) error {
+	calledArgs := m.Called(query, args)
+	return calledArgs.Error(0)
+}
+
+func (m *MockDatabase) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	calledArgs := m.Called(query, args)
+	return calledArgs.Get(0).(*sql.Rows), calledArgs.Error(1)
+}
+
+func (m *MockDatabase) QueryRow(query string, args ...interface{}) *sql.Row {
+	calledArgs := m.Called(query, args)
+	return calledArgs.Get(0).(*sql.Row)
+}
+
 func (m *MockDatabase) LogAuditEvent(sessionID, command, argument string, success bool, errorMsg string) error {
 	args := m.Called(sessionID, command, argument, success, errorMsg)
 	return args.Error(0)
@@ -445,48 +465,4 @@ func TestDatabaseTransactions(t *testing.T) {
 	finalLogs, err := db.GetAuditLogs("session1", 100)
 	assert.NoError(t, err)
 	assert.Len(t, finalLogs, 11) // 1 original + 10 new
-}
-
-// Placeholder interfaces and types
-type Database interface {
-	LogAuditEvent(sessionID, command, argument string, success bool, errorMsg string) error
-	GetAuditLogs(sessionID string, limit int) ([]AuditLog, error)
-	Initialize() error
-	Close() error
-}
-
-type AuditLog struct {
-	ID        int64
-	Timestamp time.Time
-	SessionID string
-	Command   string
-	Argument  string
-	Success   bool
-	ErrorMsg  string
-}
-
-func NewSQLiteDatabase(path string) Database {
-	return &sqliteDatabase{path: path}
-}
-
-type sqliteDatabase struct {
-	path string
-	db   *sql.DB
-}
-
-func (s *sqliteDatabase) Initialize() error {
-	// Mock implementation
-	return fmt.Errorf("mock implementation")
-}
-
-func (s *sqliteDatabase) LogAuditEvent(sessionID, command, argument string, success bool, errorMsg string) error {
-	return fmt.Errorf("mock implementation")
-}
-
-func (s *sqliteDatabase) GetAuditLogs(sessionID string, limit int) ([]AuditLog, error) {
-	return nil, fmt.Errorf("mock implementation")
-}
-
-func (s *sqliteDatabase) Close() error {
-	return fmt.Errorf("mock implementation")
 }

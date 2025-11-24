@@ -29,7 +29,7 @@ func (l *DefaultConfigLoader) LoadConfig(configPath string) (*core.Config, error
 			return nil, err
 		}
 	} else {
-		// If flags are already parsed, use current directory as default
+		// Set default values when flags already parsed
 		config.RepositoryRoot = "."
 		config.MaxFileSize = 1048576
 		config.MaxWriteSize = 102400

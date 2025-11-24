@@ -138,8 +138,7 @@ func (e *DefaultCommandExecutor) ExecuteExec(command string) ExecutionResult {
 	startTime := time.Now()
 
 	result := ExecutionResult{
-		Command:       Command{Type: "exec", Argument: command},
-		ExecutionTime: time.Since(startTime),
+		Command: Command{Type: "exec", Argument: command},
 	}
 
 	config := e.session.GetConfig()
@@ -158,9 +157,10 @@ func (e *DefaultCommandExecutor) ExecuteExec(command string) ExecutionResult {
 	// Execute via handler
 	execResult, err := e.execHandler.ExecuteCommand(command, execConfig)
 
+	// Calculate execution time AFTER the command completes
+	result.ExecutionTime = time.Since(startTime)
 	result.Success = err == nil
 	result.Error = err
-	result.ExecutionTime = time.Since(startTime)
 
 	if err == nil {
 		result.ExitCode = execResult.ExitCode
@@ -180,10 +180,17 @@ func (e *DefaultCommandExecutor) ExecuteExec(command string) ExecutionResult {
 	if err != nil {
 		errorMsg = err.Error()
 	} else {
-		// Round to 3 decimal places for consistent testing
-		durationSeconds := float64(result.ExecutionTime.Nanoseconds()) / float64(time.Second.Nanoseconds())
+		// Use the execResult.Duration if available, otherwise use calculated time
+		var duration time.Duration
+		if execResult.Duration > 0 {
+			duration = execResult.Duration
+		} else {
+			duration = result.ExecutionTime
+		}
+		durationSeconds := float64(duration.Nanoseconds()) / float64(time.Second.Nanoseconds())
 		errorMsg = fmt.Sprintf("exit_code:%d,duration:%.3fs", result.ExitCode, durationSeconds)
 	}
+
 	e.session.LogAudit("exec", command, result.Success, errorMsg)
 	if result.Success {
 		e.session.IncrementCommandsRun()
@@ -197,16 +204,16 @@ func (e *DefaultCommandExecutor) ExecuteSearch(query string) ExecutionResult {
 	startTime := time.Now()
 
 	result := ExecutionResult{
-		Command:       Command{Type: "search", Argument: query},
-		ExecutionTime: time.Since(startTime),
+		Command: Command{Type: "search", Argument: query},
 	}
 
 	// Execute via handler
 	searchResults, err := e.searchHandler.Search(query)
 
+	// Calculate execution time AFTER the search completes
+	result.ExecutionTime = time.Since(startTime)
 	result.Success = err == nil
 	result.Error = err
-	result.ExecutionTime = time.Since(startTime)
 
 	if err == nil {
 		result.Result = e.formatSearchResults(query, searchResults, result.ExecutionTime)
@@ -217,8 +224,10 @@ func (e *DefaultCommandExecutor) ExecuteSearch(query string) ExecutionResult {
 	if err != nil {
 		errorMsg = err.Error()
 	} else {
-		errorMsg = fmt.Sprintf("results:%d,duration:%.3fs", len(searchResults), result.ExecutionTime.Seconds())
+		durationSeconds := float64(result.ExecutionTime.Nanoseconds()) / float64(time.Second.Nanoseconds())
+		errorMsg = fmt.Sprintf("results:%d,duration:%.3fs", len(searchResults), durationSeconds)
 	}
+
 	e.session.LogAudit("search", query, result.Success, errorMsg)
 	if result.Success {
 		e.session.IncrementCommandsRun()

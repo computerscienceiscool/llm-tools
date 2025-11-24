@@ -35,7 +35,7 @@ func main() {
 	parser := parser.NewCommandParser()
 	dockerClient := infrastructure.NewDockerClient()
 	fileHandler := handlers.NewFileHandler(validator, auditor)
-	execHandler := handlers.NewExecHandler(dockerClient)
+	execHandler := handlers.NewExecHandler(dockerClient.(handlers.DockerClient))
 	searchHandler := handlers.NewSearchHandler()
 
 	// Create executor

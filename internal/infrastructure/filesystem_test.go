@@ -317,20 +317,6 @@ func BenchmarkFileSystemOperations(b *testing.B) {
 	})
 }
 
-// Placeholder interface for testing
-type FileSystem interface {
-	ReadFile(filename string) ([]byte, error)
-	WriteFile(filename string, data []byte, perm os.FileMode) error
-	Stat(filename string) (os.FileInfo, error)
-	Exists(filename string) bool
-	MkdirAll(path string, perm os.FileMode) error
-}
-
-// Placeholder constructor
-func NewFileSystem() FileSystem {
-	return &realFileSystem{}
-}
-
 type realFileSystem struct{}
 
 func (fs *realFileSystem) ReadFile(filename string) ([]byte, error) {

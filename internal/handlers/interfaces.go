@@ -15,30 +15,6 @@ type WriteResult struct {
 	BackupFile   string
 }
 
-// ExecHandler handles command execution
-type ExecHandler interface {
-	ExecuteCommand(command string, config ExecConfig) (ExecResult, error)
-}
-
-// ExecConfig contains execution configuration
-type ExecConfig struct {
-	Enabled        bool
-	Whitelist      []string
-	Timeout        time.Duration
-	MemoryLimit    string
-	CPULimit       int
-	ContainerImage string
-	RepoRoot       string
-}
-
-// ExecResult contains execution results
-type ExecResult struct {
-	ExitCode int
-	Stdout   string
-	Stderr   string
-	Duration time.Duration
-}
-
 // SearchHandler handles search operations
 type SearchHandler interface {
 	Search(query string) ([]SearchResult, error)

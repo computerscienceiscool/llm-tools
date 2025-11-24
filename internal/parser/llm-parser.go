@@ -29,13 +29,13 @@ func (p *LLMParser) ParseCommands(text string) []ParsedCommand {
 
 	// Parse open commands
 	commands = append(commands, p.parseOpenCommands(text)...)
-	
+
 	// Parse write commands
 	commands = append(commands, p.parseWriteCommands(text)...)
-	
+
 	// Parse exec commands
 	commands = append(commands, p.parseExecCommands(text)...)
-	
+
 	// Parse search commands
 	commands = append(commands, p.parseSearchCommands(text)...)
 
@@ -44,7 +44,7 @@ func (p *LLMParser) ParseCommands(text string) []ParsedCommand {
 
 func (p *LLMParser) parseOpenCommands(text string) []ParsedCommand {
 	var commands []ParsedCommand
-	
+
 	matches := p.openPattern.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range matches {
 		if len(match) >= 4 {
@@ -58,17 +58,21 @@ func (p *LLMParser) parseOpenCommands(text string) []ParsedCommand {
 			commands = append(commands, cmd)
 		}
 	}
-	
+
 	return commands
 }
 
 func (p *LLMParser) parseWriteCommands(text string) []ParsedCommand {
 	var commands []ParsedCommand
-	
+
 	matches := p.writePattern.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range matches {
 		if len(match) >= 6 {
-			content := strings.TrimSpace(text[match[4]:match[5]])
+			content := ""
+			if match[4] != -1 && match[5] != -1 {
+				content = strings.TrimSpace(text[match[4]:match[5]])
+			}
+
 			cmd := ParsedCommand{
 				Type:     "write",
 				Argument: strings.TrimSpace(text[match[2]:match[3]]),
@@ -80,13 +84,13 @@ func (p *LLMParser) parseWriteCommands(text string) []ParsedCommand {
 			commands = append(commands, cmd)
 		}
 	}
-	
+
 	return commands
 }
 
 func (p *LLMParser) parseExecCommands(text string) []ParsedCommand {
 	var commands []ParsedCommand
-	
+
 	matches := p.execPattern.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range matches {
 		if len(match) >= 4 {
@@ -100,13 +104,13 @@ func (p *LLMParser) parseExecCommands(text string) []ParsedCommand {
 			commands = append(commands, cmd)
 		}
 	}
-	
+
 	return commands
 }
 
 func (p *LLMParser) parseSearchCommands(text string) []ParsedCommand {
 	var commands []ParsedCommand
-	
+
 	matches := p.searchPattern.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range matches {
 		if len(match) >= 4 {
@@ -120,6 +124,6 @@ func (p *LLMParser) parseSearchCommands(text string) []ParsedCommand {
 			commands = append(commands, cmd)
 		}
 	}
-	
+
 	return commands
 }

@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"time"
+
+	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
 )
 
 // ExecHandler handles command execution
@@ -37,7 +39,7 @@ type DefaultExecHandler struct {
 // DockerClient interface for exec handler
 type DockerClient interface {
 	CheckAvailability() error
-	ExecuteInContainer(ctx context.Context, config ContainerConfig) (ContainerResult, error)
+	ExecuteInContainer(ctx context.Context, config infrastructure.ContainerConfig) (infrastructure.ContainerResult, error)
 }
 
 // ContainerConfig for Docker operations
