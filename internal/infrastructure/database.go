@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -16,6 +17,21 @@ type Database interface {
 	Execute(query string, args ...interface{}) error
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
+	// Add missing methods that tests expect
+	Initialize() error
+	LogAuditEvent(sessionID, command, argument string, success bool, errorMsg string) error
+	GetAuditLogs(sessionID string, limit int) ([]AuditLog, error)
+}
+
+// AuditLog represents an audit log entry
+type AuditLog struct {
+	ID        int64
+	Timestamp time.Time
+	SessionID string
+	Command   string
+	Argument  string
+	Success   bool
+	ErrorMsg  string
 }
 
 // SQLiteDatabase implements Database for SQLite
@@ -64,20 +80,59 @@ func (d *SQLiteDatabase) QueryRow(query string, args ...interface{}) *sql.Row {
 	return d.db.QueryRow(query, args...)
 }
 
-// InitializeSchema sets up database tables
-func (d *SQLiteDatabase) InitializeSchema() error {
+// Initialize sets up database tables
+func (d *SQLiteDatabase) Initialize() error {
 	schema := `
-	CREATE TABLE IF NOT EXISTS embeddings (
-		filepath TEXT PRIMARY KEY,
-		content_hash TEXT NOT NULL,
-		embedding BLOB NOT NULL,
-		last_modified INTEGER NOT NULL,
-		file_size INTEGER NOT NULL,
-		indexed_at INTEGER NOT NULL
+	CREATE TABLE IF NOT EXISTS audit_logs (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		timestamp DATETIME NOT NULL,
+		session_id TEXT NOT NULL,
+		command TEXT NOT NULL,
+		argument TEXT NOT NULL,
+		success BOOLEAN NOT NULL,
+		error_msg TEXT
 	);
-	CREATE INDEX IF NOT EXISTS idx_hash ON embeddings(content_hash);
-	CREATE INDEX IF NOT EXISTS idx_modified ON embeddings(last_modified);
+	CREATE INDEX IF NOT EXISTS idx_session ON audit_logs(session_id);
+	CREATE INDEX IF NOT EXISTS idx_timestamp ON audit_logs(timestamp);
 	`
 
 	return d.Execute(schema)
+}
+
+// LogAuditEvent logs an audit event
+func (d *SQLiteDatabase) LogAuditEvent(sessionID, command, argument string, success bool, errorMsg string) error {
+	query := `
+		INSERT INTO audit_logs (timestamp, session_id, command, argument, success, error_msg)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`
+	return d.Execute(query, time.Now(), sessionID, command, argument, success, errorMsg)
+}
+
+// GetAuditLogs retrieves audit logs for a session
+func (d *SQLiteDatabase) GetAuditLogs(sessionID string, limit int) ([]AuditLog, error) {
+	query := `
+		SELECT id, timestamp, session_id, command, argument, success, error_msg
+		FROM audit_logs
+		WHERE session_id = ?
+		ORDER BY timestamp DESC
+		LIMIT ?
+	`
+
+	rows, err := d.Query(query, sessionID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []AuditLog
+	for rows.Next() {
+		var log AuditLog
+		err := rows.Scan(&log.ID, &log.Timestamp, &log.SessionID, &log.Command, &log.Argument, &log.Success, &log.ErrorMsg)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+
+	return logs, nil
 }
