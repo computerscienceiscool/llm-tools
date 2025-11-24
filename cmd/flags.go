@@ -35,15 +35,56 @@ func setupFlags() *core.Config {
 		config.ExecTimeout = timeout
 	}
 
-	// Parse lists
+	// Parse lists with proper trimming
 	if *allowedExts != "" {
-		config.AllowedExtensions = strings.Split(*allowedExts, ",")
+		parts := strings.Split(*allowedExts, ",")
+		config.AllowedExtensions = make([]string, 0, len(parts))
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				config.AllowedExtensions = append(config.AllowedExtensions, trimmed)
+			}
+		}
+		// Handle empty string case
+		if *allowedExts == "" {
+			config.AllowedExtensions = []string{""}
+		}
+	} else {
+		config.AllowedExtensions = []string{""}
 	}
+
 	if *execWhitelist != "" {
-		config.ExecWhitelist = strings.Split(*execWhitelist, ",")
+		parts := strings.Split(*execWhitelist, ",")
+		config.ExecWhitelist = make([]string, 0, len(parts))
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				config.ExecWhitelist = append(config.ExecWhitelist, trimmed)
+			}
+		}
+		// Handle empty string case
+		if *execWhitelist == "" {
+			config.ExecWhitelist = []string{""}
+		}
+	} else {
+		config.ExecWhitelist = []string{""}
 	}
+
 	if *excludedPaths != "" {
-		config.ExcludedPaths = strings.Split(*excludedPaths, ",")
+		parts := strings.Split(*excludedPaths, ",")
+		config.ExcludedPaths = make([]string, 0, len(parts))
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				config.ExcludedPaths = append(config.ExcludedPaths, trimmed)
+			}
+		}
+		// Handle empty string case
+		if *excludedPaths == "" {
+			config.ExcludedPaths = []string{""}
+		}
+	} else {
+		config.ExcludedPaths = []string{""}
 	}
 
 	return config

@@ -9,11 +9,11 @@ import (
 
 // DefaultSession implements Session interface
 type DefaultSession struct {
-	id           string
-	config       *Config
-	commandsRun  int
-	startTime    time.Time
-	auditLogger  security.AuditLogger
+	id          string
+	config      *Config
+	commandsRun int
+	startTime   time.Time
+	auditLogger security.AuditLogger
 }
 
 // NewSession creates a new execution session

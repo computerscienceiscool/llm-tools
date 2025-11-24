@@ -47,7 +47,7 @@ func (d *DefaultDockerClient) PullImage(image string) error {
 // ExecuteInContainer executes a command in a Docker container
 func (d *DefaultDockerClient) ExecuteInContainer(ctx context.Context, config ContainerConfig) (ContainerResult, error) {
 	startTime := time.Now()
-	
+
 	result := ContainerResult{
 		Duration: time.Since(startTime),
 	}
@@ -95,7 +95,7 @@ func (d *DefaultDockerClient) ExecuteInContainer(ctx context.Context, config Con
 	// Add security options
 	dockerArgs = append(dockerArgs,
 		"--user", "1000:1000", // Run as non-root
-		"--cap-drop", "ALL",   // Drop all capabilities
+		"--cap-drop", "ALL", // Drop all capabilities
 		"--security-opt", "no-new-privileges", // Prevent privilege escalation
 		"--read-only",     // Make root filesystem read-only
 		"--tmpfs", "/tmp", // Temporary filesystem for /tmp

@@ -38,14 +38,14 @@ func NewCommandExecutor(
 // ExecuteOpen handles the "open" command
 func (e *DefaultCommandExecutor) ExecuteOpen(filepath string) ExecutionResult {
 	startTime := time.Now()
-	
+
 	result := ExecutionResult{
 		Command:       Command{Type: "open", Argument: filepath},
 		ExecutionTime: time.Since(startTime),
 	}
 
 	config := e.session.GetConfig()
-	
+
 	// Validate path
 	safePath, err := e.validator.ValidatePath(filepath, config.RepositoryRoot, config.ExcludedPaths)
 	if err != nil {
@@ -55,15 +55,15 @@ func (e *DefaultCommandExecutor) ExecuteOpen(filepath string) ExecutionResult {
 		e.session.LogAudit("open", filepath, false, result.Error.Error())
 		return result
 	}
-	
+
 	// Execute via handler
 	content, err := e.fileHandler.OpenFile(safePath, config.MaxFileSize, config.RepositoryRoot)
-	
+
 	result.Success = err == nil
 	result.Result = content
 	result.Error = err
 	result.ExecutionTime = time.Since(startTime)
-	
+
 	// Log operation
 	var errorMsg string
 	if err != nil {
@@ -73,21 +73,21 @@ func (e *DefaultCommandExecutor) ExecuteOpen(filepath string) ExecutionResult {
 	if result.Success {
 		e.session.IncrementCommandsRun()
 	}
-	
+
 	return result
 }
 
 // ExecuteWrite handles the "write" command
 func (e *DefaultCommandExecutor) ExecuteWrite(filepath, content string) ExecutionResult {
 	startTime := time.Now()
-	
+
 	result := ExecutionResult{
 		Command:       Command{Type: "write", Argument: filepath, Content: content},
 		ExecutionTime: time.Since(startTime),
 	}
 
 	config := e.session.GetConfig()
-	
+
 	// Validate path
 	safePath, err := e.validator.ValidatePath(filepath, config.RepositoryRoot, config.ExcludedPaths)
 	if err != nil {
@@ -106,20 +106,20 @@ func (e *DefaultCommandExecutor) ExecuteWrite(filepath, content string) Executio
 		e.session.LogAudit("write", filepath, false, result.Error.Error())
 		return result
 	}
-	
+
 	// Execute via handler
 	writeResult, err := e.fileHandler.WriteFile(safePath, content, config.MaxWriteSize, config.RepositoryRoot, config.AllowedExtensions, config.BackupBeforeWrite)
-	
+
 	result.Success = err == nil
 	result.Error = err
 	result.ExecutionTime = time.Since(startTime)
-	
+
 	if err == nil {
 		result.Action = writeResult.Action
 		result.BytesWritten = writeResult.BytesWritten
 		result.BackupFile = writeResult.BackupFile
 	}
-	
+
 	// Log operation
 	var errorMsg string
 	if err != nil {
@@ -129,21 +129,21 @@ func (e *DefaultCommandExecutor) ExecuteWrite(filepath, content string) Executio
 	if result.Success {
 		e.session.IncrementCommandsRun()
 	}
-	
+
 	return result
 }
 
 // ExecuteExec handles the "exec" command
 func (e *DefaultCommandExecutor) ExecuteExec(command string) ExecutionResult {
 	startTime := time.Now()
-	
+
 	result := ExecutionResult{
 		Command:       Command{Type: "exec", Argument: command},
 		ExecutionTime: time.Since(startTime),
 	}
 
 	config := e.session.GetConfig()
-	
+
 	// Create exec config
 	execConfig := handlers.ExecConfig{
 		Enabled:        config.ExecEnabled,
@@ -154,14 +154,14 @@ func (e *DefaultCommandExecutor) ExecuteExec(command string) ExecutionResult {
 		ContainerImage: config.ExecContainerImage,
 		RepoRoot:       config.RepositoryRoot,
 	}
-	
+
 	// Execute via handler
 	execResult, err := e.execHandler.ExecuteCommand(command, execConfig)
-	
+
 	result.Success = err == nil
 	result.Error = err
 	result.ExecutionTime = time.Since(startTime)
-	
+
 	if err == nil {
 		result.ExitCode = execResult.ExitCode
 		result.Stdout = execResult.Stdout
@@ -174,26 +174,28 @@ func (e *DefaultCommandExecutor) ExecuteExec(command string) ExecutionResult {
 			result.Result += execResult.Stderr
 		}
 	}
-	
-	// Log operation
+
+	// Log operation - format duration consistently
 	var errorMsg string
 	if err != nil {
 		errorMsg = err.Error()
 	} else {
-		errorMsg = fmt.Sprintf("exit_code:%d,duration:%.3fs", result.ExitCode, result.ExecutionTime.Seconds())
+		// Round to 3 decimal places for consistent testing
+		durationSeconds := float64(result.ExecutionTime.Nanoseconds()) / float64(time.Second.Nanoseconds())
+		errorMsg = fmt.Sprintf("exit_code:%d,duration:%.3fs", result.ExitCode, durationSeconds)
 	}
 	e.session.LogAudit("exec", command, result.Success, errorMsg)
 	if result.Success {
 		e.session.IncrementCommandsRun()
 	}
-	
+
 	return result
 }
 
 // ExecuteSearch handles the "search" command
 func (e *DefaultCommandExecutor) ExecuteSearch(query string) ExecutionResult {
 	startTime := time.Now()
-	
+
 	result := ExecutionResult{
 		Command:       Command{Type: "search", Argument: query},
 		ExecutionTime: time.Since(startTime),
@@ -201,15 +203,15 @@ func (e *DefaultCommandExecutor) ExecuteSearch(query string) ExecutionResult {
 
 	// Execute via handler
 	searchResults, err := e.searchHandler.Search(query)
-	
+
 	result.Success = err == nil
 	result.Error = err
 	result.ExecutionTime = time.Since(startTime)
-	
+
 	if err == nil {
 		result.Result = e.formatSearchResults(query, searchResults, result.ExecutionTime)
 	}
-	
+
 	// Log operation
 	var errorMsg string
 	if err != nil {
@@ -221,7 +223,7 @@ func (e *DefaultCommandExecutor) ExecuteSearch(query string) ExecutionResult {
 	if result.Success {
 		e.session.IncrementCommandsRun()
 	}
-	
+
 	return result
 }
 

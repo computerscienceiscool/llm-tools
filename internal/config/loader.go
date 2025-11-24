@@ -28,6 +28,18 @@ func (l *DefaultConfigLoader) LoadConfig(configPath string) (*core.Config, error
 		if err := l.parseFlags(config); err != nil {
 			return nil, err
 		}
+	} else {
+		// If flags are already parsed, use current directory as default
+		config.RepositoryRoot = "."
+		config.MaxFileSize = 1048576
+		config.MaxWriteSize = 102400
+		config.ExecTimeout = 30 * time.Second
+		config.ExecMemoryLimit = "512m"
+		config.ExecCPULimit = 2
+		config.BackupBeforeWrite = true
+		config.AllowedExtensions = []string{".go", ".py", ".js", ".md", ".txt", ".json", ".yaml", ".yml", ".toml"}
+		config.ExecWhitelist = []string{"go test", "go build", "go run", "npm test", "npm run build", "python -m pytest", "make", "cargo build", "cargo test"}
+		config.ExcludedPaths = []string{".git", ".env", "*.key", "*.pem"}
 	}
 
 	// Resolve repository root to absolute path
@@ -87,27 +99,36 @@ func (l *DefaultConfigLoader) parseFlags(config *core.Config) error {
 		return fmt.Errorf("invalid exec timeout: %w", err)
 	}
 
-	// Set up allowed extensions
-	if *allowedExts != "" {
-		config.AllowedExtensions = strings.Split(*allowedExts, ",")
-		for i := range config.AllowedExtensions {
-			config.AllowedExtensions[i] = strings.TrimSpace(config.AllowedExtensions[i])
-		}
-	}
+	// Set up allowed extensions with proper empty handling
+	config.AllowedExtensions = parseStringList(*allowedExts)
 
-	// Set up exec whitelist
-	if *execWhitelistStr != "" {
-		config.ExecWhitelist = strings.Split(*execWhitelistStr, ",")
-		for i := range config.ExecWhitelist {
-			config.ExecWhitelist[i] = strings.TrimSpace(config.ExecWhitelist[i])
-		}
-	}
+	// Set up exec whitelist with proper empty handling
+	config.ExecWhitelist = parseStringList(*execWhitelistStr)
 
-	// Set up excluded paths
-	config.ExcludedPaths = strings.Split(*excludedPaths, ",")
-	for i := range config.ExcludedPaths {
-		config.ExcludedPaths[i] = strings.TrimSpace(config.ExcludedPaths[i])
-	}
+	// Set up excluded paths with proper empty handling
+	config.ExcludedPaths = parseStringList(*excludedPaths)
 
 	return nil
+}
+
+// parseStringList parses a comma-separated string into a slice, handling empty strings correctly
+func parseStringList(input string) []string {
+	if input == "" {
+		return []string{""}
+	}
+
+	parts := strings.Split(input, ",")
+	result := make([]string, 0, len(parts))
+
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		result = append(result, trimmed)
+	}
+
+	// If all parts were empty after trimming and we started with an empty string
+	if len(result) == 1 && result[0] == "" && input == "" {
+		return []string{""}
+	}
+
+	return result
 }
