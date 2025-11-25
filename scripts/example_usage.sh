@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Change to project root directory
+cd "$(dirname "$0")/.."
+
 # Example: LLM exploring a Go web application
 # This demonstrates how an LLM would use the tool to understand a codebase
 

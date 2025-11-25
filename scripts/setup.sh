@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Change to project root directory
+cd "$(dirname "$0")/.."
+
 # Setup script for LLM File Access Tool
 # This script helps you build and install the tool on your system
 

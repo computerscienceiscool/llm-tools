@@ -105,19 +105,19 @@ run: build
 
 # Run the demo
 demo: build
-	@chmod +x demo.sh
-	./demo.sh
+	@chmod +x scripts/demo.sh
+	./scripts/demo.sh
 
 # Run the example usage
 example: build
-	@chmod +x example_usage.sh
-	./example_usage.sh
+	@chmod +x scripts/example_usage.sh
+	./scripts/example_usage.sh
 
 # Run the exec command demo
 exec-demo: build
 	@echo "Running exec command demonstration..."
-	@chmod +x exec_demo.sh
-	./exec_demo.sh
+	@chmod +x scripts/exec_demo.sh
+	./scripts/exec_demo.sh
 
 # Quick test with a simple command
 quick-test: build
@@ -204,10 +204,10 @@ release: clean build test
 		README.md \
 		SYSTEM_PROMPT.md \
 		llm-tool.config.yaml \
-		demo.sh \
-		example_usage.sh \
-		exec_demo.sh \
-		write_demo.sh
+		scripts/demo.sh \
+		scripts/example_usage.sh \
+		scripts/exec_demo.sh \
+		scripts/write_demo.sh
 	@echo "Release created: releases/$(BINARY_NAME)-$(shell date +%Y%m%d).tar.gz"
 
 # Check Docker availability
@@ -231,7 +231,7 @@ test-suite: build check-docker
 	@echo "2. Basic functionality..."
 	@$(MAKE) test-write
 	@echo "3. Security tests..."
-	@chmod +x security_test.sh && ./security_test.sh
+	@chmod +x scripts/security_test.sh && ./scripts/security_test.sh
 	@if command -v docker >/dev/null 2>&1; then \
 		echo "4. Exec functionality..."; \
 		$(MAKE) test-exec; \

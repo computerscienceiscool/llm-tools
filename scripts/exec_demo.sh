@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Change to project root directory
+cd "$(dirname "$0")/.."
+
 # Demo script for LLM File Access Tool exec command functionality
 
 echo "=== LLM File Access Tool - Exec Command Demo ==="

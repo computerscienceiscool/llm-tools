@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Change to project root directory
+cd "$(dirname "$0")/.."
+
 # Quick Start Script for LLM File Access Tool
 # Run this to get started immediately!
 

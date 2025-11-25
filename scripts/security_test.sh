@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Change to project root directory
+cd "$(dirname "$0")/.."
+
 # Security test suite for LLM File Access Tool
 # This script tests various security scenarios to ensure the tool is safe
 
