@@ -135,3 +135,27 @@ func (d *DefaultDockerClient) ExecuteInContainer(ctx context.Context, config Con
 	result.ExitCode = 0
 	return result, nil
 }
+
+// RunCommand wraps ExecuteInContainer for test compatibility
+func (d *DefaultDockerClient) RunCommand(ctx context.Context, config ExecConfig, command string) (ExecResult, error) {
+	// Convert ExecConfig to ContainerConfig
+	containerConfig := ContainerConfig{
+		Image:    config.ContainerImage,
+		Command:  []string{"sh", "-c", command}, // Wrap command in shell
+		WorkDir:  config.RepoRoot,
+		Memory:   config.MemoryLimit,
+		CPULimit: config.CPULimit,
+		Timeout:  config.Timeout,
+	}
+	
+	// Use existing ExecuteInContainer method
+	result, err := d.ExecuteInContainer(ctx, containerConfig)
+	
+	// Convert ContainerResult to ExecResult
+	return ExecResult{
+		ExitCode: result.ExitCode,
+		Stdout:   result.Stdout,
+		Stderr:   result.Stderr,
+		Duration: result.Duration,
+	}, err
+}

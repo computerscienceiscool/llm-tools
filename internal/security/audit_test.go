@@ -24,7 +24,7 @@ func (m *MockAuditManager) LogEvent(event AuditEvent) error {
 	return args.Error(0)
 }
 
-func (m *MockAuditManager) GetEvents(sessionID string, limit int) ([]AuditEvent, error) {
+func (m *MockAuditManager) GetAuditLogs(sessionID string, limit int) ([]AuditEvent, error) {
 	args := m.Called(sessionID, limit)
 	return args.Get(0).([]AuditEvent), args.Error(1)
 }
@@ -41,8 +41,8 @@ func (m *MockAuditManager) Close() error {
 
 // TestAuditManagerInterface tests the AuditManager interface
 func TestAuditManagerInterface(t *testing.T) {
+	// var _ AuditManager = (*MockAuditManager)(nil)
 	var _ AuditManager = (*MockAuditManager)(nil)
-
 	mockManager := &MockAuditManager{}
 
 	event := AuditEvent{
@@ -67,11 +67,11 @@ func TestAuditManagerInterface(t *testing.T) {
 	mockManager.On("Close").Return(nil)
 
 	// Test LogEvent
-	err := mockManager.LogEvent(event)
+	err := mockManager.LogAudit(event)
 	assert.NoError(t, err)
 
 	// Test GetEvents
-	events, err := mockManager.GetEvents("session123", 10)
+	events, err := mockManager.GetAuditLogs("session123", 10)
 	assert.NoError(t, err)
 	assert.Len(t, events, 1)
 	assert.Equal(t, "session123", events[0].SessionID)
@@ -129,7 +129,9 @@ func TestDefaultAuditManager(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	auditFile := filepath.Join(tempDir, "audit.log")
-	manager := NewAuditManager(auditFile)
+	manager, err := NewAuditManager(&AuditConfig{LogPath: auditFile})
+	require.NoError(t, err)
+	//	manager := NewAuditManager(auditFile)
 	require.NotNil(t, manager)
 	defer manager.Close()
 
@@ -146,7 +148,7 @@ func TestDefaultAuditManager(t *testing.T) {
 			IPAddress: "127.0.0.1",
 		}
 
-		err := manager.LogEvent(event)
+		err := manager.LogAudit(event)
 		assert.NoError(t, err)
 
 		// Verify event was written to file
@@ -182,7 +184,7 @@ func TestDefaultAuditManager(t *testing.T) {
 		}
 
 		for _, event := range events {
-			err := manager.LogEvent(event)
+			err := manager.LogAudit(event)
 			assert.NoError(t, err)
 		}
 
@@ -198,7 +200,7 @@ func TestDefaultAuditManager(t *testing.T) {
 	})
 
 	t.Run("retrieve events", func(t *testing.T) {
-		events, err := manager.GetEvents("session_multi", 10)
+		events, err := manager.GetAuditLogs("session_multi", 10)
 		assert.NoError(t, err)
 		assert.Len(t, events, 2)
 
@@ -248,7 +250,9 @@ func TestAuditConcurrency(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	auditFile := filepath.Join(tempDir, "concurrent_audit.log")
-	manager := NewAuditManager(auditFile)
+	manager, err := NewAuditManager(&AuditConfig{LogPath: auditFile})
+	require.NoError(t, err)
+	//	manager := NewAuditManager(auditFile)
 	require.NotNil(t, manager)
 	defer manager.Close()
 
@@ -273,7 +277,7 @@ func TestAuditConcurrency(t *testing.T) {
 					Success:   true,
 				}
 
-				err := manager.LogEvent(event)
+				err := manager.LogAudit(event)
 				assert.NoError(t, err)
 			}
 		}(i)
@@ -306,7 +310,9 @@ func TestAuditLogRotation(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	auditFile := filepath.Join(tempDir, "rotation_audit.log")
-	manager := NewAuditManager(auditFile)
+	manager, err := NewAuditManager(&AuditConfig{LogPath: auditFile})
+	require.NoError(t, err)
+	// manager := NewAuditManager(auditFile)
 	require.NotNil(t, manager)
 	defer manager.Close()
 
@@ -321,7 +327,7 @@ func TestAuditLogRotation(t *testing.T) {
 			Action:    "test",
 			Success:   true,
 		}
-		err := manager.LogEvent(event)
+		err := manager.LogAudit(event)
 		require.NoError(t, err)
 	}
 
@@ -356,7 +362,7 @@ func TestAuditLogRotation(t *testing.T) {
 		Action:    "test",
 		Success:   true,
 	}
-	err = manager.LogEvent(newEvent)
+	err = manager.LogAudit(newEvent)
 	assert.NoError(t, err)
 
 	time.Sleep(50 * time.Millisecond)
@@ -374,7 +380,9 @@ func TestAuditSecurity(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	auditFile := filepath.Join(tempDir, "security_audit.log")
-	manager := NewAuditManager(auditFile)
+	manager, err := NewAuditManager(&AuditConfig{LogPath: auditFile})
+	require.NoError(t, err)
+	//	manager := NewAuditManager(auditFile)
 	require.NotNil(t, manager)
 	defer manager.Close()
 
@@ -413,7 +421,7 @@ func TestAuditSecurity(t *testing.T) {
 		}
 
 		for _, event := range securityEvents {
-			err := manager.LogEvent(event)
+			err := manager.LogAudit(event)
 			assert.NoError(t, err)
 		}
 
@@ -453,7 +461,9 @@ func TestAuditFiltering(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	auditFile := filepath.Join(tempDir, "filter_audit.log")
-	manager := NewAuditManager(auditFile)
+	//	manager := NewAuditManager(auditFile)
+	manager, err := NewAuditManager(&AuditConfig{LogPath: auditFile})
+	require.NoError(t, err)
 	require.NotNil(t, manager)
 	defer manager.Close()
 
@@ -472,24 +482,24 @@ func TestAuditFiltering(t *testing.T) {
 		event.Resource = fmt.Sprintf("resource_%d", i)
 		event.Action = "test"
 
-		err := manager.LogEvent(event)
+		err := manager.LogAudit(event)
 		require.NoError(t, err)
 	}
 
 	time.Sleep(100 * time.Millisecond)
 
 	t.Run("filter by session", func(t *testing.T) {
-		session1Events, err := manager.GetEvents("session1", 10)
+		session1Events, err := manager.GetAuditLogs("session1", 10)
 		assert.NoError(t, err)
 		assert.Len(t, session1Events, 3)
 
-		session2Events, err := manager.GetEvents("session2", 10)
+		session2Events, err := manager.GetAuditLogs("session2", 10)
 		assert.NoError(t, err)
 		assert.Len(t, session2Events, 2)
 	})
 
 	t.Run("limit results", func(t *testing.T) {
-		limitedEvents, err := manager.GetEvents("session1", 2)
+		limitedEvents, err := manager.GetAuditLogs("session1", 2)
 		assert.NoError(t, err)
 		assert.Len(t, limitedEvents, 2)
 	})
@@ -524,7 +534,7 @@ func TestAuditPerformance(t *testing.T) {
 			Success:   true,
 		}
 
-		err := manager.LogEvent(event)
+		err := manager.LogAudit(event)
 		assert.NoError(t, err)
 	}
 	elapsed := time.Since(start)
@@ -572,7 +582,7 @@ func BenchmarkAuditLogging(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = manager.LogEvent(event)
+			_ = manager.LogAudit(event)
 		}
 	})
 }

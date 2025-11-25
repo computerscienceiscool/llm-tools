@@ -36,11 +36,6 @@ func (m *MockFileSystem) MkdirAll(path string, perm os.FileMode) error {
 	return args.Error(0)
 }
 
-func (m *MockFileSystem) Stat(filename string) (os.FileInfo, error) {
-	args := m.Called(filename)
-	return args.Get(0).(os.FileInfo), args.Error(1)
-}
-
 // TestFileSystemInterface tests the FileSystem interface
 func TestFileSystemInterface(t *testing.T) {
 	var _ FileSystem = (*MockFileSystem)(nil)
@@ -338,4 +333,19 @@ func (fs *realFileSystem) Exists(filename string) bool {
 
 func (fs *realFileSystem) MkdirAll(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
+}
+
+func (m *MockFileSystem) Stat(path string) (os.FileInfo, error) {
+	args := m.Called(path)
+	return args.Get(0).(os.FileInfo), args.Error(1)
+}
+
+func (m *MockFileSystem) Remove(path string) error {
+	args := m.Called(path)
+	return args.Error(0)
+}
+
+func (m *MockFileSystem) Rename(oldpath, newpath string) error {
+	args := m.Called(oldpath, newpath)
+	return args.Error(0)
 }

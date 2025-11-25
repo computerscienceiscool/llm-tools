@@ -1,0 +1,14 @@
+# github.com/computerscienceiscool/llm-tools/internal/security [github.com/computerscienceiscool/llm-tools/internal/security.test]
+./audit_test.go:45:23: cannot use (*MockAuditManager)(nil) (value of type *MockAuditManager) as AuditManager value in variable declaration
+./audit_test.go:70:21: mockManager.LogAudit undefined (type *MockAuditManager has no field or method LogAudit)
+./audit_test.go:151:18: manager.LogAudit undefined (type *AuditManager has no field or method LogAudit)
+./audit_test.go:187:19: manager.LogAudit undefined (type *AuditManager has no field or method LogAudit)
+./audit_test.go:203:26: manager.GetAuditLogs undefined (type *AuditManager has no field or method GetAuditLogs)
+./audit_test.go:280:20: manager.LogAudit undefined (type *AuditManager has no field or method LogAudit)
+./audit_test.go:330:18: manager.LogAudit undefined (type *AuditManager has no field or method LogAudit)
+./audit_test.go:341:16: manager.RotateLog undefined (type *AuditManager has no field or method RotateLog)
+./audit_test.go:365:16: manager.LogAudit undefined (type *AuditManager has no field or method LogAudit)
+./audit_test.go:424:19: manager.LogAudit undefined (type *AuditManager has no field or method LogAudit)
+./audit_test.go:424:19: too many errors
+FAIL	github.com/computerscienceiscool/llm-tools/internal/security [build failed]
+FAIL

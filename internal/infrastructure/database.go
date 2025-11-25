@@ -35,12 +35,18 @@ type AuditLog struct {
 
 // SQLiteDatabase implements Database for SQLite
 type SQLiteDatabase struct {
-	db *sql.DB
+	db     *sql.DB
+	dbPath string
 }
 
 // NewDatabase creates a new database handler
 func NewDatabase() Database {
 	return &SQLiteDatabase{}
+}
+
+// NewSQLiteDatabase creates a new SQLite database with a specific path
+func NewSQLiteDatabase(dbPath string) Database {
+	return &SQLiteDatabase{dbPath: dbPath}
 }
 
 func (d *SQLiteDatabase) Connect(dbPath string) error {
@@ -50,12 +56,19 @@ func (d *SQLiteDatabase) Connect(dbPath string) error {
 		return fmt.Errorf("failed to create database directory: %w", err)
 	}
 
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite3", dbPath+"?cache=shared&_journal_mode=WAL")
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
 
+	// Test the connection
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return fmt.Errorf("failed to ping database: %w", err)
+	}
+
 	d.db = db
+	d.dbPath = dbPath
 	return nil
 }
 
@@ -67,20 +80,41 @@ func (d *SQLiteDatabase) Close() error {
 }
 
 func (d *SQLiteDatabase) Execute(query string, args ...interface{}) error {
+	if d.db == nil {
+		return fmt.Errorf("database not connected")
+	}
 	_, err := d.db.Exec(query, args...)
 	return err
 }
 
 func (d *SQLiteDatabase) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	if d.db == nil {
+		return nil, fmt.Errorf("database not connected")
+	}
 	return d.db.Query(query, args...)
 }
 
 func (d *SQLiteDatabase) QueryRow(query string, args ...interface{}) *sql.Row {
+	if d.db == nil {
+		// Return a row that will error when scanned
+		return (&sql.DB{}).QueryRow("SELECT 1 WHERE 0=1")
+	}
 	return d.db.QueryRow(query, args...)
 }
 
 // Initialize sets up database tables
 func (d *SQLiteDatabase) Initialize() error {
+	// Auto-connect if we have a path but no connection
+	if d.db == nil && d.dbPath != "" {
+		if err := d.Connect(d.dbPath); err != nil {
+			return fmt.Errorf("failed to auto-connect: %w", err)
+		}
+	}
+
+	if d.db == nil {
+		return fmt.Errorf("no database connection available")
+	}
+
 	schema := `
 	CREATE TABLE IF NOT EXISTS audit_logs (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,11 +168,4 @@ func (d *SQLiteDatabase) GetAuditLogs(sessionID string, limit int) ([]AuditLog, 
 	}
 
 	return logs, nil
-}
-
-// NewSQLiteDatabase creates a new SQLite database instance
-func NewSQLiteDatabase(dbPath string) Database {
-	db := &SQLiteDatabase{}
-	db.Connect(dbPath)
-	return db
 }

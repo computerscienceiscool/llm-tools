@@ -1,0 +1,26 @@
+# github.com/computerscienceiscool/llm-tools/internal/handlers [github.com/computerscienceiscool/llm-tools/internal/handlers.test]
+./file-handler_test.go:78:22: undefined: MockAuditLogger
+./file-handler_test.go:96:27: handler.ReadFile undefined (type FileHandler has no field or method ReadFile)
+./file-handler_test.go:108:28: not enough arguments in call to NewFileHandler
+	have (*MockFileSystem)
+	want (security.PathValidator, security.AuditLogger)
+./file-handler_test.go:118:21: handler.ReadFile undefined (type FileHandler has no field or method ReadFile)
+./file-handler_test.go:129:28: not enough arguments in call to NewFileHandler
+	have (*MockFileSystem)
+	want (security.PathValidator, security.AuditLogger)
+./file-handler_test.go:134:21: handler.ReadFile undefined (type FileHandler has no field or method ReadFile)
+./file-handler_test.go:146:28: not enough arguments in call to NewFileHandler
+	have (*MockFileSystem)
+	want (security.PathValidator, security.AuditLogger)
+./file-handler_test.go:159:115: too many arguments in call to handler.WriteFile
+	have (string, string, number, string, []string, []string, bool)
+	want (string, string, int64, string, []string, bool)
+./file-handler_test.go:172:28: not enough arguments in call to NewFileHandler
+	have (*MockFileSystem)
+	want (security.PathValidator, security.AuditLogger)
+./file-handler_test.go:189:111: too many arguments in call to handler.WriteFile
+	have (string, string, number, string, []string, []string, bool)
+	want (string, string, int64, string, []string, bool)
+./file-handler_test.go:189:111: too many errors
+FAIL	github.com/computerscienceiscool/llm-tools/internal/handlers [build failed]
+FAIL

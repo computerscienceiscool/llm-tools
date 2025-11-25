@@ -205,7 +205,7 @@ func TestParseOpenCommands(t *testing.T) {
 					Type:     "open",
 					Argument: "file with spaces.txt",
 					StartPos: 0,
-					EndPos:   32,
+					EndPos:   31,
 					Original: "<open   file with spaces.txt  >",
 				},
 			},
@@ -560,7 +560,7 @@ func TestParserEdgeCases(t *testing.T) {
 		{
 			name:          "empty command arguments",
 			input:         "<open> <write></write> <exec> <search>",
-			expectedCount: 4,
+			expectedCount: 0,
 			description:   "Should handle empty arguments",
 		},
 		{

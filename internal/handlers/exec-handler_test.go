@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -15,6 +16,16 @@ import (
 // MockDockerClient for testing exec handler
 type MockDockerClient struct {
 	mock.Mock
+}
+
+func (m *MockDockerClient) ExecuteInContainer(ctx context.Context, config infrastructure.ContainerConfig) (infrastructure.ContainerResult, error) {
+	args := m.Called(ctx, config)
+	return args.Get(0).(infrastructure.ContainerResult), args.Error(1)
+}
+
+func (m *MockDockerClient) PullImage(image string) error {
+	args := m.Called(image)
+	return args.Error(0)
 }
 
 func (m *MockDockerClient) RunCommand(ctx context.Context, config ExecConfig, command string) (ExecResult, error) {
@@ -41,7 +52,7 @@ func (m *MockCommandValidator) ValidateCommand(command string, whitelist []strin
 func TestDefaultExecHandler(t *testing.T) {
 	mockDocker := &MockDockerClient{}
 	mockValidator := &MockCommandValidator{}
-	handler := NewExecHandler(mockDocker, mockValidator)
+	handler := NewExecHandler(mockDocker)
 	require.NotNil(t, handler)
 
 	config := ExecConfig{
@@ -93,7 +104,7 @@ func TestDefaultExecHandler(t *testing.T) {
 	t.Run("docker unavailable", func(t *testing.T) {
 		mockDocker = &MockDockerClient{}
 		mockValidator = &MockCommandValidator{}
-		handler = NewExecHandler(mockDocker, mockValidator)
+		handler = NewExecHandler(mockDocker)
 
 		command := "go version"
 
@@ -122,7 +133,7 @@ func TestDefaultExecHandler(t *testing.T) {
 func TestExecHandlerErrors(t *testing.T) {
 	mockDocker := &MockDockerClient{}
 	mockValidator := &MockCommandValidator{}
-	handler := NewExecHandler(mockDocker, mockValidator)
+	handler := NewExecHandler(mockDocker)
 
 	config := ExecConfig{
 		Enabled:   true,
@@ -156,7 +167,7 @@ func TestExecHandlerErrors(t *testing.T) {
 	t.Run("docker execution error", func(t *testing.T) {
 		mockDocker = &MockDockerClient{}
 		mockValidator = &MockCommandValidator{}
-		handler = NewExecHandler(mockDocker, mockValidator)
+		handler = NewExecHandler(mockDocker)
 
 		command := "go build"
 
@@ -176,7 +187,7 @@ func TestExecHandlerErrors(t *testing.T) {
 	t.Run("timeout handling", func(t *testing.T) {
 		mockDocker = &MockDockerClient{}
 		mockValidator = &MockCommandValidator{}
-		handler = NewExecHandler(mockDocker, mockValidator)
+		handler = NewExecHandler(mockDocker)
 
 		command := "sleep 30"
 		shortConfig := config
@@ -200,7 +211,7 @@ func TestExecHandlerErrors(t *testing.T) {
 func TestExecHandlerValidation(t *testing.T) {
 	mockDocker := &MockDockerClient{}
 	mockValidator := &MockCommandValidator{}
-	handler := NewExecHandler(mockDocker, mockValidator)
+	handler := NewExecHandler(mockDocker)
 
 	tests := []struct {
 		name      string
@@ -278,7 +289,7 @@ func TestExecHandlerValidation(t *testing.T) {
 			// Reset mocks for next test
 			mockValidator = &MockCommandValidator{}
 			mockDocker = &MockDockerClient{}
-			handler = NewExecHandler(mockDocker, mockValidator)
+			handler = NewExecHandler(mockDocker)
 		})
 	}
 }
@@ -287,7 +298,7 @@ func TestExecHandlerValidation(t *testing.T) {
 func TestExecHandlerConcurrency(t *testing.T) {
 	mockDocker := &MockDockerClient{}
 	mockValidator := &MockCommandValidator{}
-	handler := NewExecHandler(mockDocker, mockValidator)
+	handler := NewExecHandler(mockDocker)
 
 	config := ExecConfig{
 		Enabled:   true,
@@ -339,7 +350,7 @@ func TestExecHandlerConcurrency(t *testing.T) {
 func BenchmarkExecHandler(b *testing.B) {
 	mockDocker := &MockDockerClient{}
 	mockValidator := &MockCommandValidator{}
-	handler := NewExecHandler(mockDocker, mockValidator)
+	handler := NewExecHandler(mockDocker)
 
 	config := ExecConfig{
 		Enabled:   true,

@@ -9,6 +9,7 @@ import (
 type FileSystem interface {
 	ReadFile(path string) ([]byte, error)
 	WriteFile(path string, data []byte, perm os.FileMode) error
+	Exists(path string) bool  // ADD THIS LINE
 	Stat(path string) (os.FileInfo, error)
 	MkdirAll(path string, perm os.FileMode) error
 	Remove(path string) error
@@ -29,6 +30,12 @@ func (fs *DefaultFileSystem) ReadFile(path string) ([]byte, error) {
 
 func (fs *DefaultFileSystem) WriteFile(path string, data []byte, perm os.FileMode) error {
 	return os.WriteFile(path, data, perm)
+}
+
+// ADD THIS METHOD
+func (fs *DefaultFileSystem) Exists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
 }
 
 func (fs *DefaultFileSystem) Stat(path string) (os.FileInfo, error) {

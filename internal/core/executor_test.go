@@ -423,10 +423,15 @@ func TestExecuteSearch(t *testing.T) {
 		expectedResults int
 	}{
 		{
+
 			name:  "successful search",
 			query: "authentication",
 			setupMocks: func(session *MockSession, searchHandler *MockSearchHandler) {
-				session.On("LogAudit", "search", "authentication", true, "results:2,duration:0.050s")
+
+				session.On("LogAudit", "search", "authentication", true, mock.MatchedBy(func(msg string) bool {
+					return strings.HasPrefix(msg, "results:2,duration:")
+				}))
+
 				session.On("IncrementCommandsRun")
 
 				searchResults := []handlers.SearchResult{
@@ -468,7 +473,10 @@ func TestExecuteSearch(t *testing.T) {
 			name:  "empty search results",
 			query: "nonexistent",
 			setupMocks: func(session *MockSession, searchHandler *MockSearchHandler) {
-				session.On("LogAudit", "search", "nonexistent", true, "results:0,duration:0.020s")
+				session.On("LogAudit", "search", "nonexistent", true, mock.MatchedBy(func(msg string) bool {
+					return strings.HasPrefix(msg, "results:0,duration:")
+				}))
+
 				session.On("IncrementCommandsRun")
 
 				searchHandler.On("Search", "nonexistent").Return([]handlers.SearchResult{}, nil)

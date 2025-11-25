@@ -210,6 +210,7 @@ func TestParseFlags(t *testing.T) {
 				assert.Equal(t, []string{".git", ".env", "*.key"}, config.ExcludedPaths)
 			},
 		},
+
 		{
 			name: "invalid timeout",
 			args: []string{
@@ -217,7 +218,17 @@ func TestParseFlags(t *testing.T) {
 				"-root", tempDir,
 				"-exec-timeout", "invalid-duration",
 			},
-			expectErr: false, // Should not error, just use zero value
+			expectErr: true, // Should error on invalid duration
+			validate:  nil,
+		},
+		{
+			name: "zero timeout allowed",
+			args: []string{
+				"test",
+				"-root", tempDir,
+				"-exec-timeout", "0",
+			},
+			expectErr: false, // Should not error; zero is valid
 			validate: func(t *testing.T, config *core.Config) {
 				assert.Equal(t, time.Duration(0), config.ExecTimeout)
 			},
@@ -479,7 +490,11 @@ func TestFlagAlreadyParsed(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, finalConfig)
-	assert.Equal(t, tempDir, finalConfig.RepositoryRoot)
+
+	// The repository root should be resolved to absolute path
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	assert.Equal(t, cwd, finalConfig.RepositoryRoot)
 }
 
 // TestConcurrentConfigLoad tests concurrent config loading

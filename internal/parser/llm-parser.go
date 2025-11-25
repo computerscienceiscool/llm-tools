@@ -16,8 +16,9 @@ type LLMParser struct {
 // NewCommandParser creates a new LLM command parser
 func NewCommandParser() CommandParser {
 	return &LLMParser{
-		openPattern:   regexp.MustCompile(`<open\s+([^>]+)>`),
-		writePattern:  regexp.MustCompile(`<write\s+([^>]+)>\s*(.*?)</write>`),
+		openPattern:  regexp.MustCompile(`<open\s+([^>]+)>`),
+		writePattern: regexp.MustCompile(`(?s)<write\s+([^>]+)>(.*?)</write>`),
+		//	writePattern: regexp.MustCompile(`<write\s+([^>]+)>([\s\S]*?)</write>`),
 		execPattern:   regexp.MustCompile(`<exec\s+([^>]+)>`),
 		searchPattern: regexp.MustCompile(`<search\s+([^>]+)>`),
 	}
