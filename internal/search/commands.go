@@ -57,8 +57,8 @@ func (sc *SearchCommands) HandleSearchStatus() error {
 
 	fmt.Printf("Search Index Status\n")
 	fmt.Printf("==================\n")
-	fmt.Printf("Total files indexed: %s\n", stats["total_files"])
-	fmt.Printf("Total size: %s bytes\n", stats["total_size"])
+	fmt.Printf("Total files indexed: %v\n", stats["total_files"])
+	fmt.Printf("Total size: %v bytes\n", stats["total_size"])
 	fmt.Printf("Oldest index: %s\n", stats["oldest_index"])
 	fmt.Printf("Newest index: %s\n", stats["newest_index"])
 
