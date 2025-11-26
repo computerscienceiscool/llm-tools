@@ -88,3 +88,4 @@ npm-debug.log*
 
 # Test directories and files
 tests/
+coverage.out
