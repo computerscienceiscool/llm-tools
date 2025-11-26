@@ -1,16 +1,4 @@
 # Makefile for LLM File Access Tool
-# export PATH := $(HOME)/.goenv/shims:$(PATH)
-
-
-# Makefile for LLM File Access Tool
-
-# Go parameters
-GOCMD=go
-GOBUILD=$(GOCMD) build
-GOTEST=$(GOCMD) test
-
-
-
 
 # Go parameters
 GOCMD=go
@@ -24,6 +12,9 @@ GOVET=$(GOCMD) vet
 # Binary name
 BINARY_NAME=llm-tool
 BINARY_PATH=./$(BINARY_NAME)
+
+# Source path
+CMD_PATH=./cmd/llm-tool
 
 # Installation path
 INSTALL_PATH=/usr/local/bin
@@ -39,7 +30,7 @@ all: test build
 # Build the binary
 build:
 	@echo "Building $(BINARY_NAME)..."
-	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH) main.go
+	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH) $(CMD_PATH)
 	@echo "Build complete: $(BINARY_PATH)"
 
 # Run tests
@@ -128,7 +119,7 @@ quick-test: build
 test-write: build
 	@echo "Testing write functionality..."
 	@echo "Creating test file: <write test_output.txt>\nThis is a test file created by the LLM tool.\nCurrent time: $$(date)\nWrite command is working!\n</write>" | $(BINARY_PATH)
-	@if [ -f test_output.txt ]; then echo "✓ Write test successful"; echo "File contents:"; cat test_output.txt; rm test_output.txt; else echo "✗ Write test failed"; fi
+	@if [ -f test_output.txt ]; then echo "Write test successful"; echo "File contents:"; cat test_output.txt; rm test_output.txt; else echo "Write test failed"; fi
 
 # Test exec functionality (requires Docker)
 test-exec: build
@@ -179,19 +170,19 @@ build-all:
 	@mkdir -p dist
 	
 	@echo "Building for Linux (amd64)..."
-	@GOOS=linux GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 main.go
+	@GOOS=linux GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 $(CMD_PATH)
 	
 	@echo "Building for Linux (arm64)..."
-	@GOOS=linux GOARCH=arm64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 main.go
+	@GOOS=linux GOARCH=arm64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 $(CMD_PATH)
 	
 	@echo "Building for macOS (amd64)..."
-	@GOOS=darwin GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 main.go
+	@GOOS=darwin GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 $(CMD_PATH)
 	
 	@echo "Building for macOS (arm64)..."
-	@GOOS=darwin GOARCH=arm64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64 main.go
+	@GOOS=darwin GOARCH=arm64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64 $(CMD_PATH)
 	
 	@echo "Building for Windows (amd64)..."
-	@GOOS=windows GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe main.go
+	@GOOS=windows GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe $(CMD_PATH)
 	
 	@echo "Cross-platform builds complete in dist/"
 
@@ -213,10 +204,10 @@ release: clean build test
 # Check Docker availability
 check-docker:
 	@if command -v docker >/dev/null 2>&1; then \
-		echo "✓ Docker is available"; \
+		echo "Docker is available"; \
 		docker version --format '{{.Server.Version}}' 2>/dev/null | sed 's/^/  Version: /' || echo "  (Could not get version)"; \
 	else \
-		echo "✗ Docker not found"; \
+		echo "Docker not found"; \
 		echo "  Install Docker to use exec commands:"; \
 		echo "  - Linux: curl -fsSL https://get.docker.com | sh"; \
 		echo "  - macOS: brew install docker"; \
@@ -269,8 +260,6 @@ help:
 	@echo "  make check-docker  - Check Docker availability"
 	@echo "  make help          - Show this help message"
 
-
-
 # Commit using grok and push to current branch
 commit:
 	@echo "Staging modified tracked files..."
@@ -282,9 +271,8 @@ commit:
 	@echo "Pushing to current branch..."
 	@git push origin $$(git rev-parse --abbrev-ref HEAD)
 
-	@echo "✓ Commit and push complete."
+	@echo "Commit and push complete."
 
 debug-path:
 	@echo "PATH is: $$PATH"
 	@which grok || echo "grok still not found"
-
