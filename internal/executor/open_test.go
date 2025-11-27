@@ -558,3 +558,116 @@ func BenchmarkExecuteOpen_LargeFile(b *testing.B) {
 		ExecuteOpen("large.txt", cfg, nil)
 	}
 }
+
+func TestExecuteOpen_PermissionDenied(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+
+	// Create a file with no read permissions
+	testFile := filepath.Join(tmpDir, "noperm.txt")
+	if err := os.WriteFile(testFile, []byte("secret"), 0000); err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+	defer os.Chmod(testFile, 0644) // Restore for cleanup
+
+	result := ExecuteOpen("noperm.txt", cfg, nil)
+
+	if result.Success {
+		t.Error("expected failure when file is not readable")
+	}
+
+	// Should fail with either PERMISSION_DENIED or READ_ERROR
+	errStr := result.Error.Error()
+	if !strings.Contains(errStr, "PERMISSION_DENIED") && !strings.Contains(errStr, "READ_ERROR") {
+		t.Errorf("expected permission or read error, got: %v", result.Error)
+	}
+}
+
+func TestExecuteOpen_AuditLogOnPermissionDenied(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+
+	// Create a file with no read permissions
+	testFile := filepath.Join(tmpDir, "noperm_audit.txt")
+	if err := os.WriteFile(testFile, []byte("secret"), 0000); err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+	defer os.Chmod(testFile, 0644)
+
+	audit := &testAuditLog{}
+	ExecuteOpen("noperm_audit.txt", cfg, audit.log)
+
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+
+	if entries[0].success {
+		t.Error("audit should show failure")
+	}
+}
+
+func TestExecuteOpen_AuditLogOnFileTooLarge(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+	cfg.MaxFileSize = 10
+
+	testFile := filepath.Join(tmpDir, "large_audit.txt")
+	if err := os.WriteFile(testFile, []byte("this is too large"), 0644); err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+
+	audit := &testAuditLog{}
+	ExecuteOpen("large_audit.txt", cfg, audit.log)
+
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+
+	if entries[0].success {
+		t.Error("audit should show failure")
+	}
+	if !strings.Contains(entries[0].errMsg, "RESOURCE_LIMIT") {
+		t.Errorf("expected RESOURCE_LIMIT in error, got %q", entries[0].errMsg)
+	}
+}
+
+func TestExecuteOpen_ReadErrorOnDirectory(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+
+	// Create a subdirectory
+	subDir := filepath.Join(tmpDir, "testdir")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("failed to create subdirectory: %v", err)
+	}
+
+	audit := &testAuditLog{}
+	result := ExecuteOpen("testdir", cfg, audit.log)
+
+	if result.Success {
+		t.Error("expected failure when opening a directory")
+	}
+
+	if !strings.Contains(result.Error.Error(), "READ_ERROR") {
+		t.Errorf("expected READ_ERROR, got: %v", result.Error)
+	}
+
+	// Check audit log
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+	if entries[0].success {
+		t.Error("audit should show failure")
+	}
+}

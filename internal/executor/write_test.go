@@ -896,3 +896,338 @@ func BenchmarkExecuteWrite_LargeFile(b *testing.B) {
 		ExecuteWrite(fmt.Sprintf("file%d.txt", i), content, cfg, nil)
 	}
 }
+
+func TestExecuteWrite_AuditLogOnPathSecurityFailure(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+
+	audit := &testAuditLog{}
+	ExecuteWrite("../outside.txt", "content", cfg, audit.log)
+
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+
+	if entries[0].success {
+		t.Error("audit should show failure")
+	}
+	if !strings.Contains(entries[0].errMsg, "PATH_SECURITY") {
+		t.Errorf("expected PATH_SECURITY in error, got %q", entries[0].errMsg)
+	}
+}
+
+func TestExecuteWrite_AuditLogOnExtensionFailure(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+	cfg.AllowedExtensions = []string{".txt"}
+
+	audit := &testAuditLog{}
+	ExecuteWrite("file.exe", "content", cfg, audit.log)
+
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+
+	if entries[0].success {
+		t.Error("audit should show failure")
+	}
+	if !strings.Contains(entries[0].errMsg, "EXTENSION_DENIED") {
+		t.Errorf("expected EXTENSION_DENIED in error, got %q", entries[0].errMsg)
+	}
+}
+
+func TestExecuteWrite_AuditLogOnResourceLimit(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+	cfg.MaxWriteSize = 10
+
+	audit := &testAuditLog{}
+	ExecuteWrite("test.txt", "this content is too large", cfg, audit.log)
+
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+
+	if entries[0].success {
+		t.Error("audit should show failure")
+	}
+	if !strings.Contains(entries[0].errMsg, "RESOURCE_LIMIT") {
+		t.Errorf("expected RESOURCE_LIMIT in error, got %q", entries[0].errMsg)
+	}
+}
+
+func TestExecuteWrite_WriteErrorOnReadOnlyDir(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+	cfg.BackupBeforeWrite = false
+
+	// Create a subdirectory and make it read-only
+	subDir := filepath.Join(tmpDir, "readonly")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("failed to create subdir: %v", err)
+	}
+
+	// Make directory read-only (can't write files into it)
+	if err := os.Chmod(subDir, 0555); err != nil {
+		t.Fatalf("failed to chmod: %v", err)
+	}
+	defer os.Chmod(subDir, 0755) // Restore for cleanup
+
+	result := ExecuteWrite("readonly/test.txt", "content", cfg, nil)
+
+	if result.Success {
+		t.Error("expected failure when directory is read-only")
+	}
+
+	// Should fail with WRITE_ERROR
+	if result.Error == nil {
+		t.Error("expected error to be set")
+	}
+}
+
+func TestExecuteWrite_BackupFailsOnReadOnlyDir(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+	cfg.BackupBeforeWrite = true
+
+	// Create subdirectory with a file
+	subDir := filepath.Join(tmpDir, "backuptest")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("failed to create subdir: %v", err)
+	}
+
+	existingFile := filepath.Join(subDir, "existing.txt")
+	if err := os.WriteFile(existingFile, []byte("original"), 0644); err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+
+	// Make directory read-only (can't create backup file)
+	if err := os.Chmod(subDir, 0555); err != nil {
+		t.Fatalf("failed to chmod: %v", err)
+	}
+	defer os.Chmod(subDir, 0755) // Restore for cleanup
+
+	result := ExecuteWrite("backuptest/existing.txt", "new content", cfg, nil)
+
+	if result.Success {
+		t.Error("expected failure when backup cannot be created")
+	}
+
+	if !strings.Contains(result.Error.Error(), "BACKUP_FAILED") {
+		t.Errorf("expected BACKUP_FAILED error, got: %v", result.Error)
+	}
+}
+
+func TestExecuteWrite_CannotCreateNestedDirectory(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+
+	// Create a read-only directory
+	readonlyDir := filepath.Join(tmpDir, "readonly")
+	if err := os.MkdirAll(readonlyDir, 0755); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
+	if err := os.Chmod(readonlyDir, 0555); err != nil {
+		t.Fatalf("failed to chmod: %v", err)
+	}
+	defer os.Chmod(readonlyDir, 0755)
+
+	// Try to create a file in a subdirectory that can't be created
+	result := ExecuteWrite("readonly/newsubdir/test.txt", "content", cfg, nil)
+
+	if result.Success {
+		t.Error("expected failure when directory cannot be created")
+	}
+
+	if !strings.Contains(result.Error.Error(), "DIRECTORY_CREATION_FAILED") {
+		t.Errorf("expected DIRECTORY_CREATION_FAILED error, got: %v", result.Error)
+	}
+}
+
+func TestExecuteWrite_AuditLogOnBackupFailure(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+	cfg.BackupBeforeWrite = true
+
+	// Create subdirectory with a file
+	subDir := filepath.Join(tmpDir, "auditbackup")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("failed to create subdir: %v", err)
+	}
+
+	existingFile := filepath.Join(subDir, "existing.txt")
+	if err := os.WriteFile(existingFile, []byte("original"), 0644); err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+
+	// Make directory read-only
+	if err := os.Chmod(subDir, 0555); err != nil {
+		t.Fatalf("failed to chmod: %v", err)
+	}
+	defer os.Chmod(subDir, 0755)
+
+	audit := &testAuditLog{}
+	ExecuteWrite("auditbackup/existing.txt", "new content", cfg, audit.log)
+
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+
+	if entries[0].success {
+		t.Error("audit should show failure")
+	}
+	if !strings.Contains(entries[0].errMsg, "BACKUP_FAILED") {
+		t.Errorf("expected BACKUP_FAILED in audit, got %q", entries[0].errMsg)
+	}
+}
+
+func TestExecuteWrite_AuditLogOnDirectoryCreationFailure(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+
+	// Create a read-only directory
+	readonlyDir := filepath.Join(tmpDir, "readonly2")
+	if err := os.MkdirAll(readonlyDir, 0755); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
+	if err := os.Chmod(readonlyDir, 0555); err != nil {
+		t.Fatalf("failed to chmod: %v", err)
+	}
+	defer os.Chmod(readonlyDir, 0755)
+
+	audit := &testAuditLog{}
+	ExecuteWrite("readonly2/newsubdir/test.txt", "content", cfg, audit.log)
+
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+
+	if entries[0].success {
+		t.Error("audit should show failure")
+	}
+	if !strings.Contains(entries[0].errMsg, "DIRECTORY_CREATION_FAILED") {
+		t.Errorf("expected DIRECTORY_CREATION_FAILED in audit, got %q", entries[0].errMsg)
+	}
+}
+
+func TestCreateBackup_PermissionDenied(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+
+	// Create a file in a directory
+	subDir := filepath.Join(tmpDir, "backupdir")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
+
+	testFile := filepath.Join(subDir, "test.txt")
+	if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+
+	// Make directory read-only
+	if err := os.Chmod(subDir, 0555); err != nil {
+		t.Fatalf("failed to chmod: %v", err)
+	}
+	defer os.Chmod(subDir, 0755)
+
+	_, err := CreateBackup(testFile)
+	if err == nil {
+		t.Error("expected error when backup cannot be written")
+	}
+}
+
+func TestFormatContent_NoExtension(t *testing.T) {
+	content := "content without extension"
+	result, err := FormatContent("Makefile", content)
+
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if result != content {
+		t.Error("content should be unchanged for files without extension")
+	}
+}
+
+func TestExecuteWrite_AuditLogOnWriteError(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping permission test when running as root")
+	}
+
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+	cfg.BackupBeforeWrite = false
+
+	// Create read-only directory
+	subDir := filepath.Join(tmpDir, "readonly_write")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("failed to create subdir: %v", err)
+	}
+	if err := os.Chmod(subDir, 0555); err != nil {
+		t.Fatalf("failed to chmod: %v", err)
+	}
+	defer os.Chmod(subDir, 0755)
+
+	audit := &testAuditLog{}
+	ExecuteWrite("readonly_write/test.txt", "content", cfg, audit.log)
+
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+
+	if entries[0].success {
+		t.Error("audit should show failure")
+	}
+}
+
+func TestFormatContent_EmptyContent(t *testing.T) {
+	tests := []struct {
+		filename string
+		content  string
+	}{
+		{"test.go", ""},
+		{"test.json", ""},
+		{"test.txt", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.filename, func(t *testing.T) {
+			result, err := FormatContent(tt.filename, tt.content)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+			if result != tt.content {
+				t.Errorf("empty content should remain empty")
+			}
+		})
+	}
+}

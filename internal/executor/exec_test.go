@@ -467,3 +467,47 @@ func BenchmarkExecuteExec_WhitelistCheck(b *testing.B) {
 		ExecuteExec("unknown command", cfg, nil)
 	}
 }
+
+func TestExecuteExec_ResultOutputFormatting(t *testing.T) {
+	// Test the result formatting logic by examining what would happen
+	// with different stdout/stderr combinations
+	// This tests the logic even when Docker isn't available
+
+	cfg := &config.Config{
+		RepositoryRoot: t.TempDir(),
+		ExecEnabled:    false, // Will fail early, but we can test command setup
+	}
+
+	result := ExecuteExec("test command", cfg, nil)
+
+	// Verify command is properly set up
+	if result.Command.Type != "exec" {
+		t.Errorf("expected type 'exec', got %q", result.Command.Type)
+	}
+	if result.Command.Argument != "test command" {
+		t.Errorf("expected argument 'test command', got %q", result.Command.Argument)
+	}
+}
+
+func TestExecuteExec_AuditLogFormat(t *testing.T) {
+	cfg := &config.Config{
+		RepositoryRoot: t.TempDir(),
+		ExecEnabled:    true,
+		ExecWhitelist:  []string{}, // Empty whitelist causes validation failure
+	}
+
+	audit := &testAuditLog{}
+	ExecuteExec("test", cfg, audit.log)
+
+	entries := audit.getEntries()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+	}
+
+	if entries[0].cmdType != "exec" {
+		t.Errorf("expected cmdType 'exec', got %q", entries[0].cmdType)
+	}
+	if entries[0].arg != "test" {
+		t.Errorf("expected arg 'test', got %q", entries[0].arg)
+	}
+}

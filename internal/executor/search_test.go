@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
 	"github.com/computerscienceiscool/llm-tools/internal/search"
@@ -446,5 +447,79 @@ func BenchmarkFormatFileSizeForSearch(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		formatFileSizeForSearch(sizes[i%len(sizes)])
+	}
+}
+
+func TestFormatSearchOutput_AllFields(t *testing.T) {
+	results := []search.SearchResult{
+		{
+			FilePath:  "internal/main.go",
+			Score:     0.9234,
+			LineCount: 150,
+			FileSize:  4096,
+			Preview:   "func main() { ... }",
+		},
+	}
+
+	output := formatSearchOutput("main function", results, 10, 250*time.Millisecond)
+
+	checks := []string{
+		"=== SEARCH: main function ===",
+		"SEARCH RESULTS",
+		"0.25s",
+		"internal/main.go",
+		"92.34",
+		"Lines: 150",
+		"4.0 KB",
+		"Preview:",
+		"func main()",
+		"=== END SEARCH ===",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("output should contain %q\nGot:\n%s", check, output)
+		}
+	}
+}
+
+func TestFormatSearchOutput_MultipleResults(t *testing.T) {
+	results := []search.SearchResult{
+		{FilePath: "a.go", Score: 0.95, LineCount: 100, FileSize: 1024, Preview: "preview a"},
+		{FilePath: "b.go", Score: 0.85, LineCount: 200, FileSize: 2048, Preview: "preview b"},
+		{FilePath: "c.go", Score: 0.75, LineCount: 300, FileSize: 3072, Preview: "preview c"},
+	}
+
+	output := formatSearchOutput("test", results, 10, 0)
+
+	// Check ordering (should be 1, 2, 3)
+	if !strings.Contains(output, "1. a.go") {
+		t.Error("first result should be a.go")
+	}
+	if !strings.Contains(output, "2. b.go") {
+		t.Error("second result should be b.go")
+	}
+	if !strings.Contains(output, "3. c.go") {
+		t.Error("third result should be c.go")
+	}
+}
+
+func TestFormatFileSizeForSearch_LargeFiles(t *testing.T) {
+	tests := []struct {
+		size     int64
+		contains string
+	}{
+		{1024 * 1024 * 1024 * 10, "GB"},          // 10 GB
+		{1024 * 1024 * 1024 * 1024, "TB"},        // 1 TB
+		{1024 * 1024 * 1024 * 1024 * 1024, "PB"}, // 1 PB
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.contains, func(t *testing.T) {
+			result := formatFileSizeForSearch(tt.size)
+			if !strings.Contains(result, tt.contains) {
+				t.Errorf("formatFileSizeForSearch(%d) = %q, should contain %q", tt.size, result, tt.contains)
+			}
+		})
 	}
 }
