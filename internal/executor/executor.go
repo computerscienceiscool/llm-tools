@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/computerscienceiscool/llm-tools/internal/command"
 	"github.com/computerscienceiscool/llm-tools/internal/config"
@@ -14,6 +15,7 @@ type Executor struct {
 	searchCfg   *search.SearchConfig
 	auditLog    func(cmd, arg string, success bool, errMsg string)
 	commandsRun int
+	mu          sync.Mutex
 }
 
 // NewExecutor creates a new executor instance
@@ -47,7 +49,9 @@ func (e *Executor) Execute(cmd command.Command) command.ExecutionResult {
 	}
 
 	if result.Success {
+		e.mu.Lock()
 		e.commandsRun++
+		e.mu.Unlock()
 	}
 
 	return result
@@ -55,6 +59,8 @@ func (e *Executor) Execute(cmd command.Command) command.ExecutionResult {
 
 // GetCommandsRun returns the number of successfully executed commands
 func (e *Executor) GetCommandsRun() int {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	return e.commandsRun
 }
 
