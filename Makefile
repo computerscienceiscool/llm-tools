@@ -268,14 +268,18 @@ commit: build test
 	@echo ""
 	@echo "Staging modified tracked files..."
 	@git add -u
-
-	@echo "Generating commit message with grok..."
-	@grok commit | git commit -F - || { echo "Nothing to commit."; exit 1; }
-
-	@echo "Pushing to current branch..."
-	@git push origin $$(git rev-parse --abbrev-ref HEAD)
-
-	@echo "Commit and push complete."
+	@if git diff --cached --quiet; then \
+		echo "Nothing to commit."; \
+	else \
+		echo "Generating commit message with grok (this may take a moment)..."; \
+		grok commit > .commit_msg.tmp; \
+		echo "Committing..."; \
+		git commit -F .commit_msg.tmp; \
+		rm -f .commit_msg.tmp; \
+		echo "Pushing to current branch..."; \
+		git push origin $$(git rev-parse --abbrev-ref HEAD); \
+		echo "Commit and push complete."; \
+	fi
 
 debug-path:
 	@echo "PATH is: $$PATH"

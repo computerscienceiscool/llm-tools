@@ -29,7 +29,7 @@ Complete guide to the `<search>` command for AI-powered semantic search across y
 
 ## Setup and Configuration
 
-### **[installation.md](installation.md)**
+### **[installation-guide.md](installation-guide.md)**
 Complete installation guide for all platforms with troubleshooting steps.
 
 ### **[configuration.md](configuration.md)**

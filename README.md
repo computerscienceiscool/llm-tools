@@ -16,6 +16,7 @@ A secure tool that enables Large Language Models to autonomously explore and wor
 ### Prerequisites
 - Go 1.21 or later
 - Docker (for exec commands)
+- Python 3.8+ with sentence-transformers (for search feature)
 
 ### Build from source
 ```bash
@@ -60,6 +61,12 @@ func main() {
 Let me run the tests <exec go test ./...>
 Now build the project <exec make build>
 ```
+
+### 4. Semantic Search: `<search query>`
+```
+
+
+
 
 ## Usage
 

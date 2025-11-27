@@ -1,503 +1,535 @@
-# Command Execution Guide - `<exec>` Command
+
+# Semantic Search Guide - `<search>` Command
 
 ## Overview
 
-The `<exec>` command allows LLMs to execute shell commands in secure, isolated Docker containers. This enables LLMs to run tests, build projects, validate changes, and interact with development tools without compromising system security.
+The `<search>` command enables LLMs to perform AI-powered semantic search across all indexed files in a repository. Unlike traditional text search (grep), semantic search understands the *meaning* of your query and finds conceptually related code, even when exact keywords don't match.
 
 ## How It Works
 
-When an LLM includes an `<exec>` command, the tool:
-1. **Validates the command** - Checks against whitelist of allowed commands
-2. **Creates Docker container** - Spins up isolated Ubuntu container
-3. **Mounts repository** - Repository mounted read-only at `/workspace`
-4. **Executes command** - Runs command with strict resource limits
-5. **Captures output** - Returns stdout, stderr, and exit code
-6. **Cleans up** - Container automatically removed after execution
+When an LLM includes a `<search>` command, the tool:
+1. **Generates query embedding** - Converts the search query to a 384-dimensional vector using sentence-transformers
+2. **Compares against index** - Calculates cosine similarity between query and all indexed file embeddings
+3. **Filters by threshold** - Only returns results above the minimum similarity score (default: 0.5)
+4. **Ranks results** - Sorts by relevance score descending
+5. **Returns formatted output** - Provides file paths, scores, previews, and metadata
 
 ## Basic Syntax
 
 ```
-<exec command arguments>
+<search query terms>
 ```
 
 **Examples:**
-- `<exec go test>` - Run Go tests
-- `<exec npm build>` - Build Node.js project  
-- `<exec python -m pytest>` - Run Python tests
-- `<exec make clean>` - Run make command
+- `<search authentication logic>` - Find auth-related code
+- `<search database connection>` - Find DB connection code
+- `<search error handling>` - Find error handling patterns
+- `<search API endpoints>` - Find route definitions
+- `<search configuration parsing>` - Find config-related code
 
-## Security Model
+## Technical Architecture
 
-### **Docker Isolation**
-- **No network access**: `--network none` prevents internet access
-- **Read-only repository**: Source code mounted as read-only
-- **Temporary workspace**: Separate writable directory for outputs
-- **Resource limits**: 512MB RAM, 2 CPU cores, 30-second timeout
-- **Non-root execution**: Commands run as unprivileged user (1000:1000)
+### Embedding Model
 
-### **Command Whitelisting** 
-Only pre-approved commands are allowed:
+The tool uses the `all-MiniLM-L6-v2` model from sentence-transformers:
+- **Dimensions**: 384
+- **Speed**: Fast inference
+- **Quality**: Good semantic understanding
+- **Normalization**: Embeddings are L2-normalized for cosine similarity
 
-**Default Whitelist:**
-- **Go**: `go test`, `go build`, `go run`
-- **Node.js**: `npm test`, `npm run build`, `npm install`
-- **Python**: `python`, `python3`, `python -m pytest`
-- **Build tools**: `make`, `make test`, `make build`
-- **Rust**: `cargo build`, `cargo test`, `cargo run`
-- **System**: `ls`, `cat`, `grep`, `find`, `head`, `tail`, `wc`
+### Vector Database
 
-### **Container Security**
+Embeddings are stored in SQLite for simplicity and portability:
+
+```sql
+CREATE TABLE embeddings (
+    filepath TEXT PRIMARY KEY,
+    content_hash TEXT NOT NULL,
+    embedding BLOB NOT NULL,
+    last_modified INTEGER NOT NULL,
+    file_size INTEGER NOT NULL,
+    indexed_at INTEGER NOT NULL
+);
+```
+
+### Similarity Calculation
+
+Cosine similarity is used to compare embeddings:
+
+```
+similarity = (A · B) / (||A|| × ||B||)
+```
+
+Where A is the query embedding and B is the file embedding. Scores range from 0.0 (unrelated) to 1.0 (identical meaning).
+
+## Requirements
+
+### Python Dependencies
+
+Search requires Python 3.8+ with sentence-transformers:
+
 ```bash
-docker run \
-    --rm \
-    --network none \
-    --user 1000:1000 \
-    --cap-drop ALL \
-    --security-opt no-new-privileges \
-    --read-only \
-    --tmpfs /tmp \
-    --memory 512m \
-    --cpus 2 \
-    ubuntu:22.04
+# Basic installation
+pip install sentence-transformers
+
+# Or with virtual environment (recommended)
+python3 -m venv search-env
+source search-env/bin/activate
+pip install sentence-transformers
+```
+
+### Verify Installation
+
+```bash
+# Check Python setup
+./llm-tool --check-python-setup
+
+# Or manually test
+python3 -c "import sentence_transformers; print('OK')"
+```
+
+## Configuration
+
+### Enable Search
+
+In `llm-tool.config.yaml`:
+
+```yaml
+commands:
+  search:
+    enabled: true
+    vector_db_path: "./embeddings.db"
+    embedding_model: "all-MiniLM-L6-v2"
+    max_results: 10
+    min_similarity_score: 0.5
+    max_preview_length: 100
+    chunk_size: 1000
+    python_path: "python3"
+    index_extensions:
+      - ".go"
+      - ".py"
+      - ".js"
+      - ".ts"
+      - ".md"
+      - ".txt"
+      - ".yaml"
+      - ".json"
+    max_file_size: 1048576  # 1MB
+```
+
+### Configuration Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `enabled` | `false` | Enable/disable search functionality |
+| `vector_db_path` | `./embeddings.db` | SQLite database path for embeddings |
+| `embedding_model` | `all-MiniLM-L6-v2` | Sentence-transformer model name |
+| `max_results` | `10` | Maximum search results to return |
+| `min_similarity_score` | `0.5` | Minimum score (0.0-1.0) to include |
+| `max_preview_length` | `100` | Characters of preview text per result |
+| `chunk_size` | `1000` | Text chunk size for large files |
+| `python_path` | `python3` | Path to Python interpreter |
+| `index_extensions` | See above | File extensions to index |
+| `max_file_size` | `1048576` | Maximum file size to index (bytes) |
+
+## Building the Search Index
+
+### Initial Index Build
+
+```bash
+# Build complete index from scratch
+./llm-tool --reindex
+```
+
+This will:
+1. Walk through all files in the repository
+2. Filter by allowed extensions and excluded paths
+3. Check if each file is text-based
+4. Generate embeddings using Python/sentence-transformers
+5. Store embeddings in SQLite database
+
+### Incremental Updates
+
+```bash
+# Update only new/modified files
+./llm-tool --search-update
+```
+
+### Index Management Commands
+
+```bash
+# Show index statistics
+./llm-tool --search-status
+
+# Validate index integrity
+./llm-tool --search-validate
+
+# Remove entries for deleted files
+./llm-tool --search-cleanup
+
+# Full rebuild
+./llm-tool --reindex
 ```
 
 ## Use Cases
 
-### **Testing & Validation**
+### Finding Related Code
+
 ```
-Let me run the test suite to verify everything works:
+I need to understand how authentication works in this project.
 
-<exec go test ./...>
+<search authentication middleware>
 
-Now let me run just the unit tests:
+Let me also find where tokens are validated:
 
-<exec go test -short ./...>
-
-And check test coverage:
-
-<exec go test -cover ./...>
+<search JWT token validation>
 ```
 
-### **Building & Compilation**
+### Discovering Patterns
+
 ```
-First, let me build the project:
+I want to see how error handling is done across the codebase:
 
-<exec go build -o bin/app .>
+<search error handling patterns>
 
-Now let's build for different platforms:
+Now let me find logging implementations:
 
-<exec go build -o bin/app-linux ./cmd/main.go>
-
-Let me check if the binary was created:
-
-<exec ls -la bin/>
+<search logging and debug output>
 ```
 
-### **Dependency Management**
+### Locating Configuration
+
 ```
-Let me install the project dependencies:
+Where is the database configured?
 
-<exec npm install>
+<search database configuration connection string>
 
-And check for outdated packages:
+And where are environment variables loaded?
 
-<exec npm outdated>
-
-Let me update the dependencies:
-
-<exec npm update>
+<search environment variables loading>
 ```
 
-### **Code Analysis**
+### Finding Similar Functions
+
 ```
-Let me run the linter:
+I see there's a user service. Are there similar services?
 
-<exec go vet ./...>
+<search service implementation pattern>
 
-Check code formatting:
+Let me find all the handlers:
 
-<exec gofmt -l .>
-
-Run static analysis:
-
-<exec go run honnef.co/go/tools/cmd/staticcheck ./...>
+<search HTTP request handlers>
 ```
 
-### **Project Information**
+### Code Review Preparation
+
 ```
-Let me examine the project structure:
+Before reviewing, let me understand the security measures:
 
-<exec find . -name "*.go" -type f | head -10>
+<search input validation sanitization>
 
-Check the lines of code:
+<search SQL injection prevention>
 
-<exec find . -name "*.go" -exec wc -l {} \; | awk '{sum += $1} END {print sum}'>
-
-See what Git files have changed:
-
-<exec git status>
-```
-
-### **Debugging & Troubleshooting**
-```
-Let me check if there are any compilation errors:
-
-<exec go build .>
-
-Run with verbose output:
-
-<exec go test -v -run TestSpecificFunction>
-
-Check for race conditions:
-
-<exec go test -race ./...>
+<search XSS protection>
 ```
 
 ## Output Format
 
-### **Successful Execution**
+### Successful Search
+
 ```
-=== EXEC SUCCESSFUL: go test ===
-Exit code: 0
-Duration: 2.150s
-Output:
-?       github.com/example/project/cmd  [no test files]
-ok      github.com/example/project/pkg  0.123s
-=== END EXEC ===
+=== SEARCH: authentication logic ===
+=== SEARCH RESULTS (0.45s) ===
+1. src/auth/middleware.go (score: 78.50)
+   Lines: 156 | Size: 4.2 KB
+   Preview: "// AuthMiddleware validates JWT tokens and extracts user..."
+
+2. src/handlers/login.go (score: 72.30)
+   Lines: 89 | Size: 2.1 KB
+   Preview: "// LoginHandler processes user authentication requests..."
+
+3. internal/security/jwt.go (score: 68.90)
+   Lines: 203 | Size: 5.8 KB
+   Preview: "// Package security provides JWT token generation and..."
+
+[Showing top 10 results]
+=== END SEARCH ===
 ```
 
-### **Failed Execution**
-```
-=== EXEC SUCCESSFUL: go test ===
-Exit code: 1
-Duration: 1.234s
-Output:
-STDOUT:
---- FAIL: TestExample (0.00s)
-    example_test.go:10: expected true, got false
-FAIL
-exit status 1
+### No Results
 
-STDERR:
-FAIL    github.com/example/project  0.001s
-=== END EXEC ===
+```
+=== SEARCH: nonexistent feature ===
+=== SEARCH RESULTS (0.23s) ===
+No files found matching query.
+Try broader search terms or check if files are indexed.
+=== END SEARCH ===
 ```
 
-### **Command Validation Error**
-```
-=== ERROR: EXEC_VALIDATION ===
-Message: EXEC_VALIDATION: command not in whitelist: rm
-Command: <exec rm -rf />
-=== END ERROR ===
-```
+### Relevance Labels
+
+Results include relevance indicators based on score:
+
+| Score Range | Label |
+|-------------|-------|
+| 90-100% | Excellent |
+| 80-89% | Very Good |
+| 70-79% | Good |
+| 60-69% | Fair |
+| 50-59% | Marginal |
+| Below 50% | (filtered out) |
 
 ## Common Error Types
 
-### **EXEC_VALIDATION**
-```
-<exec rm -rf />
-```
-**Cause**: Command not in whitelist
-**Solution**: Add to whitelist or use allowed alternative
+### SEARCH_DISABLED
 
-### **DOCKER_UNAVAILABLE**
 ```
-<exec go test>
+=== ERROR: SEARCH_DISABLED ===
+Message: SEARCH_DISABLED: search feature is not enabled
 ```
-**Cause**: Docker not installed or accessible
-**Solution**: Install Docker and ensure it's running
 
-### **EXEC_TIMEOUT**
-```
-<exec sleep 60>
-```
-**Cause**: Command took longer than 30 seconds
-**Solution**: Optimize command or increase timeout
+**Cause**: Search not enabled in configuration
+**Solution**: Set `commands.search.enabled: true` in config
 
-### **EXEC_FAILED**
-```
-<exec go test>  # when tests fail
-```
-**Cause**: Command executed but returned non-zero exit code
-**Result**: Still shows output, but indicates failure
+### SEARCH_INIT_FAILED
 
-## Configuration
+```
+=== ERROR: SEARCH_INIT_FAILED ===
+Message: SEARCH_INIT_FAILED: Python dependencies not available
+```
 
-### **Enable Exec Commands**
+**Cause**: Python or sentence-transformers not installed
+**Solution**: 
 ```bash
-# Enable exec functionality
-./llm-tool --exec-enabled
-
-# With custom settings
-./llm-tool --exec-enabled \
-           --exec-timeout 60s \
-           --exec-memory 1g \
-           --exec-cpu 4
+pip install sentence-transformers
+# Update python_path in config if needed
 ```
 
-### **Custom Whitelist**
-```bash
-# Add custom commands
-./llm-tool --exec-enabled \
-           --exec-whitelist "go test,npm build,python -m pytest,make clean"
+### INDEX_NOT_FOUND
+
+```
+=== ERROR: SEARCH_FAILED ===
+Message: No files in search index
 ```
 
-### **Configuration File**
-```yaml
-commands:
-  exec:
-    enabled: true
-    container_image: "ubuntu:22.04"
-    timeout_seconds: 30
-    memory_limit: "512m"
-    cpu_limit: 2
-    network_enabled: false
-    whitelist:
-      - "go test"
-      - "go build"
-      - "go run"
-      - "npm test"
-      - "npm run build"
-      - "python -m pytest"
-      - "make"
-      - "cargo build"
-      - "ls"
-      - "find"
-      - "grep"
-      - "cat"
-      - "head"
-      - "tail"
-      - "wc"
-```
+**Cause**: Index hasn't been built yet
+**Solution**: Run `./llm-tool --reindex`
 
-## Advanced Usage
+## Performance Considerations
 
-### **Complex Build Pipelines**
-```
-I'll run the complete build and test pipeline:
+### Index Size
 
-<exec make clean>
+Approximate storage requirements:
+- ~1.5 KB per indexed file
+- 1,000 files ≈ 1.5 MB index
+- 10,000 files ≈ 15 MB index
+- 100,000 files ≈ 150 MB index
 
-<exec make deps>
+### Search Speed
 
-<exec make lint>
+- Query embedding generation: ~100-500ms (first query slower due to model loading)
+- Similarity calculation: <1ms per file
+- Typical search (1000 files): <1 second total
 
-<exec make test>
+### Optimization Tips
 
-<exec make build>
-
-<exec make package>
-```
-
-### **Conditional Execution**
-```
-Let me check if this is a Go project:
-
-<exec ls go.mod>
-
-Since it's a Go project, let me run Go-specific commands:
-
-<exec go mod tidy>
-
-<exec go test ./...>
-```
-
-### **Multi-Step Workflows**
-```
-I'll set up and test the development environment:
-
-<exec npm install>
-
-<exec npm run build>
-
-<exec npm test>
-
-<exec npm run lint>
-
-Everything looks good! The project builds and all tests pass.
-```
-
-### **File System Operations**
-```
-Let me explore the project structure:
-
-<exec find . -type f -name "*.go" | wc -l>
-
-<exec find . -type d -name "test*">
-
-<exec ls -la src/>
-
-<exec du -sh .>
-```
-
-## Docker Requirements
-
-### **Installation Check**
-```bash
-# Check if Docker is available
-docker --version
-
-# Test Docker functionality  
-docker run hello-world
-
-# Check for required image
-docker images | grep ubuntu
-```
-
-### **Manual Image Preparation**
-```bash
-# Pre-pull the image to avoid delays
-docker pull ubuntu:22.04
-
-# Verify image is available
-docker image inspect ubuntu:22.04
-```
-
-### **Custom Images**
-You can configure custom Docker images with pre-installed tools:
-
-```yaml
-commands:
-  exec:
-    container_image: "node:18-alpine"  # For Node.js projects
-    # or
-    container_image: "golang:1.21"     # For Go projects
-    # or  
-    container_image: "python:3.11"     # For Python projects
-```
-
-## Performance Tips
-
-### **Container Startup Time**
-- **Pre-pull images**: `docker pull ubuntu:22.04`
-- **Use specific tags**: Avoid `latest` tag
-- **Smaller images**: Consider Alpine variants
-
-### **Command Optimization**
-```
-# Instead of multiple separate commands
-<exec go test>
-<exec go build>
-<exec go vet>
-
-# Combine when possible
-<exec go test && go build && go vet>
-```
-
-### **Resource Management**
-- **Adjust limits**: Increase memory/CPU for heavy operations
-- **Cleanup**: Containers auto-remove, but monitor disk space
-- **Parallel execution**: Multiple exec commands can run simultaneously
+1. **Limit indexed extensions**: Only index relevant file types
+2. **Set appropriate file size limits**: Skip very large files
+3. **Use incremental updates**: `--search-update` instead of `--reindex`
+4. **Adjust result count**: Lower `max_results` if you only need top matches
+5. **Tune similarity threshold**: Higher `min_similarity_score` = faster filtering
 
 ## Best Practices for LLMs
 
-### **Always Verify Before Modifying**
+### Start Broad, Then Narrow
+
 ```
-Let me run tests before making changes:
+First, let me get an overview of the authentication system:
 
-<exec go test ./...>
+<search authentication>
 
-[make changes with write commands]
+Now let me focus on the specific token handling:
 
-Now let me verify the changes work:
-
-<exec go test ./...>
-```
-
-### **Incremental Testing**
-```
-Let me test the specific component I'm working on:
-
-<exec go test ./internal/auth>
-
-Now test the integration:
-
-<exec go test ./cmd/server>
-
-Finally, run the full suite:
-
-<exec go test ./...>
+<search JWT token expiration refresh>
 ```
 
-### **Build Verification**
+### Combine with File Reading
+
 ```
-Let me ensure the project builds correctly:
+Let me find files related to database operations:
 
-<exec go build ./cmd/server>
+<search database queries>
 
-And verify there are no linting issues:
+Based on the results, I'll examine the top match:
 
-<exec go vet ./...>
-
-<exec gofmt -l . | wc -l>
+<open src/database/queries.go>
 ```
 
-### **Environment Information**
+### Use Domain-Specific Terms
+
 ```
-Let me understand the environment:
+# Good - uses specific terms
+<search GraphQL resolver mutations>
 
-<exec go version>
+# Less effective - too generic  
+<search data changes>
+```
 
-<exec go env GOPATH>
+### Search Before Writing
 
-<exec ls -la>
+```
+Before creating a new utility, let me check if something similar exists:
+
+<search string manipulation utilities>
+
+Good, nothing similar exists. I'll create a new file:
+
+<write src/utils/strings.go>
+// New string utilities
+</write>
+```
+
+### Verify with Exec
+
+```
+Let me find the test files:
+
+<search unit tests for user service>
+
+Now run those specific tests:
+
+<exec go test ./src/services/user_test.go -v>
 ```
 
 ## Troubleshooting
 
-### **Docker Issues**
+### Search Returns No Results
+
+1. **Check if index exists**:
+   ```bash
+   ./llm-tool --search-status
+   ```
+
+2. **Verify files are being indexed**:
+   - Check `index_extensions` includes your file types
+   - Check `excluded_paths` isn't blocking files
+   - Verify `max_file_size` isn't too restrictive
+
+3. **Lower similarity threshold**:
+   ```yaml
+   commands:
+     search:
+       min_similarity_score: 0.3  # More permissive
+   ```
+
+4. **Try broader search terms**
+
+### Search Is Slow
+
+1. **Reduce indexed files**: Narrow `index_extensions`
+2. **Lower `max_results`**: Return fewer results
+3. **Check Python path**: Ensure it's not loading unnecessary modules
+
+### Index Out of Date
+
 ```bash
-# Check Docker daemon
-systemctl status docker
+# Quick update for changed files
+./llm-tool --search-update
 
-# Check Docker permissions
-groups $USER | grep docker
-
-# Test basic Docker functionality
-docker run --rm ubuntu:22.04 echo "Hello"
+# Full rebuild if needed
+./llm-tool --reindex
 ```
 
-### **Command Not Found**
-1. **Check whitelist**: Command must be in allowed list
-2. **Verify spelling**: Ensure command name is exact
-3. **Check image**: Command must exist in Ubuntu 22.04
+### Python Errors
 
-### **Timeout Issues**
-1. **Optimize command**: Make operations faster
-2. **Increase timeout**: Use `--exec-timeout` flag
-3. **Split operations**: Break into smaller commands
+1. **Check Python version**: Requires 3.8+
+   ```bash
+   python3 --version
+   ```
 
-### **Permission Denied**
-1. **Docker setup**: Ensure Docker is properly installed
-2. **User permissions**: Add user to docker group
-3. **Image access**: Verify image can be pulled
+2. **Verify sentence-transformers**:
+   ```bash
+   python3 -c "import sentence_transformers; print('OK')"
+   ```
 
-### **Memory/Resource Issues**
-1. **Increase limits**: Use `--exec-memory` and `--exec-cpu`
-2. **Optimize operations**: Reduce memory usage
-3. **Monitor resources**: Check system resources
+3. **Check python_path in config**: Must point to correct interpreter
+
+4. **Virtual environment issues**: Ensure venv is activated or use full path:
+   ```yaml
+   commands:
+     search:
+       python_path: "/path/to/venv/bin/python3"
+   ```
+
+## Integration with Other Commands
+
+### Search → Open → Analyze
+
+```
+<search error handling middleware>
+
+Based on results, examining the top file:
+
+<open src/middleware/errors.go>
+
+This shows the error handling pattern used throughout the project.
+```
+
+### Search → Open → Write → Exec
+
+```
+<search similar service implementations>
+
+<open src/services/user_service.go>
+
+I'll create a similar service for products:
+
+<write src/services/product_service.go>
+// Implementation based on user_service pattern
+package services
+...
+</write>
+
+Now verify it compiles:
+
+<exec go build ./src/services/...>
+```
+
+### Search for Test Patterns → Write Tests → Run
+
+```
+<search test patterns table driven>
+
+<open src/auth/auth_test.go>
+
+I'll follow this pattern for new tests:
+
+<write src/handlers/api_test.go>
+// Table-driven tests following project conventions
+...
+</write>
+
+<exec go test ./src/handlers/... -v>
+```
 
 ## Security Considerations
 
-### **What's Allowed**
-- Running tests and builds
-- Code analysis and linting  
-- File system inspection
-- Package management (install/update)
-- Development tool execution
+- **Index location**: The embeddings database (`embeddings.db`) should be in `.gitignore`
+- **Excluded paths**: Sensitive files (`.env`, `*.key`) are excluded from indexing via `excluded_paths`
+- **No content storage**: Only embeddings are stored, not file contents
+- **Local processing**: All embedding generation happens locally via Python
 
-### **What's Blocked**
-- Network access (no internet)
-- System modification commands (`rm -rf`, `sudo`)
-- Privileged operations
-- Access to host file system
-- Long-running services
+## Comparison: Semantic Search vs. Traditional Search
 
-### **Audit Trail**
-All exec commands are logged with:
-- Command executed
-- Exit code and duration  
-- Success/failure status
-- Timestamp and session ID
+| Aspect | `<search>` (Semantic) | `grep` / `find` |
+|--------|----------------------|-----------------|
+| Query | Natural language | Exact patterns/regex |
+| Finds | Conceptually related | Exact matches |
+| Example | `<search user auth>` finds "login", "signin", "authenticate" | `grep "auth"` only finds "auth" |
+| Setup | Requires index + Python | Built-in |
+| Speed | Fast after indexing | Fast always |
+| Best for | Discovery, understanding | Known patterns |
 
-The `<exec>` command transforms LLMs from read-only code analyzers into active development assistants capable of testing, building, and validating their changes in real-time while maintaining complete security isolation.
+## Summary
+
+The `<search>` command transforms how LLMs explore unfamiliar codebases by enabling conceptual discovery rather than requiring exact keyword knowledge. Combined with `<open>`, `<write>`, and `<exec>`, it provides a complete toolkit for autonomous code exploration, understanding, and modification.
