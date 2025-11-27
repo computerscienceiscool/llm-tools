@@ -1,6 +1,6 @@
 # Compiled binaries
 llm-tools.exe
-llm-tool.exe
+llm-tool
 *.exe
 *.exe~
 *.dll
