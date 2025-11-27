@@ -1,0 +1,491 @@
+package cli
+
+import (
+	"bytes"
+	"io"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/computerscienceiscool/llm-tools/internal/config"
+	"github.com/computerscienceiscool/llm-tools/internal/executor"
+	"github.com/computerscienceiscool/llm-tools/internal/search"
+)
+
+// captureOutput captures stdout and stderr during function execution
+func captureOutput(t *testing.T, f func()) (stdout, stderr string) {
+	t.Helper()
+
+	// Capture stdout
+	oldStdout := os.Stdout
+	rOut, wOut, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Failed to create stdout pipe: %v", err)
+	}
+	os.Stdout = wOut
+
+	// Capture stderr
+	oldStderr := os.Stderr
+	rErr, wErr, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Failed to create stderr pipe: %v", err)
+	}
+	os.Stderr = wErr
+
+	// Run the function
+	f()
+
+	// Restore and read stdout
+	wOut.Close()
+	os.Stdout = oldStdout
+	var bufOut bytes.Buffer
+	io.Copy(&bufOut, rOut)
+	rOut.Close()
+
+	// Restore and read stderr
+	wErr.Close()
+	os.Stderr = oldStderr
+	var bufErr bytes.Buffer
+	io.Copy(&bufErr, rErr)
+	rErr.Close()
+
+	return bufOut.String(), bufErr.String()
+}
+
+// mockStdin temporarily replaces os.Stdin with a reader
+func mockStdin(t *testing.T, input string) func() {
+	t.Helper()
+
+	oldStdin := os.Stdin
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Failed to create stdin pipe: %v", err)
+	}
+
+	os.Stdin = r
+
+	// Write input in a goroutine to avoid blocking
+	go func() {
+		defer w.Close()
+		w.WriteString(input)
+	}()
+
+	return func() {
+		os.Stdin = oldStdin
+		r.Close()
+	}
+}
+
+func TestInteractiveMode_PrintsWelcomeMessage(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Empty input - will immediately hit EOF
+	restore := mockStdin(t, "")
+	defer restore()
+
+	startTime := time.Now()
+
+	_, stderr := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Check welcome message in stderr
+	expectedParts := []string{
+		"LLM Tool - Interactive Mode",
+		"Waiting for input",
+		"<open filepath>",
+		"<write filepath>",
+		"<exec command",
+		"<search query>",
+	}
+
+	for _, part := range expectedParts {
+		if !strings.Contains(stderr, part) {
+			t.Errorf("Welcome message missing expected part: %q\nFull stderr:\n%s", part, stderr)
+		}
+	}
+}
+
+func TestInteractiveMode_ProcessesOpenCommand(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create a test file
+	testFile := "test.txt"
+	testContent := "Hello from test file"
+	if err := os.WriteFile(tempDir+"/"+testFile, []byte(testContent), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Input with open command
+	input := "<open test.txt>\n"
+	restore := mockStdin(t, input)
+	defer restore()
+
+	startTime := time.Now()
+
+	stdout, _ := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Check that file content appears in output
+	if !strings.Contains(stdout, testContent) {
+		t.Errorf("Expected file content %q in stdout\nFull stdout:\n%s", testContent, stdout)
+	}
+}
+
+func TestInteractiveMode_ProcessesWriteCommand(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Input with write command
+	input := "<write newfile.txt>Created content</write>\n"
+	restore := mockStdin(t, input)
+	defer restore()
+
+	startTime := time.Now()
+
+	stdout, _ := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Check that write was successful
+	if !strings.Contains(stdout, "WRITE SUCCESSFUL") {
+		t.Errorf("Expected 'WRITE SUCCESSFUL' in stdout\nFull stdout:\n%s", stdout)
+	}
+
+	// Verify file was created
+	content, err := os.ReadFile(tempDir + "/newfile.txt")
+	if err != nil {
+		t.Errorf("File was not created: %v", err)
+	}
+	if string(content) != "Created content" {
+		t.Errorf("File content = %q, want %q", string(content), "Created content")
+	}
+}
+
+func TestInteractiveMode_ProcessesExecCommand(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false, // Disabled, should show error
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Input with exec command
+	input := "<exec echo hello>\n"
+	restore := mockStdin(t, input)
+	defer restore()
+
+	startTime := time.Now()
+
+	stdout, _ := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Exec is disabled, should show error
+	if !strings.Contains(stdout, "ERROR") {
+		t.Errorf("Expected 'ERROR' for disabled exec in stdout\nFull stdout:\n%s", stdout)
+	}
+}
+
+func TestInteractiveMode_ProcessesSearchCommand(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false} // Disabled
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Input with search command
+	input := "<search test query>\n"
+	restore := mockStdin(t, input)
+	defer restore()
+
+	startTime := time.Now()
+
+	stdout, _ := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Search is disabled, should show error
+	if !strings.Contains(stdout, "ERROR") {
+		t.Errorf("Expected 'ERROR' for disabled search in stdout\nFull stdout:\n%s", stdout)
+	}
+}
+
+func TestInteractiveMode_PlainTextNoCommand(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Plain text without commands - should be buffered until EOF
+	input := "Just some plain text\nwith multiple lines\n"
+	restore := mockStdin(t, input)
+	defer restore()
+
+	startTime := time.Now()
+
+	stdout, _ := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Plain text without commands should pass through
+	if !strings.Contains(stdout, "Just some plain text") {
+		t.Errorf("Expected plain text in output\nFull stdout:\n%s", stdout)
+	}
+}
+
+func TestInteractiveMode_MultipleCommands(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Multiple commands in sequence
+	input := "<write first.txt>First file</write>\n<write second.txt>Second file</write>\n"
+	restore := mockStdin(t, input)
+	defer restore()
+
+	startTime := time.Now()
+
+	stdout, stderr := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Both writes should be successful
+	if strings.Count(stdout, "WRITE SUCCESSFUL") < 2 {
+		t.Errorf("Expected 2 'WRITE SUCCESSFUL' in stdout\nFull stdout:\n%s\nStderr:\n%s", stdout, stderr)
+	}
+
+	// Verify both files were created
+	if _, err := os.Stat(tempDir + "/first.txt"); os.IsNotExist(err) {
+		t.Error("first.txt was not created")
+	}
+	if _, err := os.Stat(tempDir + "/second.txt"); os.IsNotExist(err) {
+		t.Error("second.txt was not created")
+	}
+}
+
+func TestInteractiveMode_WaitingForMoreInputMessage(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Input with a command
+	input := "<write test.txt>content</write>\n"
+	restore := mockStdin(t, input)
+	defer restore()
+
+	startTime := time.Now()
+
+	_, stderr := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// After processing a command, should print "Waiting for more input"
+	if !strings.Contains(stderr, "Waiting for more input") {
+		t.Errorf("Expected 'Waiting for more input' in stderr\nFull stderr:\n%s", stderr)
+	}
+}
+
+func TestInteractiveMode_EmptyInput(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Empty input - immediate EOF
+	restore := mockStdin(t, "")
+	defer restore()
+
+	startTime := time.Now()
+
+	// Should not panic or hang
+	stdout, stderr := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Should still print welcome message
+	if !strings.Contains(stderr, "LLM Tool - Interactive Mode") {
+		t.Errorf("Expected welcome message\nStdout:\n%s\nStderr:\n%s", stdout, stderr)
+	}
+}
+
+func TestInteractiveMode_CommandWithSurroundingText(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create a test file
+	if err := os.WriteFile(tempDir+"/existing.txt", []byte("existing content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Command with surrounding text on same line
+	input := "Let me check the file <open existing.txt> and see what's there\n"
+	restore := mockStdin(t, input)
+	defer restore()
+
+	startTime := time.Now()
+
+	stdout, _ := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Should process the open command and show file content
+	if !strings.Contains(stdout, "existing content") {
+		t.Errorf("Expected file content in output\nFull stdout:\n%s", stdout)
+	}
+}
+
+func TestInteractiveMode_FailedCommand(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := &config.Config{
+		RepositoryRoot:    tempDir,
+		MaxFileSize:       1048576,
+		MaxWriteSize:      102400,
+		AllowedExtensions: []string{".txt"},
+		ExcludedPaths:     []string{".git"},
+		BackupBeforeWrite: false,
+		ExecEnabled:       false,
+	}
+
+	searchCfg := &search.SearchConfig{Enabled: false}
+	auditLog := func(cmd, arg string, success bool, errMsg string) {}
+	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+
+	// Try to open non-existent file
+	input := "<open nonexistent.txt>\n"
+	restore := mockStdin(t, input)
+	defer restore()
+
+	startTime := time.Now()
+
+	stdout, _ := captureOutput(t, func() {
+		InteractiveMode(exec, startTime)
+	})
+
+	// Should show error
+	if !strings.Contains(stdout, "ERROR") {
+		t.Errorf("Expected 'ERROR' for non-existent file\nFull stdout:\n%s", stdout)
+	}
+}
