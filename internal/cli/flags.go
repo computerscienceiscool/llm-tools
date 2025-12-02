@@ -46,8 +46,8 @@ func ParseFlags() *CLIFlags {
 
 	allowedExts := flag.String("allowed-extensions", ".go,.py,.js,.md,.txt,.json,.yaml,.yml,.toml",
 		"Comma-separated list of allowed file extensions for writing")
-	execWhitelistStr := flag.String("exec-whitelist", "go test,go build,go run,npm test,npm run build,python -m pytest,make,cargo build,cargo test",
-		"Comma-separated list of allowed exec commands")
+
+	execWhitelistStr := flag.String("exec-whitelist", "", "Comma-separated list of allowed exec commands")
 
 	// Parse excluded paths
 	excludedPaths := flag.String("exclude", ".git,.env,*.key,*.pem", "Comma-separated list of excluded paths")
@@ -82,6 +82,14 @@ func ParseFlags() *CLIFlags {
 		cfg.ExecWhitelist = strings.Split(*execWhitelistStr, ",")
 		for i := range cfg.ExecWhitelist {
 			cfg.ExecWhitelist[i] = strings.TrimSpace(cfg.ExecWhitelist[i])
+		}
+	}
+
+	// Load config file and use its whitelist if flag wasn't set
+	if len(cfg.ExecWhitelist) == 0 {
+		configPath := config.GetConfigPath()
+		if fullConfig, err := config.LoadConfig(configPath); err == nil {
+			cfg.ExecWhitelist = fullConfig.Commands.Exec.Whitelist
 		}
 	}
 

@@ -55,7 +55,7 @@ commands:
     container_image: "ubuntu:22.04"
     timeout_seconds: 30
     memory_limit: "512m"
-    cpu_limit: 2
+    cpu_limit: 1
     network_enabled: false
     whitelist:
       - "go test"
