@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
 )
 
 func TestNewSession(t *testing.T) {

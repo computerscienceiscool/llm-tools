@@ -1,4 +1,4 @@
-module github.com/computerscienceiscool/llm-tools
+module github.com/computerscienceiscool/llm-runtime
 
 go 1.21
 

@@ -158,14 +158,14 @@ func TestGetConfigPath(t *testing.T) {
 			t.Fatalf("Failed to change directory: %v", err)
 		}
 
-		localConfig := filepath.Join(tempDir, "llm-tool.config.yaml")
+		localConfig := filepath.Join(tempDir, "llm-runtime.config.yaml")
 		if err := os.WriteFile(localConfig, []byte("test: value"), 0644); err != nil {
 			t.Fatalf("Failed to create local config: %v", err)
 		}
 
 		result := GetConfigPath()
-		if result != "llm-tool.config.yaml" {
-			t.Errorf("GetConfigPath() = %q, want %q", result, "llm-tool.config.yaml")
+		if result != "llm-runtime.config.yaml" {
+			t.Errorf("GetConfigPath() = %q, want %q", result, "llm-runtime.config.yaml")
 		}
 	})
 
@@ -176,8 +176,8 @@ func TestGetConfigPath(t *testing.T) {
 		}
 
 		result := GetConfigPath()
-		if result != "llm-tool.config.yaml" {
-			t.Errorf("GetConfigPath() = %q, want %q", result, "llm-tool.config.yaml")
+		if result != "llm-runtime.config.yaml" {
+			t.Errorf("GetConfigPath() = %q, want %q", result, "llm-runtime.config.yaml")
 		}
 	})
 }
@@ -260,7 +260,7 @@ commands:
     enabled: true
     max_results: 50
 `
-		if err := os.WriteFile("llm-tool.config.yaml", []byte(configContent), 0644); err != nil {
+		if err := os.WriteFile("llm-runtime.config.yaml", []byte(configContent), 0644); err != nil {
 			t.Fatalf("Failed to write config: %v", err)
 		}
 
@@ -277,7 +277,7 @@ commands:
 			t.Fatalf("Failed to change directory: %v", err)
 		}
 
-		if err := os.WriteFile("llm-tool.config.yaml", []byte("{ invalid yaml"), 0644); err != nil {
+		if err := os.WriteFile("llm-runtime.config.yaml", []byte("{ invalid yaml"), 0644); err != nil {
 			t.Fatalf("Failed to write config: %v", err)
 		}
 

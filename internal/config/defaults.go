@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/computerscienceiscool/llm-tools/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/internal/search"
 )
 
 // GetDefaultSearchConfig returns default search configuration
@@ -67,6 +67,6 @@ func SetFullConfigDefaults(config *FullConfig) {
 
 	// Default logging settings
 	config.Logging.Level = "info"
-	config.Logging.File = "./llm-tool.log"
+	config.Logging.File = "./llm-runtime.log"
 	config.Logging.Format = "json"
 }

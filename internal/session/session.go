@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
 )
 
 // Session manages a tool execution session

@@ -156,19 +156,19 @@ Command: <open nonexistent.txt>
 ### Command Line Flags
 ```bash
 # Set custom file size limit (2MB)
-./llm-tool --max-size 2097152
+./llm-runtime --max-size 2097152
 
 # Custom repository root
-./llm-tool --root /path/to/project
+./llm-runtime --root /path/to/project
 
 # Custom excluded paths
-./llm-tool --exclude ".git,*.secret,private/"
+./llm-runtime --exclude ".git,*.secret,private/"
 
 # Verbose output for debugging
-./llm-tool --verbose
+./llm-runtime --verbose
 ```
 
-### Configuration File (llm-tool.config.yaml)
+### Configuration File (llm-runtime.config.yaml)
 ```yaml
 commands:
   open:

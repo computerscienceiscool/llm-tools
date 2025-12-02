@@ -37,8 +37,8 @@ echo "Demo repository created with initial files."
 echo "Building the tool..."
 
 # Build the tool if not already built
-if [ ! -f "./llm-tool" ]; then
-    go build -o llm-tool main.go
+if [ ! -f "./llm-runtime" ]; then
+    go build -o llm-runtime main.go
 fi
 
 echo
@@ -46,7 +46,7 @@ echo "=== Demo 1: Create a new file ==="
 echo "Testing: Create a new configuration file"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR" --verbose
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR" --verbose
 I need to create a configuration file for this project.
 
 <write config.yaml>
@@ -75,7 +75,7 @@ echo "=== Demo 2: Update an existing file ==="
 echo "Testing: Update the README with more content"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR" --verbose
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR" --verbose
 Let me first read the current README to understand it:
 
 <open README.md>
@@ -123,7 +123,7 @@ echo "=== Demo 3: Create multiple related files ==="
 echo "Testing: Create documentation and test files"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR" --verbose
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR" --verbose
 I'll create comprehensive documentation and test files for this project.
 
 First, let's create a proper Go module:
@@ -268,7 +268,7 @@ echo "=== Demo 4: Test backup functionality ==="
 echo "Testing: Modify a file multiple times to see backups"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR" --verbose --backup
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR" --verbose --backup
 Let me modify the hello.go file to demonstrate backup functionality:
 
 <write src/hello.go>
@@ -305,7 +305,7 @@ echo "=== Demo 5: Error handling ==="
 echo "Testing: Various error conditions"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR" --verbose
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR" --verbose
 Let me test various error conditions:
 
 Try to write to a forbidden extension:

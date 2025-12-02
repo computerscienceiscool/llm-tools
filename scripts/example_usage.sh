@@ -270,12 +270,12 @@ echo "=== Now simulating an LLM exploring this codebase ==="
 echo
 
 # Build the tool if needed
-if [ ! -f "./llm-tool" ]; then
-    go build -o llm-tool main.go
+if [ ! -f "./llm-runtime" ]; then
+    go build -o llm-runtime main.go
 fi
 
 # Simulate LLM exploration
-cat << 'EOFLM' | ./llm-tool --root "$SAMPLE_APP"
+cat << 'EOFLM' | ./llm-runtime --root "$SAMPLE_APP"
 I've been asked to analyze this Go web application. Let me explore it systematically to understand its architecture and implementation.
 
 First, let me start with the README to get an overview:

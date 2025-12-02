@@ -59,7 +59,7 @@ Common questions and answers about the LLM File Access Tool.
 ### **Q: Why are my commands timing out?**
 **A:** Default timeout is 30 seconds. For longer operations:
 ```bash
-./llm-tool --exec-timeout 120s
+./llm-runtime --exec-timeout 120s
 ```
 Or in config:
 ```yaml
@@ -123,24 +123,24 @@ Disable with `backup_before_write: false` in config.
 
 ### **Q: Where should I put my config file?**
 **A:** Tool looks in this order:
-1. `./llm-tool.config.yaml` (current directory) - **Recommended**
-2. `~/.llm-tool.config.yaml` (home directory)
+1. `./llm-runtime.config.yaml` (current directory) - **Recommended**
+2. `~/.llm-runtime.config.yaml` (home directory)
 3. Built-in defaults
 
 ### **Q: Can I use different configs for different projects?**
 **A:** Yes! Use project-specific configs:
 ```bash
 # In each project directory
-./llm-tool --config project-config.yaml
+./llm-runtime --config project-config.yaml
 
 # Or specify path
-./llm-tool --config /path/to/specific-config.yaml
+./llm-runtime --config /path/to/specific-config.yaml
 ```
 
 ### **Q: How do I know what commands are whitelisted?**
 **A:** Check your config:
 ```bash
-grep -A 20 "whitelist:" llm-tool.config.yaml
+grep -A 20 "whitelist:" llm-runtime.config.yaml
 ```
 Or see defaults in documentation.
 
@@ -195,7 +195,7 @@ Or see defaults in documentation.
 - Read-only repository access
 - Comprehensive monitoring
 
-### **Q: What if someone malicious gets access to my llm-tool?**
+### **Q: What if someone malicious gets access to my llm-runtime?**
 **A:** Limited damage due to built-in protections:
 - Can only access files within repository
 - Cannot execute non-whitelisted commands
@@ -223,7 +223,7 @@ Solution: Use paths relative to repository root only.
 ### **Q: Search isn't finding anything. Why?**
 **A:** Possible causes:
 1. **Search not enabled**: `commands.search.enabled: true`
-2. **Index not built**: `./llm-tool --reindex`
+2. **Index not built**: `./llm-runtime --reindex`
 3. **Python deps missing**: `pip install sentence-transformers`
 4. **Wrong file types**: Check `index_extensions` in config
 5. **High similarity threshold**: Lower `min_similarity_score`

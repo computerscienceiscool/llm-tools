@@ -82,7 +82,7 @@ pip install sentence-transformers
 
 ```bash
 # Check Python setup
-./llm-tool --check-python-setup
+./llm-runtime --check-python-setup
 
 # Or manually test
 python3 -c "import sentence_transformers; print('OK')"
@@ -92,7 +92,7 @@ python3 -c "import sentence_transformers; print('OK')"
 
 ### Enable Search
 
-In `llm-tool.config.yaml`:
+In `llm-runtime.config.yaml`:
 
 ```yaml
 commands:
@@ -138,7 +138,7 @@ commands:
 
 ```bash
 # Build complete index from scratch
-./llm-tool --reindex
+./llm-runtime --reindex
 ```
 
 This will:
@@ -152,23 +152,23 @@ This will:
 
 ```bash
 # Update only new/modified files
-./llm-tool --search-update
+./llm-runtime --search-update
 ```
 
 ### Index Management Commands
 
 ```bash
 # Show index statistics
-./llm-tool --search-status
+./llm-runtime --search-status
 
 # Validate index integrity
-./llm-tool --search-validate
+./llm-runtime --search-validate
 
 # Remove entries for deleted files
-./llm-tool --search-cleanup
+./llm-runtime --search-cleanup
 
 # Full rebuild
-./llm-tool --reindex
+./llm-runtime --reindex
 ```
 
 ## Use Cases
@@ -313,7 +313,7 @@ Message: No files in search index
 ```
 
 **Cause**: Index hasn't been built yet
-**Solution**: Run `./llm-tool --reindex`
+**Solution**: Run `./llm-runtime --reindex`
 
 ## Performance Considerations
 
@@ -407,7 +407,7 @@ Now run those specific tests:
 
 1. **Check if index exists**:
    ```bash
-   ./llm-tool --search-status
+   ./llm-runtime --search-status
    ```
 
 2. **Verify files are being indexed**:
@@ -434,10 +434,10 @@ Now run those specific tests:
 
 ```bash
 # Quick update for changed files
-./llm-tool --search-update
+./llm-runtime --search-update
 
 # Full rebuild if needed
-./llm-tool --reindex
+./llm-runtime --reindex
 ```
 
 ### Python Errors

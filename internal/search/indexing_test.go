@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
+	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 func TestShouldIndexFile_ValidExtensions(t *testing.T) {

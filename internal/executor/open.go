@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/command"
-	"github.com/computerscienceiscool/llm-tools/internal/config"
-	"github.com/computerscienceiscool/llm-tools/internal/security"
+	"github.com/computerscienceiscool/llm-runtime/internal/command"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/security"
 )
 
 // ExecuteOpen handles the "open" command

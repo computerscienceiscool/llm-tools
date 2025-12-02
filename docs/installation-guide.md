@@ -16,8 +16,8 @@ Complete installation guide for the LLM File Access Tool across different operat
 
 ### Automated Setup (Recommended)
 ```bash
-git clone https://github.com/computerscienceiscool/llm-tools.git
-cd llm-tools
+git clone https://github.com/computerscienceiscool/llm-runtime.git
+cd llm-runtime
 ./setup.sh
 ```
 
@@ -68,17 +68,17 @@ choco install golang
 ### 2. Clone and Build
 ```bash
 # Clone repository
-git clone https://github.com/computerscienceiscool/llm-tools.git
-cd llm-tools
+git clone https://github.com/computerscienceiscool/llm-runtime.git
+cd llm-runtime
 
 # Download dependencies
 go mod download
 
 # Build the tool
-go build -o llm-tool main.go
+go build -o llm-runtime main.go
 
 # Verify build
-./llm-tool --help
+./llm-runtime --help
 ```
 
 ### 3. Install Docker (for exec commands)
@@ -130,21 +130,21 @@ python3 -c "import sentence_transformers; print('Search dependencies ready')"
 
 ### 1. Test Basic Functionality
 ```bash
-echo "Test file access <open README.md>" | ./llm-tool
+echo "Test file access <open README.md>" | ./llm-runtime
 ```
 
 ### 2. Test Docker Integration (if installed)
 ```bash
-echo "Test exec <exec echo 'Docker works'>" | ./llm-tool --exec-enabled
+echo "Test exec <exec echo 'Docker works'>" | ./llm-runtime --exec-enabled
 ```
 
 ### 3. Test Search (if Python deps installed)
 ```bash
 # Build search index
-./llm-tool --reindex
+./llm-runtime --reindex
 
 # Test search
-echo "Test search <search configuration>" | ./llm-tool
+echo "Test search <search configuration>" | ./llm-runtime
 ```
 
 ### 4. Run Test Suite
@@ -164,7 +164,7 @@ make test-suite
 ### Create Configuration File
 ```bash
 # Copy example config
-cp llm-tool.config.yaml my-config.yaml
+cp llm-runtime.config.yaml my-config.yaml
 
 # Edit as needed
 nano my-config.yaml
@@ -183,17 +183,17 @@ commands:
 
 ### Install to /usr/local/bin
 ```bash
-sudo cp llm-tool /usr/local/bin/
-sudo chmod +x /usr/local/bin/llm-tool
+sudo cp llm-runtime /usr/local/bin/
+sudo chmod +x /usr/local/bin/llm-runtime
 
 # Now available globally
-llm-tool --help
+llm-runtime --help
 ```
 
 ### Create Shell Alias
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
-echo 'alias llm="./llm-tool"' >> ~/.bashrc
+echo 'alias llm="./llm-runtime"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -211,7 +211,7 @@ go version
 ### Permission Issues (Linux/macOS)
 ```bash
 # Make sure tool is executable
-chmod +x llm-tool
+chmod +x llm-runtime
 
 # Docker permission issues
 sudo usermod -aG docker $USER
@@ -251,7 +251,7 @@ pip install sentence-transformers
 # Clean and rebuild
 make clean
 go mod tidy
-go build -o llm-tool main.go
+go build -o llm-runtime main.go
 
 # Check for missing dependencies
 go mod download
@@ -268,7 +268,7 @@ git pull origin main
 make build
 
 # Update search index if needed
-./llm-tool --reindex
+./llm-runtime --reindex
 ```
 
 ### Update Dependencies
@@ -316,7 +316,7 @@ pip install --upgrade sentence-transformers
 After successful installation:
 1. **Read the [configuration guide](configuration.md)** to customize settings
 2. **Check [troubleshooting](troubleshooting.md)** for common issues
-3. **See [llm-tool-overview.md](llm-tool-overview.md)** to understand all features
+3. **See [llm-runtime-overview.md](llm-runtime-overview.md)** to understand all features
 4. **Review [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md)** for LLM integration
 
 ## Tips

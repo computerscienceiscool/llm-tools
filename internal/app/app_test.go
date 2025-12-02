@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/computerscienceiscool/llm-tools/internal/cli"
-	"github.com/computerscienceiscool/llm-tools/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/cli"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
 )
 
 // captureStderr captures stderr during function execution
@@ -1181,7 +1181,7 @@ commands:
     min_similarity_score: 0.5
     python_path: "python3"
 `
-	configPath := filepath.Join(tempDir, "llm-tool.config.yaml")
+	configPath := filepath.Join(tempDir, "llm-runtime.config.yaml")
 	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
 		t.Fatalf("Failed to create config file: %v", err)
 	}

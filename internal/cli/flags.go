@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
 )
 
 // CLIFlags holds parsed command-line flags

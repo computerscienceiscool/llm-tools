@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/config"
-	"github.com/computerscienceiscool/llm-tools/internal/executor"
-	"github.com/computerscienceiscool/llm-tools/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/internal/search"
 )
 
 // captureOutput captures stdout and stderr during function execution

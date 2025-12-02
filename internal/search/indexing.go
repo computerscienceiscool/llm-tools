@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
+	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 // IndexStats holds statistics about indexing operation

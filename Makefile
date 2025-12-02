@@ -10,11 +10,11 @@ GOFMT=$(GOCMD) fmt
 GOVET=$(GOCMD) vet
 
 # Binary name
-BINARY_NAME=llm-tool
+BINARY_NAME=llm-runtime
 BINARY_PATH=./$(BINARY_NAME)
 
 # Source path
-CMD_PATH=./cmd/llm-tool
+CMD_PATH=./cmd/llm-runtime
 
 # Installation path
 INSTALL_PATH=/usr/local/bin
@@ -56,7 +56,7 @@ clean:
 	@rm -f $(BINARY_PATH)
 	@rm -f coverage.out coverage.html
 	@rm -f audit.log
-	@rm -f llm-tool.log
+	@rm -f llm-runtime.log
 	@echo "Clean complete"
 	@rm -f test_output.txt
 	@rm -f *.bak.*
@@ -194,7 +194,7 @@ release: clean build test
 		$(BINARY_PATH) \
 		README.md \
 		docs/SYSTEM_PROMPT.md \
-		llm-tool.config.yaml \
+		llm-runtime.config.yaml \
 		scripts/demo.sh \
 		scripts/example_usage.sh \
 		scripts/exec_demo.sh \

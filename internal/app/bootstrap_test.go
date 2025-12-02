@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/computerscienceiscool/llm-tools/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
 )
 
 func TestBootstrap_Success(t *testing.T) {

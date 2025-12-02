@@ -5,7 +5,7 @@
   "main": "main.go",
   "scripts": {
     "setup": "bash setup.sh",
-    "build": "go build -o llm-tool main.go",
+    "build": "go build -o llm-runtime main.go",
     "test": "go test -v ./...",
     "demo": "bash demo.sh",
     "security-test": "bash security_test.sh"

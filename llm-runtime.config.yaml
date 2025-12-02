@@ -1,0 +1,125 @@
+# LLM Tool Configuration
+# This file configures the behavior of the LLM file access tool
+
+repository:
+  # Root directory of the repository to explore
+  root: "."
+  
+  # Paths and patterns to exclude from access
+  excluded_paths:
+    - ".git"
+    - ".env"
+    - ".env.local"
+    - "*.key"
+    - "*.pem"
+    - "*.p12"
+    - "*.pfx"
+    - "node_modules"
+    - "__pycache__"
+    - ".DS_Store"
+    - "*.sqlite"
+    - "*.db"
+    - "secrets"
+    - "credentials"
+
+commands:
+  # Open command configuration
+  open:
+    enabled: true
+    max_file_size: 1048576  # 1MB
+    require_confirmation: false
+    backup_before_write: true
+    allowed_extensions:
+      - ".go"
+      - ".py"
+      - ".js"
+      - ".md"
+      - ".txt"
+      - ".json"
+      - ".yaml"
+      - ".yml"
+      - ".toml"
+    format_code: true
+    atomic_writes: true
+    
+  # Write command configuration
+  write:
+    enabled: true
+    max_file_size: 102400  # 100KB
+    require_confirmation: false
+    backup_before_write: true
+    
+  # Exec command configuration
+  exec:
+    enabled: true
+    container_image: "ubuntu:22.04"
+    timeout_seconds: 30
+    memory_limit: "512m"
+    cpu_limit: 2
+    network_enabled: false
+    whitelist:
+      - "go test"
+      - "go build" 
+      - "go run"
+      - "npm test"
+      - "npm run build"
+      - "python -m pytest"
+      - "python3 -m pytest"
+      - "python3"
+      - "python"
+      - "make"
+      - "make test"
+      - "make build"
+      - "cargo build"
+      - "cargo test"
+      - "cargo run"
+      - "node"
+      - "npm install"
+      - "pip install"
+      - "pip3 install"
+      - "ls"
+      - "cat"
+      - "grep"
+      - "find"
+      - "head"
+      - "tail"
+      - "wc"
+    
+  # Future command configurations   
+  search:
+    enabled: true
+    vector_db_path: "./embeddings.db"
+    embedding_model: "all-MiniLM-L6-v2"
+    max_results: 10
+    min_similarity_score: 0.5
+    max_preview_length: 100
+    chunk_size: 1000
+    python_path: "/home/jj/lab/llm-runtime/search-env/bin/python3"
+    index_extensions: [".go", ".py", ".js", ".md", ".txt"]
+    max_file_size: 1048576
+
+security:
+  # Maximum operations per minute
+  rate_limit_per_minute: 100
+  
+  # Enable audit logging
+  log_all_operations: true
+  audit_log_path: "./audit.log"
+  
+  # Additional security settings
+  follow_symlinks: true
+  allow_hidden_files: false
+  
+output:
+  # Output format settings
+  show_summaries: true
+  show_execution_time: true
+  truncate_large_outputs: true
+  max_output_lines: 1000
+  
+logging:
+  # Logging configuration
+  level: "info"  # debug, info, warn, error
+  file: "./llm-runtime.log"
+  format: "json"  # json or text
+

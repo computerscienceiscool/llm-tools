@@ -44,25 +44,25 @@ content goes here
 ### Basic Usage
 ```bash
 # Pipe mode (most common)
-echo "Commands here <open file>" | ./llm-tool
+echo "Commands here <open file>" | ./llm-runtime
 
 # Interactive mode
-./llm-tool --interactive
+./llm-runtime --interactive
 
 # File input/output
-./llm-tool --input input.txt --output output.txt
+./llm-runtime --input input.txt --output output.txt
 ```
 
 ### Enable Features
 ```bash
 # Enable exec commands
-./llm-tool --exec-enabled
+./llm-runtime --exec-enabled
 
 # Enable search (requires Python setup)
-./llm-tool --search-enabled
+./llm-runtime --search-enabled
 
 # Enable all features
-./llm-tool --exec-enabled --search-enabled
+./llm-runtime --exec-enabled --search-enabled
 ```
 
 ## Common Flags
@@ -95,14 +95,14 @@ echo "Commands here <open file>" | ./llm-tool
 
 ### 1. Build Tool
 ```bash
-git clone https://github.com/computerscienceiscool/llm-tools.git
-cd llm-tools
+git clone https://github.com/computerscienceiscool/llm-runtime.git
+cd llm-runtime
 make build
 ```
 
 ### 2. Test Basic Functionality
 ```bash
-echo "Test file access <open README.md>" | ./llm-tool
+echo "Test file access <open README.md>" | ./llm-runtime
 ```
 
 ### 3. Enable Docker (for exec)
@@ -111,7 +111,7 @@ echo "Test file access <open README.md>" | ./llm-tool
 docker run hello-world
 
 # Enable exec commands
-echo "Test exec <exec echo 'Hello'>" | ./llm-tool --exec-enabled
+echo "Test exec <exec echo 'Hello'>" | ./llm-runtime --exec-enabled
 ```
 
 ### 4. Enable Search (optional)
@@ -120,10 +120,10 @@ echo "Test exec <exec echo 'Hello'>" | ./llm-tool --exec-enabled
 pip install sentence-transformers
 
 # Build search index
-./llm-tool --reindex
+./llm-runtime --reindex
 
 # Test search
-echo "Test search <search configuration>" | ./llm-tool
+echo "Test search <search configuration>" | ./llm-runtime
 ```
 
 ## Default Whitelisted Commands
@@ -220,7 +220,7 @@ ls, cat, grep, find, head, tail, wc, echo
 
 ## Configuration Quick Setup
 
-### Minimal Config (llm-tool.config.yaml)
+### Minimal Config (llm-runtime.config.yaml)
 ```yaml
 repository:
   root: "."
@@ -306,16 +306,16 @@ docker run --rm hello-world
 pip install sentence-transformers
 
 # Build index
-./llm-tool --reindex
+./llm-runtime --reindex
 
 # Check setup
-./llm-tool --check-python-setup
+./llm-runtime --check-python-setup
 ```
 
 ### Permission Issues
 ```bash
 # Make executable
-chmod +x llm-tool
+chmod +x llm-runtime
 
 # Check repository access
 ls -la target/file
@@ -327,7 +327,7 @@ ls -la target/file
 ls -lh large-file.txt
 
 # Increase limits
-./llm-tool --max-size 5242880  # 5MB
+./llm-runtime --max-size 5242880  # 5MB
 ```
 
 ## Performance Tips

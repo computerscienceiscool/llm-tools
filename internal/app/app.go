@@ -5,12 +5,12 @@ import (
 	"io"
 	"os"
 
-	"github.com/computerscienceiscool/llm-tools/internal/cli"
-	"github.com/computerscienceiscool/llm-tools/internal/config"
-	"github.com/computerscienceiscool/llm-tools/internal/executor"
-	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
-	"github.com/computerscienceiscool/llm-tools/internal/search"
-	"github.com/computerscienceiscool/llm-tools/internal/session"
+	"github.com/computerscienceiscool/llm-runtime/internal/cli"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
+	"github.com/computerscienceiscool/llm-runtime/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/internal/session"
 )
 
 // App represents the main application
@@ -97,7 +97,7 @@ func (a *App) checkPythonSetup() error {
 	fmt.Fprintf(os.Stderr, "Python setup complete (%s)\n", workingPython)
 	fmt.Fprintf(os.Stderr, "sentence-transformers library available\n")
 	fmt.Fprintf(os.Stderr, "\nSearch functionality is ready to use!\n")
-	fmt.Fprintf(os.Stderr, "Enable search in llm-tool.config.yaml by setting search.enabled: true\n")
+	fmt.Fprintf(os.Stderr, "Enable search in llm-runtime.config.yaml by setting search.enabled: true\n")
 
 	return nil
 }

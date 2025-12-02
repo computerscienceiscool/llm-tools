@@ -305,7 +305,7 @@ Attempts to write `.exe`, `.bat`, or other dangerous extensions are blocked.
 ### **Configuration**
 ```bash
 # Increase write size limit to 1MB
-./llm-tool --max-write-size 1048576
+./llm-runtime --max-write-size 1048576
 ```
 
 ```yaml
@@ -420,16 +420,16 @@ Command: <write malicious.exe>content</write>
 ### **Command Line Flags**
 ```bash
 # Custom write size limit
-./llm-tool --max-write-size 1048576
+./llm-runtime --max-write-size 1048576
 
 # Disable backups  
-./llm-tool --backup=false
+./llm-runtime --backup=false
 
 # Allow all extensions
-./llm-tool --allowed-extensions=""
+./llm-runtime --allowed-extensions=""
 
 # Force writes even with conflicts
-./llm-tool --force
+./llm-runtime --force
 ```
 
 ### **Configuration File**

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/command"
-	"github.com/computerscienceiscool/llm-tools/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/internal/command"
+	"github.com/computerscienceiscool/llm-runtime/internal/executor"
 )
 
 // ProcessText processes LLM output and executes commands

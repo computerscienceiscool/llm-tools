@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/computerscienceiscool/llm-tools/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/internal/search"
 )
 
 func TestSaveConfig(t *testing.T) {

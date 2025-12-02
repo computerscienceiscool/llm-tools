@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/command"
-	"github.com/computerscienceiscool/llm-tools/internal/config"
-	"github.com/computerscienceiscool/llm-tools/internal/docker"
-	"github.com/computerscienceiscool/llm-tools/internal/security"
+	"github.com/computerscienceiscool/llm-runtime/internal/command"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/docker"
+	"github.com/computerscienceiscool/llm-runtime/internal/security"
 )
 
 // ExecuteExec handles the "exec" command

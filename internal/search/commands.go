@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
+	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 // SearchCommands handles search-related CLI commands
@@ -105,7 +105,7 @@ Search Management:
   --search-cleanup       - Remove entries for deleted files
 
 Configuration:
-  Search settings can be configured in .llm-tool.yaml under the 'search' section.
+  Search settings can be configured in .llm-runtime.yaml under the 'search' section.
   
 Requirements:
   - Python 3 with sentence-transformers package

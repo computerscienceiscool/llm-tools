@@ -11,7 +11,7 @@ echo "====================================="
 echo
 
 # Check if tool is built
-if [ ! -f "llm-tool" ]; then
+if [ ! -f "llm-runtime" ]; then
     echo "Tool not built yet. Running setup..."
     echo
     bash setup.sh
@@ -24,13 +24,13 @@ echo "📚 Quick Command Reference:"
 echo "---------------------------"
 echo
 echo "1️⃣  Test with a simple command:"
-echo "   echo 'Read the README <open README.md>' | ./llm-tool"
+echo "   echo 'Read the README <open README.md>' | ./llm-runtime"
 echo
 echo "2️⃣  Run in interactive mode:"
-echo "   ./llm-tool --interactive"
+echo "   ./llm-runtime --interactive"
 echo
 echo "3️⃣  Explore a specific directory:"
-echo "   ./llm-tool --root /path/to/your/project"
+echo "   ./llm-runtime --root /path/to/your/project"
 echo
 echo "4️⃣  Run the full demo:"
 echo "   ./demo.sh"
@@ -42,7 +42,7 @@ echo "6️⃣  Test security features:"
 echo "   ./security_test.sh"
 echo
 echo "📖 For more information, see README.md"
-echo "🔧 To customize, edit llm-tool.config.yaml"
+echo "🔧 To customize, edit llm-runtime.config.yaml"
 echo "🤖 For LLM integration, see SYSTEM_PROMPT.md"
 echo
 echo "Ready to go! Try command #1 above to start."

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
+	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 // SearchEngine provides semantic search functionality

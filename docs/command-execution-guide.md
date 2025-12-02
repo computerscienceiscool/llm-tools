@@ -226,10 +226,10 @@ Command: <exec rm -rf />
 ### **Enable Exec Commands**
 ```bash
 # Enable exec functionality
-./llm-tool --exec-enabled
+./llm-runtime --exec-enabled
 
 # With custom settings
-./llm-tool --exec-enabled \
+./llm-runtime --exec-enabled \
            --exec-timeout 60s \
            --exec-memory 1g \
            --exec-cpu 4
@@ -238,7 +238,7 @@ Command: <exec rm -rf />
 ### **Custom Whitelist**
 ```bash
 # Add custom commands
-./llm-tool --exec-enabled \
+./llm-runtime --exec-enabled \
            --exec-whitelist "go test,npm build,python -m pytest,make clean"
 ```
 

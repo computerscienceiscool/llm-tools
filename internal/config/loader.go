@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/computerscienceiscool/llm-tools/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/internal/search"
 	"gopkg.in/yaml.v2"
 )
 
@@ -33,20 +33,20 @@ func LoadConfig(configPath string) (*FullConfig, error) {
 // GetConfigPath returns the path to the configuration file
 func GetConfigPath() string {
 	// Check for config file in current directory first
-	if _, err := os.Stat("llm-tool.config.yaml"); err == nil {
-		return "llm-tool.config.yaml"
+	if _, err := os.Stat("llm-runtime.config.yaml"); err == nil {
+		return "llm-runtime.config.yaml"
 	}
 
 	// Check home directory
 	if home, err := os.UserHomeDir(); err == nil {
-		homePath := filepath.Join(home, ".llm-tool.config.yaml")
+		homePath := filepath.Join(home, ".llm-runtime.config.yaml")
 		if _, err := os.Stat(homePath); err == nil {
 			return homePath
 		}
 	}
 
 	// Default to current directory
-	return "llm-tool.config.yaml"
+	return "llm-runtime.config.yaml"
 }
 
 // GetSearchConfigFromFull extracts search configuration from FullConfig

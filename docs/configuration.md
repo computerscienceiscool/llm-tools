@@ -1,12 +1,12 @@
 # Configuration Guide
 
-Complete reference for configuring the LLM File Access Tool via `llm-tool.config.yaml` and command-line options.
+Complete reference for configuring the LLM File Access Tool via `llm-runtime.config.yaml` and command-line options.
 
 ## Configuration File Location
 
 The tool looks for configuration files in this order:
-1. `./llm-tool.config.yaml` (current directory)
-2. `~/.llm-tool.config.yaml` (home directory)
+1. `./llm-runtime.config.yaml` (current directory)
+2. `~/.llm-runtime.config.yaml` (home directory)
 3. Built-in defaults
 
 ## Complete Configuration Reference
@@ -332,7 +332,7 @@ commands:
 **Description**: Logging verbosity level  
 
 ### `logging.file`
-**Default**: `"./llm-tool.log"`  
+**Default**: `"./llm-runtime.log"`  
 **Description**: Log file path  
 
 ### `logging.format`
@@ -432,19 +432,19 @@ All configuration options can be overridden via command line:
 
 ```bash
 # Override repository root
-./llm-tool --root /path/to/project
+./llm-runtime --root /path/to/project
 
 # Override file size limits
-./llm-tool --max-size 2097152 --max-write-size 204800
+./llm-runtime --max-size 2097152 --max-write-size 204800
 
 # Enable exec with custom settings
-./llm-tool --exec-enabled --exec-timeout 60s --exec-memory 1g
+./llm-runtime --exec-enabled --exec-timeout 60s --exec-memory 1g
 
 # Custom excluded paths
-./llm-tool --exclude ".git,node_modules,*.secret"
+./llm-runtime --exclude ".git,node_modules,*.secret"
 
 # Verbose logging
-./llm-tool --verbose
+./llm-runtime --verbose
 ```
 
 ## Configuration Validation
@@ -452,16 +452,16 @@ All configuration options can be overridden via command line:
 Test your configuration:
 ```bash
 # Check current configuration
-./llm-tool --help
+./llm-runtime --help
 
 # Validate Docker setup (if exec enabled)
-./llm-tool --check-docker
+./llm-runtime --check-docker
 
 # Validate Python setup (if search enabled)  
-./llm-tool --check-python-setup
+./llm-runtime --check-python-setup
 
 # Test with specific config file
-./llm-tool --config my-config.yaml
+./llm-runtime --config my-config.yaml
 ```
 
 ## Best Practices

@@ -10,9 +10,9 @@ echo "=== LLM File Access Tool - Security Test Suite ==="
 echo
 
 # Build the tool
-if [ ! -f "./llm-tool" ]; then
+if [ ! -f "./llm-runtime" ]; then
     echo "Building tool..."
-    go build -o llm-tool main.go || exit 1
+    go build -o llm-runtime main.go || exit 1
 fi
 
 # Create test environment
@@ -53,7 +53,7 @@ run_test() {
     
     echo -n "Testing: $test_name... "
     
-    result=$(echo "$input" | ./llm-tool --root "$TEST_DIR/repo" 2>&1)
+    result=$(echo "$input" | ./llm-runtime --root "$TEST_DIR/repo" 2>&1)
     
     if [ "$should_fail" = "true" ]; then
         if echo "$result" | grep -q "ERROR"; then
@@ -158,7 +158,7 @@ run_test "File over size limit" "<open large.bin>" "true" "RESOURCE_LIMIT"
 echo -n "Testing rapid requests... "
 START_TIME=$(date +%s)
 for i in {1..20}; do
-    echo "<open safe.txt>" | ./llm-tool --root "$TEST_DIR/repo" > /dev/null 2>&1
+    echo "<open safe.txt>" | ./llm-runtime --root "$TEST_DIR/repo" > /dev/null 2>&1
 done
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))

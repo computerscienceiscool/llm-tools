@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/internal/executor"
 )
 
 // InteractiveMode handles continuous input/output

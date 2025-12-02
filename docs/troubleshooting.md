@@ -7,22 +7,22 @@ Solutions for common issues and problems with the LLM File Access Tool.
 ### Enable Verbose Mode
 ```bash
 # Get detailed output
-./llm-tool --verbose
+./llm-runtime --verbose
 
 # Check current configuration
-./llm-tool --help
+./llm-runtime --help
 ```
 
 ### Check Log Files
 ```bash
 # Application logs
-tail -f llm-tool.log
+tail -f llm-runtime.log
 
 # Audit logs
 tail -f audit.log
 
 # Search for specific errors
-grep ERROR llm-tool.log
+grep ERROR llm-runtime.log
 ```
 
 ## File Access Issues
@@ -36,7 +36,7 @@ grep ERROR llm-tool.log
 ls -la filename
 
 # 2. Verify path is relative to repository root
-./llm-tool --root /path/to/repo
+./llm-runtime --root /path/to/repo
 
 # 3. Check for typos in filename
 find . -name "*partial-name*"
@@ -53,13 +53,13 @@ find . -name "*partial-name*"
 **Solutions**:
 ```bash
 # Check excluded paths in config
-grep excluded_paths llm-tool.config.yaml
+grep excluded_paths llm-runtime.config.yaml
 
 # Modify exclusions if needed
-./llm-tool --exclude ".git,*.key"
+./llm-runtime --exclude ".git,*.key"
 
 # Use relative paths only
-./llm-tool --root /correct/repo/path
+./llm-runtime --root /correct/repo/path
 ```
 
 ### RESOURCE_LIMIT Errors
@@ -71,8 +71,8 @@ grep excluded_paths llm-tool.config.yaml
 ls -lh filename
 
 # Increase limits
-./llm-tool --max-size 2097152  # 2MB
-./llm-tool --max-write-size 204800  # 200KB
+./llm-runtime --max-size 2097152  # 2MB
+./llm-runtime --max-write-size 204800  # 200KB
 
 # Or edit config
 ```
@@ -122,7 +122,7 @@ open -a Docker
 
 **Check current whitelist**:
 ```bash
-grep -A 20 "whitelist:" llm-tool.config.yaml
+grep -A 20 "whitelist:" llm-runtime.config.yaml
 ```
 
 **Add commands to whitelist**:
@@ -136,7 +136,7 @@ commands:
 
 **Temporary whitelist override**:
 ```bash
-./llm-tool --exec-whitelist "go test,npm build,your-command"
+./llm-runtime --exec-whitelist "go test,npm build,your-command"
 ```
 
 ### EXEC_TIMEOUT Errors
@@ -145,7 +145,7 @@ commands:
 **Solutions**:
 ```bash
 # Increase timeout
-./llm-tool --exec-timeout 60s
+./llm-runtime --exec-timeout 60s
 
 # Or in config
 ```
@@ -200,7 +200,7 @@ commands:
 
 **Check Python dependencies**:
 ```bash
-./llm-tool --check-python-setup
+./llm-runtime --check-python-setup
 ```
 
 ### SEARCH_INIT_FAILED Errors
@@ -233,16 +233,16 @@ commands:
 **Index not built**:
 ```bash
 # Build initial index
-./llm-tool --reindex
+./llm-runtime --reindex
 
 # Check index status
-./llm-tool --search-status
+./llm-runtime --search-status
 ```
 
 **Files not indexed**:
 ```bash
 # Check which extensions are indexed
-grep -A 10 "index_extensions" llm-tool.config.yaml
+grep -A 10 "index_extensions" llm-runtime.config.yaml
 
 # Add more file types
 ```
@@ -267,13 +267,13 @@ commands:
 **Solution**:
 ```bash
 # Update index for changed files
-./llm-tool --search-update
+./llm-runtime --search-update
 
 # Full rebuild if needed
-./llm-tool --reindex
+./llm-runtime --reindex
 
 # Clean up deleted files
-./llm-tool --search-cleanup
+./llm-runtime --search-cleanup
 ```
 
 ## Build and Installation Issues
@@ -312,17 +312,17 @@ go clean -modcache
 go mod tidy
 
 # Rebuild
-go build -o llm-tool main.go
+go build -o llm-runtime main.go
 ```
 
 ### Permission Issues
 **Linux/macOS**:
 ```bash
 # Make tool executable
-chmod +x llm-tool
+chmod +x llm-runtime
 
 # Fix ownership
-sudo chown $USER:$USER llm-tool
+sudo chown $USER:$USER llm-runtime
 
 # Docker permissions
 sudo usermod -aG docker $USER
@@ -335,13 +335,13 @@ newgrp docker
 **Check config file locations**:
 ```bash
 # Current directory
-ls -la llm-tool.config.yaml
+ls -la llm-runtime.config.yaml
 
 # Home directory
-ls -la ~/.llm-tool.config.yaml
+ls -la ~/.llm-runtime.config.yaml
 
 # Specify config explicitly
-./llm-tool --config /path/to/config.yaml
+./llm-runtime --config /path/to/config.yaml
 ```
 
 ### Invalid YAML Syntax
@@ -350,7 +350,7 @@ ls -la ~/.llm-tool.config.yaml
 **Validate YAML**:
 ```bash
 # Check syntax with Python
-python3 -c "import yaml; yaml.safe_load(open('llm-tool.config.yaml'))"
+python3 -c "import yaml; yaml.safe_load(open('llm-runtime.config.yaml'))"
 
 # Or online validator
 # Copy config to https://yamlvalidator.com/
@@ -380,7 +380,7 @@ excluded_paths:
 find . -name "*.go" -exec ls -lh {} \;
 
 # Increase limits if needed
-./llm-tool --max-size 5242880  # 5MB
+./llm-runtime --max-size 5242880  # 5MB
 ```
 
 **Many files**:
@@ -389,7 +389,7 @@ find . -name "*.go" -exec ls -lh {} \;
 find . -type f | wc -l
 
 # Optimize exclusions
-./llm-tool --exclude ".git,node_modules,*.log,dist/"
+./llm-runtime --exclude ".git,node_modules,*.log,dist/"
 ```
 
 ### Slow Docker Performance
@@ -417,10 +417,10 @@ commands:
 **Large index**:
 ```bash
 # Check index size
-./llm-tool --search-status
+./llm-runtime --search-status
 
 # Clean up old entries
-./llm-tool --search-cleanup
+./llm-runtime --search-cleanup
 
 # Reduce indexed file types
 ```
@@ -437,7 +437,7 @@ commands:
 **Large files**:
 ```bash
 # Reduce file size limits
-./llm-tool --max-size 524288  # 512KB
+./llm-runtime --max-size 524288  # 512KB
 
 # Check available memory
 free -h  # Linux
@@ -478,10 +478,10 @@ logging:
 ### Trace Execution
 ```bash
 # Add timestamps to commands
-./llm-tool --verbose 2>&1 | while read line; do echo "$(date): $line"; done
+./llm-runtime --verbose 2>&1 | while read line; do echo "$(date): $line"; done
 
 # Monitor system resources
-top -p $(pgrep llm-tool)
+top -p $(pgrep llm-runtime)
 ```
 
 ## Getting Help
@@ -495,11 +495,11 @@ docker version
 python3 --version
 
 # Configuration
-./llm-tool --help
-cat llm-tool.config.yaml
+./llm-runtime --help
+cat llm-runtime.config.yaml
 
 # Recent logs
-tail -20 llm-tool.log
+tail -20 llm-runtime.log
 tail -20 audit.log
 ```
 
@@ -515,7 +515,7 @@ When reporting bugs, include:
 ```bash
 # Search for known issues
 grep "your-error" audit.log
-grep "PATTERN" llm-tool.log
+grep "PATTERN" llm-runtime.log
 
 # Check for resource exhaustion
 dmesg | grep -i "out of memory"

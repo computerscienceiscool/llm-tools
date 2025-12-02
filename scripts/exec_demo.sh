@@ -209,8 +209,8 @@ echo "Demo repository created with comprehensive test project."
 echo "Building the tool..."
 
 # Build the tool if not already built
-if [ ! -f "./llm-tool" ]; then
-    go build -o llm-tool main.go
+if [ ! -f "./llm-runtime" ]; then
+    go build -o llm-runtime main.go
 fi
 
 echo
@@ -218,7 +218,7 @@ echo "=== Demo 1: Project Analysis with Exec Commands ==="
 echo "Demonstrating how an LLM would analyze and test a project"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR" --exec-enabled --verbose
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR" --exec-enabled --verbose
 I'll analyze this demo project comprehensively using all available commands.
 
 First, let me understand the project structure:
@@ -261,7 +261,7 @@ echo "=== Demo 2: Security Testing - Blocked Commands ==="
 echo "Testing command validation and security restrictions"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR" --exec-enabled
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR" --exec-enabled
 Let me try some commands that should be blocked for security:
 
 Attempting to run a non-whitelisted dangerous command:
@@ -278,7 +278,7 @@ echo "=== Demo 3: Development Workflow ==="
 echo "Demonstrating complete development workflow"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR" --exec-enabled
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR" --exec-enabled
 I'll demonstrate a complete development workflow combining all command types.
 
 First, let me create a new feature file:
@@ -349,7 +349,7 @@ echo "=== Demo 4: Error Handling ==="
 echo "Testing error conditions and debugging workflows"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR" --exec-enabled
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR" --exec-enabled
 Let me demonstrate error handling capabilities.
 
 Let's try to build a non-existent file (should fail gracefully):

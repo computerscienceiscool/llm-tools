@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
+	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 // Helper to create a test database

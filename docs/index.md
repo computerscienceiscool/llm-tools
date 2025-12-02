@@ -7,7 +7,7 @@ This directory contains comprehensive documentation for the LLM File Access Tool
 ### **[README.md](../README.md)**
 Complete project documentation including installation, usage, security features, and examples (located in repository root).
 
-### **[llm-tool-overview.md](llm-tool-overview.md)**  
+### **[llm-runtime-overview.md](llm-runtime-overview.md)**  
 High-level overview of what the tool does and how all features work together.
 
 ### **[SYSTEM_PROMPT.md](SYSTEM_PROMPT.md)**
@@ -48,7 +48,7 @@ Practical examples and tutorials for common use cases (coming soon).
 
 ## Quick Start
 
-1. **For Users**: Start with [llm-tool-overview.md](llm-tool-overview.md)
+1. **For Users**: Start with [llm-runtime-overview.md](llm-runtime-overview.md)
 2. **For Installation**: Follow [installation.md](installation.md)
 3. **For LLM Integration**: Use [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md)  
 4. **For Configuration**: Check [configuration.md](configuration.md)
@@ -61,7 +61,7 @@ Practical examples and tutorials for common use cases (coming soon).
 README.md                        # Complete project documentation (root)
 docs/
 ├── index.md                     # Documentation index (this file)
-├── llm-tool-overview.md         # High-level tool overview
+├── llm-runtime-overview.md         # High-level tool overview
 ├── SYSTEM_PROMPT.md             # LLM integration instructions
 ├── installation.md              # Installation guide
 ├── configuration.md             # Configuration reference
@@ -85,10 +85,10 @@ Each guide includes:
 
 ## External Resources
 
-- **Repository**: [GitHub Repository](https://github.com/computerscienceiscool/llm-tools/)
-- **Issues**: [Report Bugs](https://github.com/computerscienceiscool/llm-tools/issues)
-- **Discussions**: [Community Discussions](https://github.com/computerscienceiscool/llm-tools/discussions)
+- **Repository**: [GitHub Repository](https://github.com/computerscienceiscool/llm-runtime/)
+- **Issues**: [Report Bugs](https://github.com/computerscienceiscool/llm-runtime/issues)
+- **Discussions**: [Community Discussions](https://github.com/computerscienceiscool/llm-runtime/discussions)
 
 ---
 
-**Need help?** Start with the [llm-tool-overview.md](llm-tool-overview.md) for a complete introduction to the tool.
+**Need help?** Start with the [llm-runtime-overview.md](llm-runtime-overview.md) for a complete introduction to the tool.

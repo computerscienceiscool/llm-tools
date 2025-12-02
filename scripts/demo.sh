@@ -61,8 +61,8 @@ echo "Demo repository created with sample files."
 echo "Building the tool..."
 
 # Build the tool if not already built
-if [ ! -f "./llm-tool" ]; then
-    go build -o llm-tool main.go
+if [ ! -f "./llm-runtime" ]; then
+    go build -o llm-runtime main.go
 fi
 
 echo
@@ -70,14 +70,14 @@ echo "=== Demo 1: Simple file reading ==="
 echo "Input: 'Let me read <open README.md>'"
 echo "---"
 
-echo "Let me read <open README.md>" | ./llm-tool --root "$DEMO_DIR"
+echo "Let me read <open README.md>" | ./llm-runtime --root "$DEMO_DIR"
 
 echo
 echo "=== Demo 2: Multiple commands ==="
 echo "Input: Multiple open commands"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR"
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR"
 I'll explore this repository step by step.
 
 First, let me check the README:
@@ -97,7 +97,7 @@ echo "=== Demo 3: Security - Attempting to read excluded files ==="
 echo "Input: Trying to open .env and .git/config"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR"
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR"
 Let me try to access sensitive files:
 <open .env>
 <open .git/config>
@@ -109,7 +109,7 @@ echo "=== Demo 4: Security - Path traversal attempt ==="
 echo "Input: Trying to escape the repository"
 echo "---"
 
-cat << 'EOF' | ./llm-tool --root "$DEMO_DIR"
+cat << 'EOF' | ./llm-runtime --root "$DEMO_DIR"
 Attempting path traversal:
 <open ../../etc/passwd>
 <open ../../../etc/hosts>
@@ -120,12 +120,12 @@ echo "=== Demo 5: Non-existent file ==="
 echo "Input: Trying to open a file that doesn't exist"
 echo "---"
 
-echo "Looking for config: <open config.yaml>" | ./llm-tool --root "$DEMO_DIR"
+echo "Looking for config: <open config.yaml>" | ./llm-runtime --root "$DEMO_DIR"
 
 echo
 echo "=== Demo 6: Interactive mode (skipping in script) ==="
 echo "To try interactive mode, run:"
-echo "  ./llm-tool --root \"$DEMO_DIR\" --interactive"
+echo "  ./llm-runtime --root \"$DEMO_DIR\" --interactive"
 echo "Then type commands and see real-time results."
 
 echo

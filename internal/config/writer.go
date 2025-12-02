@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/computerscienceiscool/llm-tools/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/internal/search"
 	"gopkg.in/yaml.v2"
 )
 

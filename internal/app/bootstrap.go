@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/computerscienceiscool/llm-tools/internal/config"
-	"github.com/computerscienceiscool/llm-tools/internal/executor"
-	"github.com/computerscienceiscool/llm-tools/internal/session"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/internal/session"
 )
 
 // Bootstrap initializes and returns a configured App

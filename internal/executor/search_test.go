@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/infrastructure"
-	"github.com/computerscienceiscool/llm-tools/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
+	"github.com/computerscienceiscool/llm-runtime/internal/search"
 )
 
 func TestExecuteSearch_Disabled(t *testing.T) {

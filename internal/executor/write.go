@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/command"
-	"github.com/computerscienceiscool/llm-tools/internal/config"
-	"github.com/computerscienceiscool/llm-tools/internal/security"
+	"github.com/computerscienceiscool/llm-runtime/internal/command"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/security"
 )
 
 // CreateBackup creates a backup of an existing file

@@ -207,8 +207,8 @@ func TestSetFullConfigDefaults(t *testing.T) {
 		if cfg.Logging.Level != "info" {
 			t.Errorf("expected Level 'info', got %q", cfg.Logging.Level)
 		}
-		if cfg.Logging.File != "./llm-tool.log" {
-			t.Errorf("expected File './llm-tool.log', got %q", cfg.Logging.File)
+		if cfg.Logging.File != "./llm-runtime.log" {
+			t.Errorf("expected File './llm-runtime.log', got %q", cfg.Logging.File)
 		}
 		if cfg.Logging.Format != "json" {
 			t.Errorf("expected Format 'json', got %q", cfg.Logging.Format)

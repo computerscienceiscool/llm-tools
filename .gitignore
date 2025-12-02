@@ -1,6 +1,6 @@
 # Compiled binaries
-llm-tools.exe
-llm-tool
+llm-runtime.exe
+llm-runtime
 *.exe
 *.exe~
 *.dll
@@ -22,7 +22,7 @@ dist/
 # Logs
 audit.log
 audit.log.*
-llm-tool.log
+llm-runtime.log
 *.log
 
 # Temporary files

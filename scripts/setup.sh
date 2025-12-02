@@ -66,14 +66,14 @@ build_tool() {
     else
         # Direct build command
         go mod download
-        go build -ldflags "-s -w" -o llm-tool main.go
+        go build -ldflags "-s -w" -o llm-runtime main.go
     fi
     
-    if [ -f "llm-tool" ]; then
+    if [ -f "llm-runtime" ]; then
         echo -e "${GREEN}✓${NC} Build successful!"
         
         # Make scripts executable
-        chmod +x llm-tool
+        chmod +x llm-runtime
         [ -f "demo.sh" ] && chmod +x demo.sh
         [ -f "example_usage.sh" ] && chmod +x example_usage.sh
         [ -f "security_test.sh" ] && chmod +x security_test.sh
@@ -100,18 +100,18 @@ run_tests() {
 # Install to system (optional)
 install_system() {
     echo
-    read -p "Do you want to install llm-tool to /usr/local/bin? (requires sudo) [y/N]: " -n 1 -r
+    read -p "Do you want to install llm-runtime to /usr/local/bin? (requires sudo) [y/N]: " -n 1 -r
     echo
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${BLUE}Installing to /usr/local/bin...${NC}"
-        sudo cp llm-tool /usr/local/bin/
-        sudo chmod +x /usr/local/bin/llm-tool
+        sudo cp llm-runtime /usr/local/bin/
+        sudo chmod +x /usr/local/bin/llm-runtime
         echo -e "${GREEN}✓${NC} Installed successfully!"
-        echo "You can now run 'llm-tool' from anywhere"
+        echo "You can now run 'llm-runtime' from anywhere"
     else
         echo "Skipping system installation"
-        echo "You can run the tool locally with: ./llm-tool"
+        echo "You can run the tool locally with: ./llm-runtime"
     fi
 }
 
@@ -133,7 +133,7 @@ run_demo() {
         echo "Testing the tool with a simple command:"
         echo "Input: 'Check the README <open README.md>'"
         echo "---"
-        echo "Check the README <open README.md>" | ./llm-tool --root "$TEST_DIR"
+        echo "Check the README <open README.md>" | ./llm-runtime --root "$TEST_DIR"
         
         rm -rf "$TEST_DIR"
         
@@ -153,13 +153,13 @@ print_usage() {
     echo
     echo "Usage examples:"
     echo "  # Basic usage (pipe mode)"
-    echo "  echo 'Read file <open main.go>' | ./llm-tool"
+    echo "  echo 'Read file <open main.go>' | ./llm-runtime"
     echo
     echo "  # Interactive mode"
-    echo "  ./llm-tool --interactive"
+    echo "  ./llm-runtime --interactive"
     echo
     echo "  # With custom repository"
-    echo "  ./llm-tool --root /path/to/repo"
+    echo "  ./llm-runtime --root /path/to/repo"
     echo
     echo "Available commands:"
     echo "  make test          - Run tests"
@@ -168,7 +168,7 @@ print_usage() {
     echo "  ./security_test.sh - Run security tests"
     echo
     echo "Configuration:"
-    echo "  Edit llm-tool.config.yaml to customize behavior"
+    echo "  Edit llm-runtime.config.yaml to customize behavior"
     echo
     echo "System Prompt:"
     echo "  See SYSTEM_PROMPT.md for LLM integration instructions"

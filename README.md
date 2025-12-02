@@ -20,14 +20,14 @@ A secure tool that enables Large Language Models to autonomously explore and wor
 
 ### Build from source
 ```bash
-git clone https://github.com/computerscienceiscool/llm-tools.git
-cd llm-tools
+git clone https://github.com/computerscienceiscool/llm-runtime.git
+cd llm-runtime
 make build
 ```
 
 Or build directly:
 ```bash
-go build -o llm-tool main.go
+go build -o llm-runtime main.go
 ```
 
 ### Quick setup
@@ -73,19 +73,19 @@ Now build the project <exec make build>
 ### Basic Usage (Pipe Mode)
 
 ```bash
-echo "Let me check the main file <open main.go>" | ./llm-tool
+echo "Let me check the main file <open main.go>" | ./llm-runtime
 ```
 
 ### With Exec Commands Enabled
 
 ```bash
-echo "Check code and run tests: <open main.go> <exec go test>" | ./llm-tool --exec-enabled
+echo "Check code and run tests: <open main.go> <exec go test>" | ./llm-runtime --exec-enabled
 ```
 
 ### Interactive Mode
 
 ```bash
-./llm-tool --interactive --exec-enabled
+./llm-runtime --interactive --exec-enabled
 ```
 
 In interactive mode, the tool continuously processes input and executes commands as they appear.
@@ -93,7 +93,7 @@ In interactive mode, the tool continuously processes input and executes commands
 ### File Mode
 
 ```bash
-./llm-tool --input llm_output.txt --output results.txt --exec-enabled
+./llm-runtime --input llm_output.txt --output results.txt --exec-enabled
 ```
 
 ## Command Line Options
@@ -349,7 +349,7 @@ make example
 
 ## Configuration
 
-Edit `llm-tool.config.yaml` to customize:
+Edit `llm-runtime.config.yaml` to customize:
 
 ```yaml
 commands:
@@ -405,7 +405,7 @@ newgrp docker
 ### Command Whitelist
 If a command is blocked:
 1. Check if it's in the whitelist
-2. Add it to `llm-tool.config.yaml` or use `--exec-whitelist`
+2. Add it to `llm-runtime.config.yaml` or use `--exec-whitelist`
 3. Consider security implications
 
 ## Future Enhancements
@@ -443,8 +443,8 @@ Planned features for future versions:
 
 ## Support
 
-- **Issues**: [Report bugs](https://github.com/computerscienceiscool/llm-tools/issues)
-- **Discussions**: [Community discussions](https://github.com/computerscienceiscool/llm-tools/discussions)
+- **Issues**: [Report bugs](https://github.com/computerscienceiscool/llm-runtime/issues)
+- **Discussions**: [Community discussions](https://github.com/computerscienceiscool/llm-runtime/discussions)
 - **Documentation**: [Complete docs](docs/)
 - **Quick Start Guides**: [Getting started](docs/quick-reference.md)
 - **Examples**: [Example projects](examples/) This will help users get started quickly and will be done in future updates.

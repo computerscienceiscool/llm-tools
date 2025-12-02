@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-tools/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
 )
 
 // Helper to check if Docker is available

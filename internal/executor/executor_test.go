@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/computerscienceiscool/llm-tools/internal/command"
-	"github.com/computerscienceiscool/llm-tools/internal/config"
-	"github.com/computerscienceiscool/llm-tools/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/internal/command"
+	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/internal/search"
 )
 
 func TestNewExecutor(t *testing.T) {
