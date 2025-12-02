@@ -284,3 +284,7 @@ commit: build test
 debug-path:
 	@echo "PATH is: $$PATH"
 	@which grok || echo "grok still not found"
+
+# Show only failed tests
+test-failures:
+	@$(GOTEST) ./... 2>&1 | grep -E "^(FAIL|---.*FAIL)" || echo "All tests passed!"
