@@ -40,8 +40,8 @@ func ParseFlags() *CLIFlags {
 	flag.BoolVar(&cfg.ExecEnabled, "exec-enabled", false, "Enable exec command")
 	execTimeoutStr := flag.String("exec-timeout", "30s", "Timeout for exec commands")
 	flag.StringVar(&cfg.ExecMemoryLimit, "exec-memory", "512m", "Memory limit for containers")
-	flag.IntVar(&cfg.ExecCPULimit, "exec-cpu", 2, "CPU limit for containers")
-	flag.StringVar(&cfg.ExecContainerImage, "exec-image", "ubuntu:22.04", "Docker image for exec commands")
+	flag.IntVar(&cfg.ExecCPULimit, "exec-cpu", 1, "CPU limit for containers")
+	flag.StringVar(&cfg.ExecContainerImage, "exec-image", "python-go", "Docker image for exec commands")
 	flag.BoolVar(&cfg.ExecNetworkEnabled, "exec-network", false, "Enable network access in containers")
 
 	allowedExts := flag.String("allowed-extensions", ".go,.py,.js,.md,.txt,.json,.yaml,.yml,.toml",

@@ -45,14 +45,23 @@ commands:
   # Write command configuration
   write:
     enabled: true
-    max_file_size: 102400  # 100KB
+    max_file_size: 102400
     require_confirmation: false
     backup_before_write: true
-    
+    allowed_extensions:
+      - ".go"
+      - ".py"
+      - ".js"
+      - ".md"
+      - ".txt"
+      - ".json"
+      - ".yaml"
+      - ".yml"    
+
   # Exec command configuration
   exec:
     enabled: true
-    container_image: "ubuntu:22.04"
+    container_image: "python-go"
     timeout_seconds: 30
     memory_limit: "512m"
     cpu_limit: 1
@@ -61,6 +70,7 @@ commands:
       - "go test"
       - "go build" 
       - "go run"
+      - "go version"
       - "npm test"
       - "npm run build"
       - "python -m pytest"

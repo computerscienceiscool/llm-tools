@@ -27,7 +27,7 @@ func ParseCommands(text string) []Command {
 	}
 
 	// Pattern for <write filepath>content</write> commands
-	writePattern := regexp.MustCompile(`<write\s+([^>]+)>\s*(.*?)</write>`)
+	writePattern := regexp.MustCompile(`(?s)<write\s+([^>]+)>\s*(.*?)</write>`)
 
 	// Find write commands
 	writeMatches := writePattern.FindAllStringSubmatchIndex(text, -1)

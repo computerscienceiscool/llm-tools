@@ -59,11 +59,11 @@ func TestParseFlags_Defaults(t *testing.T) {
 	if flags.Config.ExecMemoryLimit != "512m" {
 		t.Errorf("ExecMemoryLimit = %q, want %q", flags.Config.ExecMemoryLimit, "512m")
 	}
-	if flags.Config.ExecCPULimit != 2 {
-		t.Errorf("ExecCPULimit = %d, want %d", flags.Config.ExecCPULimit, 2)
+	if flags.Config.ExecCPULimit != 1 {
+		t.Errorf("ExecCPULimit = %d, want %d", flags.Config.ExecCPULimit, 1)
 	}
-	if flags.Config.ExecContainerImage != "ubuntu:22.04" {
-		t.Errorf("ExecContainerImage = %q, want %q", flags.Config.ExecContainerImage, "ubuntu:22.04")
+	if flags.Config.ExecContainerImage != "python-go" {
+		t.Errorf("ExecContainerImage = %q, want %q", flags.Config.ExecContainerImage, "python-go")
 	}
 	if flags.Config.ExecNetworkEnabled != false {
 		t.Errorf("ExecNetworkEnabled = %v, want %v", flags.Config.ExecNetworkEnabled, false)
