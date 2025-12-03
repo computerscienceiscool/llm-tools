@@ -76,7 +76,7 @@ func (a *App) RunSearchCommand(flags *cli.CLIFlags) error {
 func (a *App) checkPythonSetup() error {
 	fmt.Fprintf(os.Stderr, "Checking Python setup for search functionality...\n")
 
-	pythonPaths := []string{"python3", "python"}
+	pythonPaths := []string{a.searchCfg.PythonPath, "python3", "python"}
 	var workingPython string
 
 	for _, pythonPath := range pythonPaths {

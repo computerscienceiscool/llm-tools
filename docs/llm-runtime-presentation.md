@@ -43,8 +43,6 @@ A **command-line tool** that lets Large Language Models (like Claude or ChatGPT)
 
 ## How Does It Work?
 
-.center[![:img How llm-runtime works, 90%](https://via.placeholder.com/700x300?text=LLM+Output+→+llm-runtime+→+Results+→+LLM)]
-
 **Flow:**
 1. You ask an LLM to help with your code
 2. LLM includes commands like `<open README.md>` in its response
@@ -105,13 +103,12 @@ class: center, middle
 
 **Step 1:** Start with a simple command
 ```bash
-echo "Show me the README: <open README.md>" | ./llm-runtime
+echo "<open README.md>" | ./llm-runtime
 ```
 
 **Step 2:** Observe the output structure
 ```
 === LLM TOOL START ===
-Show me the README: <open README.md>
 === COMMAND: <open README.md> ===
 === FILE: README.md ===
 [file contents here]
@@ -133,29 +130,10 @@ Show me the README: <open README.md>
 | Size Limits | Default 1MB max file size |
 | Symlink Resolution | Validates final destination |
 
-**Try this (it will fail safely):**
+**Demo:** Try reading outside the repo:
 ```bash
 echo "<open ../../../etc/passwd>" | ./llm-runtime
 # Returns: PATH_SECURITY error
-```
-
----
-
-## `<open>` - Try It Yourself
-
-**Exercise 1:** Read a file
-```bash
-echo "<open go.mod>" | ./llm-runtime
-```
-
-**Exercise 2:** Try to read a protected file
-```bash
-echo "<open .git/config>" | ./llm-runtime
-```
-
-**Exercise 3:** Read multiple files
-```bash
-echo "Check these: <open README.md> <open go.mod>" | ./llm-runtime
 ```
 
 ---
@@ -208,21 +186,17 @@ database:
 
 ## `<write>` - Demo Walkthrough
 
-**Step 1:** Create a new file
+**Create a new file:**
 ```bash
 echo '<write test-file.txt>
 Hello from llm-runtime!
-This file was created automatically.
 </write>' | ./llm-runtime
 ```
 
-**Step 2:** Verify creation
+**Verify and update:**
 ```bash
 cat test-file.txt
-```
 
-**Step 3:** Update the file (note the backup)
-```bash
 echo '<write test-file.txt>
 Updated content!
 </write>' | ./llm-runtime
@@ -247,25 +221,6 @@ func main(){fmt.Println("Hello")}
 ```bash
 cat hello.go
 # Output is properly formatted!
-```
-
----
-
-## `<write>` - Try It Yourself
-
-**Exercise 1:** Create a markdown file
-```bash
-echo '<write notes.md>
-# My Notes
-- Item one
-- Item two
-</write>' | ./llm-runtime
-```
-
-**Exercise 2:** Try to create a blocked file type
-```bash
-echo '<write script.exe>content</write>' | ./llm-runtime
-# Should fail with EXTENSION_DENIED
 ```
 
 ---
@@ -347,19 +302,19 @@ Your Machine                    Docker Container
 
 ## `<exec>` - Demo Walkthrough
 
-**Step 1:** Enable exec and run a simple command
+**Run a simple command:**
 ```bash
 echo "<exec echo 'Hello from Docker'>" | \
   ./llm-runtime --exec-enabled
 ```
 
-**Step 2:** Run actual tests
+**Run actual tests:**
 ```bash
 echo "<exec go test ./...>" | \
   ./llm-runtime --exec-enabled
 ```
 
-**Step 3:** Try a blocked command
+**Try a blocked command:**
 ```bash
 echo "<exec rm -rf />" | ./llm-runtime --exec-enabled
 # Blocked: command not in whitelist
@@ -386,23 +341,43 @@ All in one response!
 
 ---
 
-## `<exec>` - Try It Yourself
+class: center, middle
 
-**Exercise 1:** Check what's available
+# Putting It All Together
+
+*A complete workflow example*
+
+---
+
+## Complete Workflow Example
+
+**Scenario:** Review a project and run tests
+
 ```bash
-echo "<exec ls -la>" | ./llm-runtime --exec-enabled
+echo "I'll analyze this project:
+
+<open README.md>
+<open go.mod>
+<exec go test ./...>
+<exec go test -cover ./...>" | ./llm-runtime --exec-enabled
 ```
 
-**Exercise 2:** Check Go version in container
+---
+
+## Interactive Mode
+
+**For ongoing exploration:**
 ```bash
-echo "<exec go version>" | ./llm-runtime --exec-enabled
+./llm-runtime --interactive --exec-enabled
 ```
 
-**Exercise 3:** Combine reading and testing
-```bash
-echo "<open README.md> <exec make test>" | \
-  ./llm-runtime --exec-enabled
+**Now you can type commands continuously:**
 ```
+<open README.md>
+<exec go test ./...>
+```
+
+**Exit with Ctrl+D**
 
 ---
 
@@ -446,165 +421,27 @@ class: center, middle
 
 ---
 
-## `<search>` - Requirements
+## `<search>` - Demo
 
-**Needs Python + sentence-transformers:**
-
+**Setup (one-time):**
 ```bash
-# Install dependencies
 pip install sentence-transformers
-
-# Build the search index
-./llm-runtime --reindex
-
-# Now search works!
-echo "<search configuration>" | ./llm-runtime
-```
-
-**Index stores:** AI embeddings of all your code files in SQLite.
-
----
-
-## `<search>` - Demo Walkthrough
-
-**Step 1:** Check Python setup
-```bash
-./llm-runtime --check-python-setup
-```
-
-**Step 2:** Build the index
-```bash
 ./llm-runtime --reindex
 ```
 
-**Step 3:** Search for code
+**Search for code:**
 ```bash
 echo "<search error handling>" | ./llm-runtime
 ```
 
----
-
-## `<search>` - Understanding Results
-
-**Output format:**
+**Output:**
 ```
-=== SEARCH: authentication logic ===
-=== SEARCH RESULTS (0.45s) ===
-1. src/auth/middleware.go (score: 78.50)
-   Lines: 156 | Size: 4.2 KB
-   Preview: "// AuthMiddleware validates JWT tokens..."
-
-2. src/handlers/login.go (score: 72.30)
-   Lines: 89 | Size: 2.1 KB
-   Preview: "// LoginHandler processes user auth..."
+=== SEARCH RESULTS ===
+1. internal/executor/exec.go (score: 78.50)
+   Preview: "// ExecuteExec handles the exec command..."
+2. internal/security/path.go (score: 72.30)
+   Preview: "// ValidatePath ensures the path is safe..."
 ```
-
-**Score:** Higher = more relevant (0-100%)
-
----
-
-## `<search>` - Index Management
-
-| Command | Purpose |
-|---------|---------|
-| `--reindex` | Full rebuild from scratch |
-| `--search-update` | Update new/changed files |
-| `--search-status` | Show index statistics |
-| `--search-cleanup` | Remove deleted files |
-
-**Tip:** Run `--search-update` periodically or after major changes.
-
----
-
-class: center, middle
-
-# Putting It All Together
-
-*A complete workflow example*
-
----
-
-## Complete Workflow Example
-
-**Scenario:** Review a project and add tests
-
-```bash
-echo "I'll analyze this project and ensure tests work.
-
-First, understand the structure:
-<open README.md>
-<open go.mod>
-
-Find the main logic:
-<search main entry point>
-
-Run existing tests:
-<exec go test ./...>
-
-Check test coverage:
-<exec go test -cover ./...>" | ./llm-runtime --exec-enabled
-```
-
----
-
-## Interactive Mode
-
-**For ongoing exploration:**
-```bash
-./llm-runtime --interactive --exec-enabled
-```
-
-**Now you can type commands continuously:**
-```
-<open README.md>
-<search authentication>
-<exec go test ./...>
-```
-
-**Exit with Ctrl+D**
-
----
-
-## Configuration
-
-**Create `llm-runtime.config.yaml`:**
-
-```yaml
-repository:
-  root: "."
-  excluded_paths: [".git", ".env", "*.key"]
-
-commands:
-  open:
-    enabled: true
-    max_file_size: 1048576  # 1MB
-
-  exec:
-    enabled: true
-    whitelist: ["go test", "npm build", "make"]
-    timeout_seconds: 30
-
-  search:
-    enabled: true
-```
-
----
-
-## Audit Logging
-
-**Everything is logged to `audit.log`:**
-
-```
-2025-01-15T10:30:45Z|session:123|open|src/main.go|success|
-2025-01-15T10:30:46Z|session:123|exec|go test|success|exit:0
-2025-01-15T10:30:47Z|session:123|exec|rm -rf /|failed|not whitelisted
-```
-
-**Tracks:**
-- Timestamp and session ID
-- Command type and arguments
-- Success/failure status
-- Error messages
 
 ---
 
