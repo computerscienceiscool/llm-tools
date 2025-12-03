@@ -1,91 +1,135 @@
-# Compiled binaries
-llm-runtime.exe
+
+##################################################
+# PYTHON VIRTUAL ENVIRONMENTS
+##################################################
+search-env/
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+##################################################
+# PYTHON AND ML CACHE / MODELS
+##################################################
+*.pt
+*.pth
+*.bin
+*.pickle
+*.pkl
+*.joblib
+
+.cache/
+huggingface/
+models/
+embeddings/
+embeddings.db
+
+
+##################################################
+# DATABASE FILES
+##################################################
+*.db
+*.sqlite
+*.sqlite3
+*.mdb
+*.duckdb
+
+
+##################################################
+# DOCKER PROTECTIONS
+##################################################
+# Prevent Docker from copying giant directories
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Optional: If you generate Docker artifacts locally
+docker/
+docker-output/
+docker-build/
+docker-temp/
+docker-cache/
+
+# Any files created by container mounts
+mnt/
+mounted/
+mounted_data/
+
+
+##################################################
+# GO BUILD ARTIFACTS
+##################################################
 llm-runtime
+llm-runtime.exe
 *.exe
-*.exe~
 *.dll
 *.so
 *.dylib
-
-# Test binaries
 *.test
 
-# Coverage files
-*.out
-coverage.html
-
-# Go build cache
 bin/
 build/
 dist/
 
-# Logs
+
+##################################################
+# LOGS
+##################################################
 audit.log
 audit.log.*
 llm-runtime.log
 *.log
 
-# Temporary files
+
+##################################################
+# TEMPORARY FILES
+##################################################
 *.tmp
 *.temp
 *.bak
 *.bak.*
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-embeddings/
-embeddings.db
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# IDE files
-.vscode/
-.idea/
 *.swp
 *.swo
 *~
 
-# OS files
+
+##################################################
+# ENVIRONMENT FILES
+##################################################
+.env
+.env.local
+.env.*.local
+
+
+##################################################
+# IDE / SYSTEM FILES
+##################################################
+.vscode/
+.idea/
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
+.Trashes
+.Lock
+.grok
+.grok.lock
+.aidda/
+.lock
 
-# Backup directory you just created
-old-search-files/
 
-# Test outputs
+##################################################
+# TEST OUTPUT
+##################################################
 test*.txt
 hello.txt
 output.txt
 README_SUMMARY.md
-
-# Search environment (if you have Python components)
-search-env/
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Node artifacts (if any)
-node_modules/
-npm-debug.log*
-
-
-
-# Grok files (AI assistant cache/config)
-.aidda/
-.grok
-.grok.lock
-.lock
-
-# Test directories and files
-tests/
 coverage.out
+coverage.html
+tests/
+*.out
+
+
