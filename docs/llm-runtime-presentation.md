@@ -27,7 +27,7 @@ By the end, you'll understand how to use this tool and why it matters.
 
 ## What is llm-runtime?
 
-A **command-line tool** that lets Large Language Models (like Claude or ChatGPT) **autonomously explore and work with local code repositories**.
+A **command-line tool** that lets Large Language Models (like Claude or ChatGPT) **explore and work with local code repositories**.
 
 **The Problem it Solves:**
 - LLMs have context limits (can't load entire codebases)
@@ -48,8 +48,11 @@ A **command-line tool** that lets Large Language Models (like Claude or ChatGPT)
 **Flow:**
 1. You ask an LLM to help with your code
 2. LLM includes commands like `<open README.md>` in its response
-3. llm-runtime parses the response and executes the commands
-4. Results are returned to the LLM for further analysis
+3. **You copy** that response and pipe it to llm-runtime
+4. Tool parses and executes commands safely
+5. **You copy** results back to the LLM for further analysis
+
+**Important:** This is currently a manual workflow—you're the bridge between the LLM and your codebase. The "autonomous" part is that the LLM decides what to explore, not that it runs automatically.
 
 ---
 
@@ -607,6 +610,27 @@ commands:
 
 class: center, middle
 
+# Current Limitations
+
+*Being honest about what this tool doesn't do*
+
+---
+
+## What This Tool Doesn't Do (Yet)
+
+| Limitation | What it means |
+|------------|---------------|
+| **Manual workflow** | You copy/paste between AI and tool |
+| **No IDE integration** | Command-line only, no VS Code plugin |
+| **AI still makes mistakes** | More capability, same intelligence |
+| **Requires setup** | Docker for exec, Python for search |
+
+**The value:** Gives AI actual access to your code in a controlled way—it can explore, verify, iterate instead of guessing from snippets.
+
+---
+
+class: center, middle
+
 # Security Summary
 
 *Why you can trust this tool*
@@ -675,12 +699,15 @@ echo "<open README.md>" | ./llm-runtime
 
 ---
 
-## Resources
+## Resources & Feedback
 
 - **Repository:** [github.com/computerscienceiscool/llm-runtime](https://github.com/computerscienceiscool/llm-runtime)
 - **Documentation:** `docs/` folder in the repo
 - **System Prompt:** `docs/SYSTEM_PROMPT.md` (for LLM integration)
-- **Questions?** Talk to JJ!
+
+**Please provide feedback!**
+- Open GitHub issues for bugs or ideas
+- Or just grab JJ directly
 
 ---
 
@@ -720,4 +747,3 @@ class: center, middle
 --verbose             # Detailed output
 --help                # Show all options
 ```
-
