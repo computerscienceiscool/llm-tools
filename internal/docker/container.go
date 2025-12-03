@@ -57,7 +57,9 @@ func RunContainer(cfg ContainerConfig) (ContainerResult, error) {
 		"--cap-drop", "ALL", // Drop all capabilities
 		"--security-opt", "no-new-privileges", // Prevent privilege escalation
 		"--read-only",     // Make root filesystem read-only
-		"--tmpfs", "/tmp", // Temporary filesystem for /tmp
+		"--tmpfs", "/tmp:exec",
+		"--tmpfs", "/.cache",
+		"--tmpfs", "/go", // Temporary filesystem for /tmp
 	)
 
 	// Add image and command
