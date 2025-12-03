@@ -332,3 +332,9 @@ export LLM_RUNTIME_PYTHON_PATH=~/venvs/search-env/bin/python3
 - Always use `backup_before_write: true` for refactoring
 - Search is safe to enable broadly - it's read-only
 - Exec is the most dangerous - whitelist carefully
+
+
+
+**remove extra config file**
+- llm-runtime.yaml 
+

@@ -106,8 +106,18 @@ commands:
     min_similarity_score: 0.3
     max_preview_length: 100
     chunk_size: 1000
-    python_path: "/home/jj/venvs/search-env/bin/python3" 
-    index_extensions: [".go", ".py", ".js", ".md", ".txt"]
+    python_path: "/home/jj/venvs/search-env/bin/python3"  # TODO: update to use environmental variables
+
+      index_extensions:
+    - ".go"
+    - ".py"
+    - ".js"
+    - ".rs"
+    - ".html"
+    - ".css"
+    - ".md"
+    - ".txt"
+
     max_file_size: 1048576
 
 security:
