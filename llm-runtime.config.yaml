@@ -107,8 +107,7 @@ commands:
     max_preview_length: 100
     chunk_size: 1000
     python_path: "/home/jj/venvs/search-env/bin/python3"  # TODO: update to use environmental variables
-
-      index_extensions:
+    index_extensions:
     - ".go"
     - ".py"
     - ".js"
