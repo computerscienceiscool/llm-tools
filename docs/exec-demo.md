@@ -17,42 +17,17 @@ echo "<open README.md>" | ./llm-runtime
 
 ### Exec blocked without flag
 ```bash
-echo "<exec echo hello>" | ./llm-runtime
+echo "<exec ls>" | ./llm-runtime
 ```
 
 ### Enable exec, simple command
 ```bash
-echo "<exec echo hello>" | ./llm-runtime --exec-enabled
+echo "<exec ls>" | ./llm-runtime --exec-enabled
 ```
 
-### Show repo is mounted at /workspace
+### List files in workspace
 ```bash
 echo "<exec ls -la>" | ./llm-runtime --exec-enabled
-```
-
-### Show working directory
-```bash
-echo "<exec pwd>" | ./llm-runtime --exec-enabled
-```
-
-### Whitelist blocks dangerous commands
-```bash
-echo "<exec rm -rf />" | ./llm-runtime --exec-enabled
-```
-
-### No network access
-```bash
-echo "<exec curl google.com>" | ./llm-runtime --exec-enabled
-```
-
-### Read-only repo (can't write)
-```bash
-echo "<exec touch /workspace/hacked.txt>" | ./llm-runtime --exec-enabled
-```
-
-### Run actual Go tests
-```bash
-echo "<exec go test ./...>" | ./llm-runtime --exec-enabled
 ```
 
 ### Check Go version in container
@@ -60,9 +35,76 @@ echo "<exec go test ./...>" | ./llm-runtime --exec-enabled
 echo "<exec go version>" | ./llm-runtime --exec-enabled
 ```
 
-### Multiple commands in one pass
+### Check Python version
+```bash
+echo "<exec python3 --version>" | ./llm-runtime --exec-enabled
+```
+
+### Run Python code
+```bash
+echo "<exec python3 -c 'print(2+2)'>" | ./llm-runtime --exec-enabled
+```
+
+### View file contents
+```bash
+echo "<exec cat /etc/os-release>" | ./llm-runtime --exec-enabled
+```
+
+### View specific file from repo
+```bash
+echo "<exec cat go.mod>" | ./llm-runtime --exec-enabled
+```
+
+### Count lines in file
+```bash
+echo "<exec wc -l README.md>" | ./llm-runtime --exec-enabled
+```
+
+### Find Go files
+```bash
+echo "<exec find . -name '*.go'>" | ./llm-runtime --exec-enabled
+```
+
+### Head of a file
+```bash
+echo "<exec head -10 README.md>" | ./llm-runtime --exec-enabled
+```
+
+### Tail of a file
+```bash
+echo "<exec tail -10 README.md>" | ./llm-runtime --exec-enabled
+```
+
+### Grep for pattern
+```bash
+echo "<exec grep -r 'func main' .>" | ./llm-runtime --exec-enabled
+```
+
+---
+
+## Security Demos
+
+### Whitelist blocks dangerous commands
+```bash
+echo "<exec rm -rf />" | ./llm-runtime --exec-enabled
+```
+**Expected:** Blocked - "command not in whitelist: rm"
+
+### Network is disabled (go test fails - can't download deps)
+```bash
+echo "<exec go test ./...>" | ./llm-runtime --exec-enabled
+```
+**Expected:** Fails with "network is unreachable" - proves isolation
+
+---
+
+## Multiple Commands
 ```bash
 echo "<open go.mod> <exec go version>" | ./llm-runtime --exec-enabled
+```
+
+```bash
+echo "<exec ls> <exec cat go.mod>" | ./llm-runtime --exec-enabled
 ```
 
 ---
@@ -77,11 +119,7 @@ echo "<open go.mod> <exec go version>" | ./llm-runtime --exec-enabled
 ### Commands to type once inside:
 
 ```
-<open README.md>
-```
-
-```
-<exec echo "Hello from Docker">
+<exec ls>
 ```
 
 ```
@@ -97,15 +135,31 @@ echo "<open go.mod> <exec go version>" | ./llm-runtime --exec-enabled
 ```
 
 ```
-<exec go test ./...>
-```
-
-```
-<open go.mod>
+<exec python3 -c 'print("Hello from Docker")'>
 ```
 
 ```
 <exec cat /etc/os-release>
+```
+
+```
+<exec cat go.mod>
+```
+
+```
+<exec head -5 README.md>
+```
+
+```
+<exec find . -name '*.go' | head -10>
+```
+
+```
+<exec wc -l README.md>
+```
+
+```
+<open README.md>
 ```
 
 ### Exit interactive mode
@@ -117,7 +171,7 @@ Ctrl+D
 
 ## Exploring the Container Manually
 
-### Start container interactively (for poking around)
+### Start container interactively
 ```bash
 docker run -it --rm python-go bash
 ```
@@ -130,13 +184,9 @@ docker run -it --rm -v $(pwd):/workspace:ro -w /workspace python-go bash
 ### Commands to run inside container:
 ```bash
 ls -la
-pwd
-cat /etc/os-release
 go version
 python3 --version
-whoami
-ping google.com      # will fail - no network
-touch test.txt       # will fail in /workspace - read-only
+cat /etc/os-release
 ```
 
 ### Exit container
@@ -146,42 +196,31 @@ exit
 
 ---
 
-## Key Security Points to Demonstrate
+## Key Security Points
 
 | Security Feature | Demo Command | Expected Result |
 |------------------|--------------|-----------------|
 | Whitelist | `<exec rm -rf />` | Blocked: not in whitelist |
-| No network | `<exec curl google.com>` | Fails: no network |
-| Read-only repo | `<exec touch /workspace/x>` | Fails: read-only filesystem |
-| Non-root user | `<exec whoami>` | Shows user 1000, not root |
-| Isolated environment | `<exec cat /etc/os-release>` | Shows Ubuntu, not host OS |
-| Container destroyed | Run any exec | Container gone after (check `docker ps`) |
+| No network | `<exec go test ./...>` | Fails: network unreachable |
+| Container isolated | `<exec cat /etc/os-release>` | Shows Ubuntu, not host OS |
 
 ---
 
-## Troubleshooting
+## Whitelisted Commands (from config)
 
-### Docker not found
-```bash
-docker version
-```
+**Go:** `go test`, `go build`, `go run`, `go version`
 
-### Image not available
-```bash
-docker images | grep python-go
-docker pull python-go  # or build it
-```
+**Python:** `python`, `python3`, `python -m pytest`, `python3 -m pytest`
 
-### Permission denied
-```bash
-sudo usermod -aG docker $USER
-newgrp docker
-```
+**Node:** `node`, `npm test`, `npm run build`, `npm install`
 
-### Check running containers (should be empty after exec)
-```bash
-docker ps
-```
+**Rust:** `cargo build`, `cargo test`, `cargo run`
+
+**Build:** `make`, `make test`, `make build`
+
+**System:** `ls`, `cat`, `grep`, `find`, `head`, `tail`, `wc`
+
+**Package:** `pip install`, `pip3 install`
 
 ---
 
@@ -196,19 +235,19 @@ docker ps
 
 ---
 
-## Quick Reference: Security Flags
+## Troubleshooting
 
+### Docker not found
 ```bash
-docker run \
-    --rm                              # Delete container when done
-    --network none                    # No internet access
-    --user 1000:1000                  # Non-root user
-    --cap-drop ALL                    # Drop all Linux capabilities
-    --security-opt no-new-privileges  # No privilege escalation
-    --read-only                       # Read-only container filesystem
-    --memory 512m                     # Memory limit
-    --cpus 1                          # CPU limit
-    -v /repo:/workspace:ro            # Mount repo read-only
-    python-go                         # Image name
-    sh -c "command"                   # Command to run
+docker version
+```
+
+### Image not available
+```bash
+docker images | grep python-go
+```
+
+### Check running containers (should be empty after exec)
+```bash
+docker ps
 ```
