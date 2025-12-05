@@ -63,7 +63,8 @@ mounted_data/
 ##################################################
 # GO BUILD ARTIFACTS
 ##################################################
-llm-runtime.exe
+./llm-runtime
+./llm-runtime.exe
 *.exe
 *.dll
 *.so

@@ -12,23 +12,18 @@ func main() {
 	// Parse command-line flags
 	flags := cli.ParseFlags()
 
+	application, err := app.Bootstrap(flags.Config)
+	if err != nil {
+		log.Fatalf("Bootstrap failed: %v", err)
+	}
+
 	// Handle search-related commands before full bootstrap
 	if flags.HasSearchCommand() {
-		application, err := app.Bootstrap(flags.Config)
-		if err != nil {
-			log.Fatalf("Bootstrap failed: %v", err)
-		}
 
 		if err := application.RunSearchCommand(flags); err != nil {
 			log.Fatalf("Search command failed: %v", err)
 		}
 		return
-	}
-
-	// Bootstrap the application
-	application, err := app.Bootstrap(flags.Config)
-	if err != nil {
-		log.Fatalf("Bootstrap failed: %v", err)
 	}
 
 	// Run the application
