@@ -489,3 +489,54 @@ func TestInteractiveMode_FailedCommand(t *testing.T) {
 		t.Errorf("Expected 'ERROR' for non-existent file\nFull stdout:\n%s", stdout)
 	}
 }
+
+// TestIsCommandStart verifies the Contains→HasPrefix bug fix
+func TestIsCommandStart(t *testing.T) {
+	tests := []struct {
+		name     string
+		line     string
+		expected bool
+	}{
+		// Should match - commands at start of line
+		{"open at start", "<open main.go>", true},
+		{"write at start", "<write test.txt>content</write>", true},
+		{"exec at start", "<exec go test>", true},
+		{"search at start", "<search query>", true},
+		{"with leading space", "  <open file.go>", true},
+		{"with leading tab", "\t<write config.yaml>data</write>", true},
+
+		// Should NOT match - THE BUG FIX
+		{"comment should NOT match", "// don't <open secret.key>", false},
+		{"mid-line should NOT match", "Please read <open main.go> carefully", false},
+		{"in string should NOT match", `fmt.Println("<open example>")`, false},
+		{"regular text", "This is just text", false},
+		{"empty line", "", false},
+		{"HTML tag not command", "<div>content</div>", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isCommandStart(tt.line)
+			if result != tt.expected {
+				t.Errorf("isCommandStart(%q) = %v, want %v", tt.line, result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestContainsBugFix demonstrates the bug that was fixed
+func TestContainsBugFix(t *testing.T) {
+	// This line has a command in a comment - should NOT trigger
+	commentLine := "// don't <open secret.key>"
+
+	if isCommandStart(commentLine) {
+		t.Error("BUG: Command in comment should NOT be detected")
+	}
+
+	// This line has command at start - SHOULD trigger
+	commandLine := "<open secret.key>"
+
+	if !isCommandStart(commandLine) {
+		t.Error("Command at start should be detected")
+	}
+}

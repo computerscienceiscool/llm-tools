@@ -10,6 +10,15 @@ import (
 	"github.com/computerscienceiscool/llm-runtime/internal/executor"
 )
 
+// isCommandStart checks if a line starts with a command (ignoring leading whitespace)
+func isCommandStart(line string) bool {
+	trimmed := strings.TrimLeft(line, " \t")
+	return strings.HasPrefix(trimmed, "<open") ||
+		strings.HasPrefix(trimmed, "<write") ||
+		strings.HasPrefix(trimmed, "<exec") ||
+		strings.HasPrefix(trimmed, "<search")
+}
+
 // InteractiveMode handles continuous input/output
 func InteractiveMode(exec *executor.Executor, startTime time.Time) {
 	scanner := bufio.NewScanner(os.Stdin)
@@ -24,9 +33,8 @@ func InteractiveMode(exec *executor.Executor, startTime time.Time) {
 		buffer.WriteString(line)
 		buffer.WriteString("\n")
 
-		// Check if line contains a command
-		if strings.Contains(line, "<open") || strings.Contains(line, "<write") ||
-			strings.Contains(line, "<exec") || strings.Contains(line, "<search") {
+		// Check if line starts with a command
+		if isCommandStart(line) {
 			// Process accumulated text
 			result := ProcessText(buffer.String(), exec, startTime)
 			fmt.Print(result)
