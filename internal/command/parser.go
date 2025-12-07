@@ -10,7 +10,7 @@ func ParseCommands(text string) []Command {
 	var commands []Command
 
 	// Pattern for <open filepath> commands
-	openPattern := regexp.MustCompile(`<open\s+([^>]+)>`)
+	openPattern := regexp.MustCompile(`(?m)^\s*<open\s+([^>]+)>`)
 
 	matches := openPattern.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range matches {
@@ -27,7 +27,7 @@ func ParseCommands(text string) []Command {
 	}
 
 	// Pattern for <write filepath>content</write> commands
-	writePattern := regexp.MustCompile(`(?s)<write\s+([^>]+)>\s*(.*?)</write>`)
+	writePattern := regexp.MustCompile(`(?ms)^\s*<write\s+([^>]+)>\s*(.*?)</write>`)
 
 	// Find write commands
 	writeMatches := writePattern.FindAllStringSubmatchIndex(text, -1)
@@ -47,7 +47,7 @@ func ParseCommands(text string) []Command {
 	}
 
 	// Pattern for <exec command arguments> commands
-	execPattern := regexp.MustCompile(`<exec\s+([^>]+)>`)
+	execPattern := regexp.MustCompile(`(?m)^\s*<exec\s+([^>]+)>`)
 
 	execMatches := execPattern.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range execMatches {
@@ -64,7 +64,7 @@ func ParseCommands(text string) []Command {
 	}
 
 	// Pattern for <search query terms> commands
-	searchPattern := regexp.MustCompile(`<search\s+([^>]+)>`)
+	searchPattern := regexp.MustCompile(`(?m)^\s*<search\s+([^>]+)>`)
 
 	searchMatches := searchPattern.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range searchMatches {

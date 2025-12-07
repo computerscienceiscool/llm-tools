@@ -101,7 +101,7 @@ func TestInteractiveMode_PrintsWelcomeMessage(t *testing.T) {
 	startTime := time.Now()
 
 	_, stderr := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Check welcome message in stderr
@@ -153,7 +153,7 @@ func TestInteractiveMode_ProcessesOpenCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Check that file content appears in output
@@ -187,7 +187,7 @@ func TestInteractiveMode_ProcessesWriteCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Check that write was successful
@@ -230,7 +230,7 @@ func TestInteractiveMode_ProcessesExecCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Exec is disabled, should show error
@@ -264,7 +264,7 @@ func TestInteractiveMode_ProcessesSearchCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Search is disabled, should show error
@@ -298,7 +298,7 @@ func TestInteractiveMode_PlainTextNoCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Plain text without commands should pass through
@@ -332,7 +332,7 @@ func TestInteractiveMode_MultipleCommands(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, stderr := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Both writes should be successful
@@ -374,7 +374,7 @@ func TestInteractiveMode_WaitingForMoreInputMessage(t *testing.T) {
 	startTime := time.Now()
 
 	_, stderr := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// After processing a command, should print "Waiting for more input"
@@ -408,7 +408,7 @@ func TestInteractiveMode_EmptyInput(t *testing.T) {
 
 	// Should not panic or hang
 	stdout, stderr := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Should still print welcome message
@@ -440,14 +440,15 @@ func TestInteractiveMode_CommandWithSurroundingText(t *testing.T) {
 	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Command with surrounding text on same line
-	input := "Let me check the file <open existing.txt> and see what's there\n"
+	input := "<open existing.txt>\n"
+
 	restore := mockStdin(t, input)
 	defer restore()
 
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Should process the open command and show file content
@@ -481,7 +482,7 @@ func TestInteractiveMode_FailedCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		InteractiveMode(exec, startTime)
+		ScanInput(exec, startTime, true)
 	})
 
 	// Should show error

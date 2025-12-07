@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/computerscienceiscool/llm-runtime/internal/cli"
@@ -27,11 +26,7 @@ func (a *App) Run() error {
 		a.printVerboseInfo()
 	}
 
-	if a.config.Interactive {
-		cli.InteractiveMode(a.executor, a.session.StartTime)
-	} else {
-		return a.processPipeMode()
-	}
+	cli.ScanInput(a.executor, a.session.StartTime, a.config.Interactive)
 
 	return nil
 }
@@ -98,40 +93,6 @@ func (a *App) checkPythonSetup() error {
 	fmt.Fprintf(os.Stderr, "sentence-transformers library available\n")
 	fmt.Fprintf(os.Stderr, "\nSearch functionality is ready to use!\n")
 	fmt.Fprintf(os.Stderr, "Enable search in llm-runtime.config.yaml by setting search.enabled: true\n")
-
-	return nil
-}
-
-// processPipeMode handles non-interactive input/output
-func (a *App) processPipeMode() error {
-	// Read input
-	var input []byte
-	var err error
-
-	if a.config.InputFile != "" {
-		input, err = os.ReadFile(a.config.InputFile)
-		if err != nil {
-			return fmt.Errorf("cannot read input file: %w", err)
-		}
-	} else {
-		input, err = io.ReadAll(os.Stdin)
-		if err != nil {
-			return fmt.Errorf("cannot read stdin: %w", err)
-		}
-	}
-
-	// Process text
-	result := cli.ProcessText(string(input), a.executor, a.session.StartTime)
-
-	// Write output
-	if a.config.OutputFile != "" {
-		err := os.WriteFile(a.config.OutputFile, []byte(result), 0644)
-		if err != nil {
-			return fmt.Errorf("cannot write output file: %w", err)
-		}
-	} else {
-		fmt.Print(result)
-	}
 
 	return nil
 }

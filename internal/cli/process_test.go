@@ -83,8 +83,8 @@ func TestProcessText_OpenCommand_FileExists(t *testing.T) {
 
 	exec := createTestExecutor(t, tempDir)
 	startTime := time.Now()
-
 	input := "<open test.txt>"
+
 	result := ProcessText(input, exec, startTime)
 
 	// Check that result contains expected sections
@@ -307,7 +307,7 @@ func TestProcessText_CommandsRunCounter(t *testing.T) {
 	exec := createTestExecutor(t, tempDir)
 	startTime := time.Now()
 
-	input := "<open a.txt><open b.txt>"
+	input := "<open a.txt>\n<open b.txt>"
 	result := ProcessText(input, exec, startTime)
 
 	if !strings.Contains(result, "Commands executed: 2") {

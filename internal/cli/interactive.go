@@ -20,13 +20,15 @@ func isCommandStart(line string) bool {
 }
 
 // InteractiveMode handles continuous input/output
-func InteractiveMode(exec *executor.Executor, startTime time.Time) {
+func ScanInput(exec *executor.Executor, startTime time.Time, showPrompts bool) {
 	scanner := bufio.NewScanner(os.Stdin)
 	var buffer strings.Builder
 
-	fmt.Fprintln(os.Stderr, "LLM Tool - Interactive Mode")
-	fmt.Fprintln(os.Stderr, "Waiting for input (send EOF with Ctrl+D to process)...")
-	fmt.Fprintln(os.Stderr, "Supports commands: <open filepath>, <write filepath>content</write>, <exec command args>, <search query>")
+	if showPrompts {
+		fmt.Fprintln(os.Stderr, "LLM Tool - Interactive Mode")
+		fmt.Fprintln(os.Stderr, "Waiting for input (send EOF with Ctrl+D to process)...")
+		fmt.Fprintln(os.Stderr, "Supports commands: <open filepath>, <write filepath>content</write>, <exec command args>, <search query>")
+	}
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -40,7 +42,9 @@ func InteractiveMode(exec *executor.Executor, startTime time.Time) {
 			fmt.Print(result)
 			buffer.Reset()
 
-			fmt.Fprintln(os.Stderr, "\nWaiting for more input...")
+			if showPrompts {
+				fmt.Fprintln(os.Stderr, "\nWaiting for more input...")
+			}
 		}
 	}
 
