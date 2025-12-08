@@ -42,7 +42,7 @@ func UpdateSearchConfigInFile(configPath string, searchConfig *search.SearchConf
 	fullConfig.Commands.Search.MinSimilarityScore = searchConfig.MinSimilarityScore
 	fullConfig.Commands.Search.MaxPreviewLength = searchConfig.MaxPreviewLength
 	fullConfig.Commands.Search.ChunkSize = searchConfig.ChunkSize
-	fullConfig.Commands.Search.PythonPath = searchConfig.PythonPath
+	fullConfig.Commands.Search.OllamaURL = searchConfig.OllamaURL
 	fullConfig.Commands.Search.IndexExtensions = searchConfig.IndexExtensions
 	fullConfig.Commands.Search.MaxFileSize = searchConfig.MaxFileSize
 

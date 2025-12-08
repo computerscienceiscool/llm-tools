@@ -186,7 +186,8 @@ func indexFile(db *sql.DB, cfg *SearchConfig, repoRoot string, filePath string, 
 	contentHash := fmt.Sprintf("%x", content)
 
 	// Generate embedding
-	embedding, err := generateEmbedding(cfg.PythonPath, string(content))
+	truncated := truncateText(string(content), 200)
+	embedding, err := generateEmbedding(cfg.OllamaURL, truncated)
 	if err != nil {
 		return fmt.Errorf("failed to generate embedding: %w", err)
 	}

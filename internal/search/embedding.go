@@ -1,69 +1,81 @@
 package search
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"os/exec"
+	"io"
+	"net/http"
+	"time"
 	"strings"
 )
 
-// Python script embedded for generating embeddings
-const embeddingScript = `
-import sys
-import json
-import numpy as np
-try:
-    from sentence_transformers import SentenceTransformer
-    
-    # Load model (cached after first use)
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-    
-    # Read text from stdin
-    text = sys.stdin.read().strip()
-    if not text:
-        print(json.dumps([0.0] * 384))  # Return zero vector for empty text
-        sys.exit(0)
-    
-    # Generate embedding
-    embedding = model.encode(text, normalize_embeddings=True)
-    
-    # Convert to list and output as JSON
-    result = embedding.tolist()
-    print(json.dumps(result))
-    
-except ImportError:
-    print("ERROR: sentence-transformers not installed", file=sys.stderr)
-    sys.exit(1)
-except Exception as e:
-    print(f"ERROR: {str(e)}", file=sys.stderr)
-    sys.exit(1)
-`
+// OllamaEmbeddingRequest represents the request to Ollama API
+type OllamaEmbeddingRequest struct {
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
+}
 
-// generateEmbedding calls Python script to generate embedding for text
-func generateEmbedding(pythonPath string, text string) ([]float32, error) {
+// OllamaEmbeddingResponse represents the response from Ollama API
+type OllamaEmbeddingResponse struct {
+	Embedding []float64 `json:"embedding"`
+}
+
+// generateEmbedding calls Ollama API to generate embedding for text
+func generateEmbedding(ollamaURL string, text string) ([]float32, error) {
 	if strings.TrimSpace(text) == "" {
 		return make([]float32, embeddingDimensions), nil
 	}
 
-	// Create command
-	cmd := exec.Command(pythonPath, "-c", embeddingScript)
-	cmd.Stdin = strings.NewReader(text)
+	// Prepare request
+	reqBody := OllamaEmbeddingRequest{
+		Model:  "nomic-embed-text",
+		Prompt: text,
+	}
 
-	// Run command and get combined output
-	output, err := cmd.CombinedOutput()
+	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("Python script failed: %w\nOutput: %s", err, output)
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	// Parse JSON result
-	var embedding []float32
-	if err := json.Unmarshal(output, &embedding); err != nil {
-		return nil, fmt.Errorf("failed to parse embedding JSON: %w\nOutput: %s", err, output)
+	// Make HTTP request to Ollama
+	resp, err := http.Post(ollamaURL+"/api/embeddings", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("Ollama API request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Ollama API error (status %d): %s", resp.StatusCode, string(body))
 	}
 
-	if len(embedding) != embeddingDimensions {
-		return nil, fmt.Errorf("unexpected embedding dimension: got %d, expected %d", len(embedding), embeddingDimensions)
+	// Parse response
+	var ollamaResp OllamaEmbeddingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ollamaResp); err != nil {
+		return nil, fmt.Errorf("failed to parse Ollama response: %w", err)
+	}
+
+	// Convert []float64 to []float32
+	if len(ollamaResp.Embedding) != embeddingDimensions {
+		return nil, fmt.Errorf("unexpected embedding dimension: got %d, expected %d", len(ollamaResp.Embedding), embeddingDimensions)
+	}
+
+	embedding := make([]float32, embeddingDimensions)
+	for i, v := range ollamaResp.Embedding {
+		embedding[i] = float32(v)
 	}
 
 	return embedding, nil
+}
+
+// truncateText limits text to approximately maxTokens
+// Rough estimate: 1 token ≈ 4 characters
+func truncateText(text string, maxTokens int) string {
+	maxChars := maxTokens * 4
+	if len(text) <= maxChars {
+		return text
+	}
+	return text[:maxChars]
 }

@@ -59,7 +59,7 @@ func GetSearchConfigFromFull(fullConfig *FullConfig) *search.SearchConfig {
 		MinSimilarityScore: fullConfig.Commands.Search.MinSimilarityScore,
 		MaxPreviewLength:   fullConfig.Commands.Search.MaxPreviewLength,
 		ChunkSize:          fullConfig.Commands.Search.ChunkSize,
-		PythonPath:         fullConfig.Commands.Search.PythonPath,
+		OllamaURL:         fullConfig.Commands.Search.OllamaURL,
 		IndexExtensions:    fullConfig.Commands.Search.IndexExtensions,
 		MaxFileSize:        fullConfig.Commands.Search.MaxFileSize,
 	}

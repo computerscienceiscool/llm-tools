@@ -16,7 +16,7 @@ func TestNewSearchEngine_Success(t *testing.T) {
 		MaxResults:         10,
 		MinSimilarityScore: 0.5,
 		MaxPreviewLength:   100,
-		PythonPath:         "python3",
+		OllamaURL:         "python3",
 	}
 
 	engine, err := NewSearchEngine(cfg, tmpDir)

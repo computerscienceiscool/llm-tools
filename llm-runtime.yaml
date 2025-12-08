@@ -111,9 +111,9 @@ commands:
     # Chunk size for processing large files (in tokens)
     chunk_size: 1000
     
-    # Python interpreter path
-    python_path: "python3"
-    
+    # URL of the local LLaMA server for embeddings (if applicable) 
+    ollama_url: "http://localhost:11434"
+
     # File extensions to index for search
     index_extensions:
       - ".go"

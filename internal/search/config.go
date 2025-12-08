@@ -9,7 +9,7 @@ type SearchConfig struct {
 	MinSimilarityScore float64  `yaml:"min_similarity_score"`
 	MaxPreviewLength   int      `yaml:"max_preview_length"`
 	ChunkSize          int      `yaml:"chunk_size"`
-	PythonPath         string   `yaml:"python_path"`
+	OllamaURL         string   `yaml:"ollama_url"`
 	IndexExtensions    []string `yaml:"index_extensions"`
 	MaxFileSize        int64    `yaml:"max_file_size"`
 }

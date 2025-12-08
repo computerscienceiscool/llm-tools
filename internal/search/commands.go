@@ -2,9 +2,8 @@ package search
 
 import (
 	"fmt"
+	"net/http"
 	"os"
-
-	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 // SearchCommands handles search-related CLI commands
@@ -87,11 +86,6 @@ func (sc *SearchCommands) HandleSearchUpdate(excludedPaths []string) error {
 	)
 }
 
-// CheckPythonSetup verifies Python environment is correctly configured
-func CheckPythonSetup(pythonPath string) error {
-	return infrastructure.CheckPythonDependencies(pythonPath)
-}
-
 // PrintSearchHelp prints help information for search commands
 func PrintSearchHelp() {
 	fmt.Println(`Search Commands:
@@ -144,4 +138,19 @@ func (sc *SearchCommands) Search(query string) (string, error) {
 	}
 
 	return FormatSearchResults(results, query, sc.engine.GetConfig().MaxResults), nil
+}
+
+// CheckOllamaSetup verifies Ollama is available
+func CheckOllamaSetup(ollamaURL string) error {
+	resp, err := http.Get(ollamaURL + "/api/tags")
+	if err != nil {
+		return fmt.Errorf("cannot connect to Ollama: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Ollama responded with status %d", resp.StatusCode)
+	}
+
+	return nil
 }

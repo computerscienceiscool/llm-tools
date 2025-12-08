@@ -3,6 +3,7 @@ package search
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -51,13 +52,13 @@ func (se *SearchEngine) Close() error {
 
 // Search performs a semantic search for the given query
 func (se *SearchEngine) Search(query string) ([]SearchResult, error) {
-	// Check Python dependencies
-	if err := infrastructure.CheckPythonDependencies(se.config.PythonPath); err != nil {
-		return nil, fmt.Errorf("Python dependencies not available: %w", err)
+	// Check Ollama availability
+	if err := checkOllamaAvailability(se.config.OllamaURL); err != nil {
+		return nil, fmt.Errorf("Ollama not available: %w", err)
 	}
 
 	// Generate embedding for query
-	queryEmbedding, err := generateEmbedding(se.config.PythonPath, query)
+	queryEmbedding, err := generateEmbedding(se.config.OllamaURL, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate query embedding: %w", err)
 	}
@@ -135,4 +136,19 @@ func (se *SearchEngine) GetConfig() *SearchConfig {
 // GetRepoRoot returns the repository root path
 func (se *SearchEngine) GetRepoRoot() string {
 	return se.repoRoot
+}
+
+// checkOllamaAvailability verifies Ollama is running and accessible
+func checkOllamaAvailability(ollamaURL string) error {
+	resp, err := http.Get(ollamaURL + "/api/tags")
+	if err != nil {
+		return fmt.Errorf("cannot connect to Ollama at %s: %w", ollamaURL, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Ollama responded with status %d", resp.StatusCode)
+	}
+
+	return nil
 }

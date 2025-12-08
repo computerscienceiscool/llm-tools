@@ -17,7 +17,7 @@ type CLIFlags struct {
 	SearchValidate   bool
 	SearchCleanup    bool
 	SearchUpdate     bool
-	CheckPythonSetup bool
+	CheckOllamaSetup bool
 }
 
 // ParseFlags parses command-line flags and returns configuration
@@ -58,7 +58,7 @@ func ParseFlags() *CLIFlags {
 	flag.BoolVar(&flags.SearchValidate, "search-validate", false, "Validate search index")
 	flag.BoolVar(&flags.SearchCleanup, "search-cleanup", false, "Clean up search index")
 	flag.BoolVar(&flags.SearchUpdate, "search-update", false, "Update search index incrementally")
-	flag.BoolVar(&flags.CheckPythonSetup, "check-python-setup", false, "Check Python dependencies for search")
+	flag.BoolVar(&flags.CheckOllamaSetup, "check-ollama-setup", false, "Check Python dependencies for search")
 
 	flag.Parse()
 
@@ -104,5 +104,5 @@ func ParseFlags() *CLIFlags {
 
 // HasSearchCommand returns true if any search-related flag is set
 func (f *CLIFlags) HasSearchCommand() bool {
-	return f.Reindex || f.SearchStatus || f.SearchValidate || f.SearchCleanup || f.SearchUpdate || f.CheckPythonSetup
+	return f.Reindex || f.SearchStatus || f.SearchValidate || f.SearchCleanup || f.SearchUpdate || f.CheckOllamaSetup
 }

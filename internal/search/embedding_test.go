@@ -19,7 +19,7 @@ func TestGenerateEmbedding_EmptyText(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := generateEmbedding("python3", tt.input)
+			result, err := generateEmbedding("http://localhost:11434", tt.input)
 			if err != nil {
 				t.Fatalf("unexpected error for empty/whitespace input: %v", err)
 			}
@@ -39,14 +39,14 @@ func TestGenerateEmbedding_EmptyText(t *testing.T) {
 	}
 }
 
-func TestGenerateEmbedding_InvalidPythonPath(t *testing.T) {
-	_, err := generateEmbedding("/nonexistent/python", "test text")
+func TestGenerateEmbedding_InvalidOllamaURL(t *testing.T) {
+	_, err := generateEmbedding("http://localhost:99999", "test text")
 	if err == nil {
 		t.Error("expected error for invalid python path, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "Python script failed") {
-		t.Errorf("expected 'Python script failed' in error, got: %v", err)
+	if !strings.Contains(err.Error(), "Ollama API") {
+		t.Errorf("expected 'Ollama API' in error, got: %v", err)
 	}
 }
 
@@ -56,7 +56,7 @@ func TestGenerateEmbedding_ValidText(t *testing.T) {
 		t.Skip("Python with sentence-transformers not available")
 	}
 
-	result, err := generateEmbedding("python3", "Hello world")
+	result, err := generateEmbedding("http://localhost:11434", "Hello world")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -84,12 +84,12 @@ func TestGenerateEmbedding_DifferentTextsDifferentEmbeddings(t *testing.T) {
 		t.Skip("Python with sentence-transformers not available")
 	}
 
-	embedding1, err := generateEmbedding("python3", "The cat sat on the mat")
+	embedding1, err := generateEmbedding("http://localhost:11434", "The cat sat on the mat")
 	if err != nil {
 		t.Fatalf("unexpected error for first text: %v", err)
 	}
 
-	embedding2, err := generateEmbedding("python3", "Quantum physics is complex")
+	embedding2, err := generateEmbedding("http://localhost:11434", "Quantum physics is complex")
 	if err != nil {
 		t.Fatalf("unexpected error for second text: %v", err)
 	}
@@ -113,12 +113,12 @@ func TestGenerateEmbedding_SimilarTextsCloseEmbeddings(t *testing.T) {
 		t.Skip("Python with sentence-transformers not available")
 	}
 
-	embedding1, err := generateEmbedding("python3", "The dog is happy")
+	embedding1, err := generateEmbedding("http://localhost:11434", "The dog is happy")
 	if err != nil {
 		t.Fatalf("unexpected error for first text: %v", err)
 	}
 
-	embedding2, err := generateEmbedding("python3", "The dog is joyful")
+	embedding2, err := generateEmbedding("http://localhost:11434", "The dog is joyful")
 	if err != nil {
 		t.Fatalf("unexpected error for second text: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestGenerateEmbedding_NormalizedOutput(t *testing.T) {
 		t.Skip("Python with sentence-transformers not available")
 	}
 
-	result, err := generateEmbedding("python3", "Test normalization")
+	result, err := generateEmbedding("http://localhost:11434", "Test normalization")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -175,7 +175,7 @@ func TestGenerateEmbedding_SpecialCharacters(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := generateEmbedding("python3", tt.text)
+			result, err := generateEmbedding("http://localhost:11434", tt.text)
 			if err != nil {
 				t.Fatalf("unexpected error for %s: %v", tt.name, err)
 			}
@@ -196,7 +196,7 @@ func TestGenerateEmbedding_LongText(t *testing.T) {
 	// Generate a long text
 	longText := strings.Repeat("This is a test sentence. ", 100)
 
-	result, err := generateEmbedding("python3", longText)
+	result, err := generateEmbedding("http://localhost:11434", longText)
 	if err != nil {
 		t.Fatalf("unexpected error for long text: %v", err)
 	}
@@ -210,7 +210,7 @@ func TestGenerateEmbedding_LongText(t *testing.T) {
 func pythonAvailable(t *testing.T) bool {
 	t.Helper()
 
-	cmd := exec.Command("python3", "-c", "from sentence_transformers import SentenceTransformer")
+	cmd := exec.Command("http://localhost:11434", "-c", "from sentence_transformers import SentenceTransformer")
 	err := cmd.Run()
 	return err == nil
 }

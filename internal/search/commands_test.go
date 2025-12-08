@@ -136,25 +136,25 @@ func TestSearchCommands_Close_Multiple(t *testing.T) {
 	sc.Close()
 }
 
-func TestCheckPythonSetup_InvalidPath(t *testing.T) {
-	err := CheckPythonSetup("/nonexistent/python")
+func TestCheckOllamaSetup_InvalidPath(t *testing.T) {
+	err := CheckOllamaSetup("/nonexistent/python")
 	if err == nil {
 		t.Error("expected error for invalid Python path")
 	}
 }
 
-func TestCheckPythonSetup_InvalidPython(t *testing.T) {
+func TestCheckOllamaSetup_InvalidPython(t *testing.T) {
 	// Try with a command that exists but isn't Python:wq
 
 	// Use /bin/true which outputs nothing (no "OK")
-	err := CheckPythonSetup("/bin/true")
+	err := CheckOllamaSetup("/bin/true")
 	if err == nil {
 		t.Error("expected error for non-Python command")
 	}
 }
 
-func TestCheckPythonSetup_EmptyPath(t *testing.T) {
-	err := CheckPythonSetup("")
+func TestCheckOllamaSetup_EmptyPath(t *testing.T) {
+	err := CheckOllamaSetup("")
 	if err == nil {
 		t.Error("expected error for empty Python path")
 	}
@@ -169,7 +169,7 @@ func TestSearchCommands_Search_NoPython(t *testing.T) {
 	cfg := &SearchConfig{
 		Enabled:      true,
 		VectorDBPath: filepath.Join(tmpDir, "test.db"),
-		PythonPath:   "/nonexistent/python",
+		OllamaURL:   "/nonexistent/python",
 		MaxResults:   10,
 	}
 
@@ -321,7 +321,7 @@ func TestSearchCommands_InitializeSearchIndex_EmptyRepo(t *testing.T) {
 	cfg := &SearchConfig{
 		Enabled:      true,
 		VectorDBPath: filepath.Join(tmpDir, "test.db"),
-		PythonPath:   "/nonexistent/python", // Will fail to index
+		OllamaURL:   "/nonexistent/python", // Will fail to index
 	}
 
 	sc, err := NewSearchCommands(cfg, tmpDir)
@@ -444,7 +444,7 @@ func TestSearchCommands_HandleReindex_NoPython(t *testing.T) {
 	cfg := &SearchConfig{
 		Enabled:      true,
 		VectorDBPath: filepath.Join(tmpDir, "test.db"),
-		PythonPath:   "/nonexistent/python",
+		OllamaURL:   "/nonexistent/python",
 	}
 
 	sc, err := NewSearchCommands(cfg, tmpDir)
@@ -471,7 +471,7 @@ func TestSearchCommands_HandleSearchUpdate_NoPython(t *testing.T) {
 	cfg := &SearchConfig{
 		Enabled:      true,
 		VectorDBPath: filepath.Join(tmpDir, "test.db"),
-		PythonPath:   "/nonexistent/python",
+		OllamaURL:   "/nonexistent/python",
 	}
 
 	sc, err := NewSearchCommands(cfg, tmpDir)

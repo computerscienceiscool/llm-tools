@@ -14,7 +14,7 @@ func GetDefaultSearchConfig() *search.SearchConfig {
 		MinSimilarityScore: 0.5,
 		MaxPreviewLength:   100,
 		ChunkSize:          1000,
-		PythonPath:         "python3",
+		OllamaURL:         "python3",
 		IndexExtensions:    []string{".go", ".py", ".js", ".md", ".txt", ".yaml", ".json"},
 		MaxFileSize:        1048576,
 	}
@@ -50,7 +50,7 @@ func SetFullConfigDefaults(config *FullConfig) {
 	config.Commands.Search.MinSimilarityScore = 0.5
 	config.Commands.Search.MaxPreviewLength = 100
 	config.Commands.Search.ChunkSize = 1000
-	config.Commands.Search.PythonPath = "python3"
+	config.Commands.Search.OllamaURL = "python3"
 	config.Commands.Search.IndexExtensions = []string{".go", ".py", ".js", ".md", ".txt", ".yaml", ".json"}
 	config.Commands.Search.MaxFileSize = 1048576 // 1MB
 

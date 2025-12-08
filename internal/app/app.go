@@ -2,14 +2,14 @@ package app
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/computerscienceiscool/llm-runtime/internal/cli"
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
-	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
-	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 	"github.com/computerscienceiscool/llm-runtime/internal/search"
 	"github.com/computerscienceiscool/llm-runtime/internal/session"
+	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 )
 
 // App represents the main application
@@ -33,8 +33,8 @@ func (a *App) Run() error {
 
 // RunSearchCommand handles search-related CLI commands
 func (a *App) RunSearchCommand(flags *cli.CLIFlags) error {
-	if flags.CheckPythonSetup {
-		return a.checkPythonSetup()
+	if flags.CheckOllamaSetup {
+		return a.checkOllamaSetup()
 	}
 
 	// Initialize search commands
@@ -67,32 +67,36 @@ func (a *App) RunSearchCommand(flags *cli.CLIFlags) error {
 	return nil
 }
 
-// checkPythonSetup verifies Python dependencies
-func (a *App) checkPythonSetup() error {
-	fmt.Fprintf(os.Stderr, "Checking Python setup for search functionality...\n")
+// checkOllamaSetup verifies Ollama is available
+func (a *App) checkOllamaSetup() error {
+	fmt.Fprintf(os.Stderr, "Checking Ollama setup for search functionality...\n")
 
-	pythonPaths := []string{a.searchCfg.PythonPath, "python3", "python"}
-	var workingPython string
-
-	for _, pythonPath := range pythonPaths {
-		if err := infrastructure.CheckPythonDependencies(pythonPath); err == nil {
-			workingPython = pythonPath
-			break
-		}
+	if err := checkOllamaAvailability(a.searchCfg.OllamaURL); err != nil {
+		fmt.Fprintf(os.Stderr, "\nOllama not available at %s\n", a.searchCfg.OllamaURL)
+		fmt.Fprintf(os.Stderr, "Please install and start Ollama:\n")
+		fmt.Fprintf(os.Stderr, "  curl -fsSL https://ollama.com/install.sh | sh\n")
+		fmt.Fprintf(os.Stderr, "  ollama pull nomic-embed-text\n")
+		fmt.Fprintf(os.Stderr, "\nFor more details, see: https://ollama.com\n")
+		return fmt.Errorf("Ollama not available: %w", err)
 	}
 
-	if workingPython == "" {
-		fmt.Fprintf(os.Stderr, "\nPython setup incomplete\n")
-		fmt.Fprintf(os.Stderr, "Please install Python and sentence-transformers:\n")
-		fmt.Fprintf(os.Stderr, "  pip install sentence-transformers\n")
-		fmt.Fprintf(os.Stderr, "\nFor more details, see: https://pypi.org/project/sentence-transformers/\n")
-		return fmt.Errorf("Python dependencies not available")
-	}
-
-	fmt.Fprintf(os.Stderr, "Python setup complete (%s)\n", workingPython)
-	fmt.Fprintf(os.Stderr, "sentence-transformers library available\n")
+	fmt.Fprintf(os.Stderr, "Ollama is running at %s\n", a.searchCfg.OllamaURL)
 	fmt.Fprintf(os.Stderr, "\nSearch functionality is ready to use!\n")
-	fmt.Fprintf(os.Stderr, "Enable search in llm-runtime.config.yaml by setting search.enabled: true\n")
+
+	return nil
+}
+
+// checkOllamaAvailability verifies Ollama is running and accessible
+func checkOllamaAvailability(ollamaURL string) error {
+	resp, err := http.Get(ollamaURL + "/api/tags")
+	if err != nil {
+		return fmt.Errorf("cannot connect to Ollama: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Ollama responded with status %d", resp.StatusCode)
+	}
 
 	return nil
 }

@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-const embeddingDimensions = 384 // all-MiniLM-L6-v2 dimensions
+const embeddingDimensions = 768 // nomic-embed-text dimensions
 
 // cosineSimilarity calculates cosine similarity between two vectors
 func cosineSimilarity(a, b []float32) float32 {
