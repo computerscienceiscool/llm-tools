@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/command"
-	"github.com/computerscienceiscool/llm-runtime/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 )
 
 // ProcessText processes LLM output and executes commands
-func ProcessText(text string, exec *executor.Executor, startTime time.Time) string {
+func ProcessText(text string, exec *evaluator.Executor, startTime time.Time) string {
 	var output strings.Builder
 
 	// Parse commands from the text
-	commands := command.ParseCommands(text)
+	commands := scanner.ParseCommands(text)
 
 	if len(commands) == 0 {
 		// No commands found, return original text

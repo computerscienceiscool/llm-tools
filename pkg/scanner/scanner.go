@@ -1,10 +1,9 @@
-package cli
+package scanner
 
 import (
 	"bufio"
 	"strings"
 
-	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 
 // ScannerState represents the current parsing state
@@ -49,7 +48,7 @@ func (s ScannerState) String() string {
 type Scanner struct {
 	state      ScannerState
 	buffer     strings.Builder
-	currentCmd *scanner.Command
+	currentCmd *Command
 	reader     *bufio.Reader
 	showPrompts bool
 }
@@ -76,7 +75,7 @@ func (s *Scanner) resetCommand() {
 
 // startCommand initializes a new command
 func (s *Scanner) startCommand(cmdType string) {
-	s.currentCmd = &scanner.Command{
+	s.currentCmd = &Command{
 		Type: cmdType,
 	}
 	s.buffer.Reset()
@@ -87,7 +86,7 @@ func (s *Scanner) startCommand(cmdType string) {
 
 // Scan reads input and returns the next complete command
 // Returns nil when EOF or no command found
-func (s *Scanner) Scan() *scanner.Command {
+func (s *Scanner) Scan() *Command {
 	for {
 		line, err := s.reader.ReadString('\n')
 		if err != nil {

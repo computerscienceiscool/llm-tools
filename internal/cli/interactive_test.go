@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
-	"github.com/computerscienceiscool/llm-runtime/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 	"github.com/computerscienceiscool/llm-runtime/internal/search"
 )
 
@@ -92,7 +92,7 @@ func TestInteractiveMode_PrintsWelcomeMessage(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Empty input - will immediately hit EOF
 	restore := mockStdin(t, "")
@@ -143,7 +143,7 @@ func TestInteractiveMode_ProcessesOpenCommand(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Input with open command
 	input := "<open test.txt>\n"
@@ -177,7 +177,7 @@ func TestInteractiveMode_ProcessesWriteCommand(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Input with write command
 	input := "<write newfile.txt>Created content</write>\n"
@@ -220,7 +220,7 @@ func TestInteractiveMode_ProcessesExecCommand(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Input with exec command
 	input := "<exec echo hello>\n"
@@ -254,7 +254,7 @@ func TestInteractiveMode_ProcessesSearchCommand(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false} // Disabled
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Input with search command
 	input := "<search test query>\n"
@@ -289,7 +289,7 @@ func TestInteractiveMode_PlainTextNoCommand(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Plain text without commands - should be buffered until EOF
 	input := "Just some plain text\nwith multiple lines\n"
@@ -323,7 +323,7 @@ func TestInteractiveMode_MultipleCommands(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Multiple commands in sequence
 	input := "<write first.txt>First file</write>\n<write second.txt>Second file</write>\n"
@@ -365,7 +365,7 @@ func TestInteractiveMode_WaitingForMoreInputMessage(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Input with a command
 	input := "<write test.txt>content</write>\n"
@@ -399,7 +399,7 @@ func TestInteractiveMode_EmptyInput(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Empty input - immediate EOF
 	restore := mockStdin(t, "")
@@ -438,7 +438,7 @@ func TestInteractiveMode_CommandWithSurroundingText(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Command with surrounding text on same line
 	input := "<open existing.txt>\n"
@@ -473,7 +473,7 @@ func TestInteractiveMode_FailedCommand(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Try to open non-existent file
 	input := "<open nonexistent.txt>\n"
@@ -560,7 +560,7 @@ func TestInteractiveMode_MultiLineWrite(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Multi-line write command 
 	input := "<write multiline.txt>\nfirst line\nsecond line\nthird line\n</write>\n"
@@ -607,7 +607,7 @@ func TestInteractiveMode_MultiLineWriteWithEmptyLines(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Write with empty lines in content
 	input := "<write empty.txt>\nline 1\n\nline 3\n</write>\n"
@@ -652,7 +652,7 @@ func TestInteractiveMode_SingleLineWrite(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Single line write (old behavior should still work)
 	input := "<write single.txt>just one line</write>\n"

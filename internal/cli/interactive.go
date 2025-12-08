@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/command"
-	"github.com/computerscienceiscool/llm-runtime/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
+	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 )
 
 // isCommandStart checks if a line starts with a command (ignoring leading whitespace)
@@ -23,7 +23,7 @@ func isCommandStart(line string) bool {
 
 
 // ScanInput handles continuous input/output using state machine scanner
-func ScanInput(exec *executor.Executor, startTime time.Time, showPrompts bool) {
+func ScanInput(exec *evaluator.Executor, startTime time.Time, showPrompts bool) {
 	reader := bufio.NewReader(os.Stdin)
 	scanner := NewScanner(reader, showPrompts)
 
@@ -53,7 +53,7 @@ func ScanInput(exec *executor.Executor, startTime time.Time, showPrompts bool) {
 }
 
 // formatCommandResult formats a single command result
-func formatCommandResult(cmd command.Command, result command.ExecutionResult, exec *executor.Executor, startTime time.Time) string {
+func formatCommandResult(cmd scanner.Command, result scanner.ExecutionResult, exec *evaluator.Executor, startTime time.Time) string {
 	var output strings.Builder
 
 	output.WriteString("=== LLM TOOL START ===\n")

@@ -6,7 +6,7 @@ import (
 
 	"github.com/computerscienceiscool/llm-runtime/internal/cli"
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
-	"github.com/computerscienceiscool/llm-runtime/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 	"github.com/computerscienceiscool/llm-runtime/internal/search"
 	"github.com/computerscienceiscool/llm-runtime/internal/session"
@@ -16,7 +16,7 @@ import (
 type App struct {
 	config    *config.Config
 	session   *session.Session
-	executor  *executor.Executor
+	executor  *evaluator.Executor
 	searchCfg *search.SearchConfig
 }
 
@@ -119,7 +119,7 @@ func (a *App) GetSession() *session.Session {
 }
 
 // GetExecutor returns the app's executor
-func (a *App) GetExecutor() *executor.Executor {
+func (a *App) GetExecutor() *evaluator.Executor {
 	return a.executor
 }
 

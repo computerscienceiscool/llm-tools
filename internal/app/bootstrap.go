@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
-	"github.com/computerscienceiscool/llm-runtime/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 	"github.com/computerscienceiscool/llm-runtime/internal/session"
 )
 
@@ -31,7 +31,7 @@ func Bootstrap(cfg *config.Config) (*App, error) {
 	searchCfg := config.LoadSearchConfig()
 
 	// Create executor with audit logging
-	exec := executor.NewExecutor(cfg, searchCfg, sess.LogAudit)
+	exec := evaluator.NewExecutor(cfg, searchCfg, sess.LogAudit)
 
 	return &App{
 		config:    cfg,

@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
-	"github.com/computerscienceiscool/llm-runtime/internal/executor"
+	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 	"github.com/computerscienceiscool/llm-runtime/internal/search"
 )
 
 // createTestExecutor creates an executor for testing with a temp directory
-func createTestExecutor(t *testing.T, repoRoot string) *executor.Executor {
+func createTestExecutor(t *testing.T, repoRoot string) *evaluator.Executor {
 	t.Helper()
 
 	cfg := &config.Config{
@@ -34,7 +34,7 @@ func createTestExecutor(t *testing.T, repoRoot string) *executor.Executor {
 		// No-op for testing
 	}
 
-	return executor.NewExecutor(cfg, searchCfg, auditLog)
+	return evaluator.NewExecutor(cfg, searchCfg, auditLog)
 }
 
 // createTestFile creates a file in the given directory
@@ -362,7 +362,7 @@ func TestProcessText_WriteWithBackup(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	// Create existing file to trigger backup
 	createTestFile(t, tempDir, "backup_test.txt", "Original")
@@ -441,7 +441,7 @@ func TestProcessText_ExecWithNonWhitelistedCommand(t *testing.T) {
 
 	searchCfg := &search.SearchConfig{Enabled: false}
 	auditLog := func(cmd, arg string, success bool, errMsg string) {}
-	exec := executor.NewExecutor(cfg, searchCfg, auditLog)
+	exec := evaluator.NewExecutor(cfg, searchCfg, auditLog)
 
 	startTime := time.Now()
 	input := "<exec rm -rf />" // Not in whitelist
