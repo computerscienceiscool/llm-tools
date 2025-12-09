@@ -16,7 +16,7 @@ A secure tool that enables Large Language Models to autonomously explore and wor
 ### Prerequisites
 - Go 1.21 or later
 - Docker (for exec commands)
-- Python 3.8+ with sentence-transformers (for search feature)
+- Ollama with nomic-embed-text model (for search feature)
 
 ### Build from source
 ```bash
@@ -34,6 +34,25 @@ go build -o llm-runtime main.go
 ```bash
 chmod +x setup.sh
 ./setup.sh
+```
+
+## Project Structure
+
+```
+llm-runtime/
+├── cmd/llm-runtime/       # Entry point
+├── internal/              # App-specific code
+│   ├── app/               # Application bootstrap
+│   ├── cli/               # Command-line handling
+│   ├── config/            # Configuration loading
+│   ├── infrastructure/    # Database, filesystem
+│   ├── search/            # Semantic search (Ollama)
+│   └── session/           # Session management
+├── pkg/                   # Public API (importable)
+│   ├── evaluator/         # Command execution
+│   ├── sandbox/           # Security, Docker isolation
+│   └── scanner/           # Command parsing
+└── docs/                  # Documentation
 ```
 
 ## Available Commands
@@ -61,10 +80,21 @@ func main() {
 Let me run the tests <exec go test ./...>
 Now build the project <exec make build>
 ```
-
 ### 4. Semantic Search: `<search query>`
 ```
+Find files related to authentication <search user login auth>
+Find database code <search database connection query>
+```
 
+**Search Setup:**
+```bash
+# Install and start Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull nomic-embed-text
+
+# Build search index
+./llm-runtime --reindex
+```
 
 
 

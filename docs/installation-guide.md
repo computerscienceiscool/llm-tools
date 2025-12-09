@@ -1,6 +1,6 @@
 # Installation Guide
 
-Complete installation guide for the LLM File Access Tool across different operating systems and environments.
+Complete installation guide for llm-runtime across different operating systems and environments.
 
 ## Prerequisites
 
@@ -10,23 +10,16 @@ Complete installation guide for the LLM File Access Tool across different operat
 
 ### Optional (for specific features)
 - **Docker** - Required for `<exec>` command execution
-- **Python 3.8+** - Required for `<search>` semantic search functionality
+- **Ollama** - Required for `<search>` semantic search functionality
 
 ## Quick Installation
 
-### Automated Setup (Recommended)
 ```bash
 git clone https://github.com/computerscienceiscool/llm-runtime.git
 cd llm-runtime
-./setup.sh
+make build
+./llm-runtime --help
 ```
-
-The setup script will:
-1. Check all prerequisites
-2. Build the tool
-3. Run tests
-4. Optionally install to system PATH
-5. Run a quick demo
 
 ## Manual Installation
 
@@ -75,7 +68,10 @@ cd llm-runtime
 go mod download
 
 # Build the tool
-go build -o llm-runtime main.go
+go build -o llm-runtime ./cmd/llm-runtime
+
+# Or use make
+make build
 
 # Verify build
 ./llm-runtime --help
@@ -112,71 +108,90 @@ brew install --cask docker
 # Ensure WSL2 is enabled
 ```
 
-### 4. Install Python Dependencies (for search)
+### 4. Install Ollama (for search)
 
-#### All Platforms
+#### Linux
 ```bash
-# Install sentence-transformers
-pip install sentence-transformers
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
 
-# Or using conda
-conda install -c conda-forge sentence-transformers
+# Pull the embedding model
+ollama pull nomic-embed-text
 
 # Verify installation
-python3 -c "import sentence_transformers; print('Search dependencies ready')"
+ollama list
+```
+
+#### macOS
+```bash
+# Install via Homebrew
+brew install ollama
+
+# Or download from https://ollama.com
+# Pull the embedding model
+ollama pull nomic-embed-text
+```
+
+#### Windows
+```bash
+# Download from https://ollama.com
+# Run installer
+# Pull the embedding model
+ollama pull nomic-embed-text
 ```
 
 ## Verification
 
 ### 1. Test Basic Functionality
 ```bash
-echo "Test file access <open README.md>" | ./llm-runtime
+echo "<open README.md>" | ./llm-runtime
 ```
 
 ### 2. Test Docker Integration (if installed)
 ```bash
-echo "Test exec <exec echo 'Docker works'>" | ./llm-runtime --exec-enabled
+echo "<exec echo 'Docker works'>" | ./llm-runtime --exec-enabled
 ```
 
-### 3. Test Search (if Python deps installed)
+### 3. Test Search (if Ollama installed)
 ```bash
 # Build search index
 ./llm-runtime --reindex
 
 # Test search
-echo "Test search <search configuration>" | ./llm-runtime
+echo "<search configuration>" | ./llm-runtime
 ```
 
 ### 4. Run Test Suite
 ```bash
-# Unit tests
 make test
-
-# Comprehensive tests
-make test-suite
-
-# Security tests
-./security_test.sh
 ```
 
 ## Configuration
 
 ### Create Configuration File
 ```bash
-# Copy example config
-cp llm-runtime.config.yaml my-config.yaml
+# Copy example config or create new
+cat > llm-runtime.config.yaml << 'EOF'
+repository:
+  root: "."
+  excluded_paths:
+    - ".git"
+    - ".env"
+    - "*.key"
 
-# Edit as needed
-nano my-config.yaml
-```
-
-### Enable Features
-```yaml
 commands:
+  open:
+    enabled: true
+    max_file_size: 1048576
+  write:
+    enabled: true
+    max_file_size: 102400
   exec:
-    enabled: true  # Requires Docker
+    enabled: false
   search:
-    enabled: true  # Requires Python dependencies
+    enabled: true
+    vector_db_path: "./embeddings.db"
+EOF
 ```
 
 ## System Installation (Optional)
@@ -205,7 +220,7 @@ source ~/.bashrc
 go version
 
 # Should show go1.21 or later
-# If too old, install newer version
+# If too old, install newer version from https://go.dev/dl/
 ```
 
 ### Permission Issues (Linux/macOS)
@@ -231,19 +246,19 @@ docker run --rm ubuntu:22.04 echo "Docker test"
 docker pull ubuntu:22.04
 ```
 
-### Python Issues
+### Ollama Issues
 ```bash
-# Check Python version
-python3 --version
+# Check Ollama is running
+ollama list
 
-# Install pip if missing
-sudo apt install python3-pip  # Linux
-brew install python3          # macOS
+# Start Ollama if needed
+ollama serve
 
-# Install in virtual environment (recommended)
-python3 -m venv llm-env
-source llm-env/bin/activate
-pip install sentence-transformers
+# Pull embedding model
+ollama pull nomic-embed-text
+
+# Test embedding endpoint
+curl http://localhost:11434/api/tags
 ```
 
 ### Build Issues
@@ -251,7 +266,7 @@ pip install sentence-transformers
 # Clean and rebuild
 make clean
 go mod tidy
-go build -o llm-runtime main.go
+make build
 
 # Check for missing dependencies
 go mod download
@@ -271,58 +286,19 @@ make build
 ./llm-runtime --reindex
 ```
 
-### Update Dependencies
-```bash
-# Update Go dependencies
-go get -u ./...
-go mod tidy
-
-# Update Python dependencies
-pip install --upgrade sentence-transformers
-```
-
-## Platform-Specific Notes
-
-### Linux
-- **WSL**: Works well in WSL2 with Docker Desktop
-- **ARM64**: Use appropriate Go and Docker builds
-- **Alpine**: May need additional packages for CGO
-
-### macOS
-- **Apple Silicon (M1/M2)**: Use arm64 builds
-- **Rosetta**: x64 builds work but slower
-- **Homebrew**: Preferred for dependencies
-
-### Windows
-- **WSL2**: Recommended environment
-- **PowerShell**: Should work but less tested
-- **File paths**: Use forward slashes in config
-
-## Security Considerations
-
-### During Installation
-- **Verify downloads** from official sources only
-- **Check checksums** for Go and Docker installers
-- **Review scripts** before running (including setup.sh)
-
-### Post-Installation
-- **Limit repository access** to trusted projects only
-- **Configure excluded paths** for sensitive files
-- **Review Docker security** settings
-- **Enable audit logging** in production
-
 ## Next Steps
 
 After successful installation:
-1. **Read the [configuration guide](configuration.md)** to customize settings
-2. **Check [troubleshooting](troubleshooting.md)** for common issues
-3. **See [llm-runtime-overview.md](llm-runtime-overview.md)** to understand all features
-4. **Review [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md)** for LLM integration
+1. Read the [configuration guide](configuration.md) to customize settings
+2. Check [troubleshooting](troubleshooting.md) for common issues
+3. See [llm-runtime-overview.md](llm-runtime-overview.md) to understand all features
+4. Review [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) for LLM integration
 
-## Tips
+## Feature Summary
 
-- **Use setup.sh** for automated installation when possible
-- **Enable Docker** for full functionality (exec commands)
-- **Install Python deps** for semantic search capabilities
-- **Run test suite** to verify everything works
-- **Start with basic usage** before enabling advanced features
+| Feature | Requirement | Test Command |
+|---------|-------------|--------------|
+| File reading | Go (built-in) | `echo "<open README.md>" \| ./llm-runtime` |
+| File writing | Go (built-in) | `echo "<write test.txt>hello</write>" \| ./llm-runtime` |
+| Command execution | Docker | `echo "<exec ls>" \| ./llm-runtime --exec-enabled` |
+| Semantic search | Ollama | `echo "<search main>" \| ./llm-runtime` |

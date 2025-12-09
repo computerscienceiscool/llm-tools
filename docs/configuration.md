@@ -1,6 +1,6 @@
 # Configuration Guide
 
-Complete reference for configuring the LLM File Access Tool via `llm-runtime.config.yaml` and command-line options.
+Complete reference for configuring llm-runtime via `llm-runtime.config.yaml` and command-line options.
 
 ## Configuration File Location
 
@@ -34,7 +34,7 @@ commands:
     timeout_seconds: 30
     
   search:
-    enabled: false
+    enabled: true
     vector_db_path: "./embeddings.db"
 
 security:
@@ -217,41 +217,19 @@ commands:
 
 ## Search Command Configuration
 
+Search uses [Ollama](https://ollama.com) with the `nomic-embed-text` model for local embedding generation.
+
 ### `commands.search.enabled`
 **Default**: `false`  
-**Description**: Enable semantic search (requires Python dependencies)  
+**Description**: Enable semantic search (requires Ollama)
 
 ### `commands.search.vector_db_path`
 **Default**: `"./embeddings.db"`  
 **Description**: SQLite database path for storing embeddings  
 
-### `commands.search.embedding_model`
-**Default**: `"all-MiniLM-L6-v2"`  
-**Description**: Sentence transformer model for embeddings  
-**Options**: 
-- `"all-MiniLM-L6-v2"` (fast, 384 dimensions)
-- `"all-mpnet-base-v2"` (slower, better quality, 768 dimensions)
-
 ### `commands.search.max_results`
 **Default**: `10`  
 **Description**: Maximum search results to return  
-
-### `commands.search.min_similarity_score`
-**Default**: `0.5`  
-**Description**: Minimum similarity score (0.0-1.0) to include results  
-
-### `commands.search.max_preview_length`
-**Default**: `100`  
-**Description**: Maximum length of file preview in search results  
-
-### `commands.search.chunk_size`
-**Default**: `1000`  
-**Description**: Text chunk size for processing large files  
-
-### `commands.search.python_path`
-**Default**: `"python3"`  
-**Description**: Python interpreter path  
-**Examples**: `"python"`, `"python3"`, `"/usr/bin/python3"`
 
 ### `commands.search.index_extensions`
 **Default**: `[".go", ".py", ".js", ".md", ".txt", ".yaml", ".json"]`  
@@ -277,12 +255,20 @@ commands:
       - ".c"
       - ".cpp"
       - ".h"
-      - ".hpp"
 ```
 
-### `commands.search.max_file_size`
-**Default**: `1048576` (1MB)  
-**Description**: Maximum file size to index for search  
+### Search Setup
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Pull embedding model
+ollama pull nomic-embed-text
+
+# Build search index
+./llm-runtime --reindex
+```
 
 ## Security Configuration
 
@@ -361,6 +347,7 @@ commands:
     whitelist: ["go test", "npm test", "make", "python3"]
   search:
     enabled: true
+    vector_db_path: "./embeddings.db"
 
 security:
   log_all_operations: true
@@ -369,7 +356,7 @@ logging:
   level: "debug"
 ```
 
-### Production Environment
+### Production / Read-Only Environment
 ```yaml
 repository:
   root: "/app/src"
@@ -404,14 +391,12 @@ logging:
   format: "json"
 ```
 
-### Search-Optimized Setup
+### Search-Focused Setup
 ```yaml
 commands:
   search:
     enabled: true
-    embedding_model: "all-mpnet-base-v2"  # Better quality
     max_results: 20
-    min_similarity_score: 0.3  # More permissive
     index_extensions:
       - ".go"
       - ".py"
@@ -423,7 +408,6 @@ commands:
       - ".json"
       - ".rs"
       - ".java"
-    max_file_size: 2097152  # 2MB
 ```
 
 ## Command Line Override
@@ -434,9 +418,6 @@ All configuration options can be overridden via command line:
 # Override repository root
 ./llm-runtime --root /path/to/project
 
-# Override file size limits
-./llm-runtime --max-size 2097152 --max-write-size 204800
-
 # Enable exec with custom settings
 ./llm-runtime --exec-enabled --exec-timeout 60s --exec-memory 1g
 
@@ -445,6 +426,9 @@ All configuration options can be overridden via command line:
 
 # Verbose logging
 ./llm-runtime --verbose
+
+# Interactive mode
+./llm-runtime --interactive
 ```
 
 ## Configuration Validation
@@ -455,13 +439,11 @@ Test your configuration:
 ./llm-runtime --help
 
 # Validate Docker setup (if exec enabled)
-./llm-runtime --check-docker
+docker run --rm hello-world
 
-# Validate Python setup (if search enabled)  
-./llm-runtime --check-python-setup
-
-# Test with specific config file
-./llm-runtime --config my-config.yaml
+# Validate Ollama setup (if search enabled)
+ollama list
+curl http://localhost:11434/api/tags
 ```
 
 ## Best Practices
