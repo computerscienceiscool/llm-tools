@@ -1,4 +1,3 @@
-
 # Docker Cheat Sheet for llm-runtime
 
 A beginner-friendly guide for using Docker with llm-runtime.
@@ -82,13 +81,13 @@ This downloads the Ubuntu image that llm-runtime uses. Do this once to avoid del
 Run a command inside Docker via llm-runtime:
 
 ```bash
-echo "<exec ls>" | ./llm-runtime --exec-enabled --exec-cpu 1
+echo "<exec ls>" | ./llm-runtime --exec-enabled
 ```
 
 ### Verify It's Running in Docker
 
 ```bash
-echo "<exec cat /etc/hostname>" | ./llm-runtime --exec-enabled --exec-cpu 1
+echo "<exec cat /etc/hostname>" | ./llm-runtime --exec-enabled
 ```
 
 If you see a random string like `b1ad5aa37b4c` (not your computer name), it's running in Docker.
@@ -96,7 +95,7 @@ If you see a random string like `b1ad5aa37b4c` (not your computer name), it's ru
 ### Check the Container's OS
 
 ```bash
-echo "<exec cat /etc/os-release>" | ./llm-runtime --exec-enabled --exec-cpu 1
+echo "<exec cat /etc/os-release>" | ./llm-runtime --exec-enabled
 ```
 
 Should show "Ubuntu 22.04" regardless of what OS you're actually using.
@@ -198,8 +197,9 @@ range of CPUs is from 0.01 to 1.00, as there are only 1 CPUs available
 
 Or update `llm-runtime.config.yaml`:
 ```yaml
-exec:
-  cpu_limit: 1
+commands:
+  exec:
+    cpu_limit: 1
 ```
 
 ### Container Runs Slowly the First Time
@@ -265,7 +265,7 @@ When you run:
 echo "<exec go test>" | ./llm-runtime --exec-enabled
 ```
 
-Behind the scenes, llm-runtime runs:
+Behind the scenes, llm-runtime runs something like:
 ```bash
 docker run \
     --rm \
@@ -276,13 +276,14 @@ docker run \
     --read-only \
     --tmpfs /tmp \
     --memory 512m \
-    --cpus 1 \
+    --cpus 2 \
     -v /your/repo:/workspace:ro \
     ubuntu:22.04 \
     sh -c "go test"
 ```
 
 **Security flags explained:**
+
 | Flag | Purpose |
 |------|---------|
 | `--rm` | Delete container after use |
@@ -292,7 +293,7 @@ docker run \
 | `--security-opt no-new-privileges` | Prevent privilege escalation |
 | `--read-only` | Container filesystem is read-only |
 | `--memory 512m` | Limit RAM to 512MB |
-| `--cpus 1` | Limit to 1 CPU |
+| `--cpus 2` | Limit to 2 CPUs |
 | `-v ...:/workspace:ro` | Mount repo as read-only |
 
 ## Quick Reference
@@ -303,7 +304,7 @@ docker run \
 | Test Docker works | `docker run --rm hello-world` |
 | Pull Ubuntu image | `docker pull ubuntu:22.04` |
 | Interactive shell | `docker run -it --rm -v $(pwd):/workspace:ro ubuntu:22.04 bash` |
-| Run llm-runtime exec | `echo "<exec ls>" \| ./llm-runtime --exec-enabled --exec-cpu 1` |
+| Run llm-runtime exec | `echo "<exec ls>" \| ./llm-runtime --exec-enabled` |
 | List running containers | `docker ps` |
 | List images | `docker images` |
 | Clean up | `docker system prune` |

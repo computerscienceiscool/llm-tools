@@ -1,13 +1,11 @@
-
 # LLM-Runtime Architecture
-
 
 ## Executive Summary
 
-This document defines the target architecture for `llm-runtime`, a command interpreter that enables Large Language Models to interact with local filesystems and execute sandboxed commands. The design draws from established principles in interpreter construction, emphasizing:
+This document describes the architecture of `llm-runtime`, a command interpreter that enables Large Language Models to interact with local filesystems and execute sandboxed commands. The design draws from established principles in interpreter construction:
 
 1. **Single Code Path** — One unified pipeline for all input modes
-2. **State Machine Parsing** — Explicit state transitions replace ad-hoc buffer manipulation
+2. **State Machine Parsing** — Explicit state transitions for command detection
 3. **Separation of Concerns** — Clear boundaries between scanning, parsing, and evaluation
 4. **Defense in Depth** — Sandboxing at every layer, not just at execution time
 
@@ -32,12 +30,7 @@ Classical interpreters follow the REPL (Read-Eval-Print-Loop) pattern from Lisp 
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Current Problem:** The existing codebase has *two* code paths—`InteractiveMode()` and `processPipeMode()`—that implement this loop differently, leading to:
-- Duplicated logic
-- Inconsistent behavior (e.g., `<write>` works in pipe mode but not interactive)
-- Command reordering bugs in `ParseCommands()`
-
-**Solution:** Unify into a single `ScanInput()` function that processes one command at a time, regardless of input source.
+A single `Scanner` processes input regardless of source (pipe or interactive), emitting commands one at a time for evaluation.
 
 ### 1.2 The Phases of Interpretation
 
@@ -60,16 +53,16 @@ Following Aho, Sethi, and Ullman's compiler design principles, we decompose inte
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-| Phase | Responsibility | Current Code | Target Code |
-|-------|---------------|--------------|-------------|
-| **Scanning** | Character-by-character input, tokenization | `bufio.Scanner` in `InteractiveMode()` | `Scanner` struct with state machine |
-| **Parsing** | Structure recognition, command extraction | `ParseCommands()` with regex | `Parser` with grammar-based extraction |
-| **Evaluation** | Command execution, side effects | `Executor.Execute()` | `Evaluator` with sandbox delegation |
-| **Printing** | Result formatting, output | Scattered `fmt.Print` calls | `Printer` with configurable formats |
+| Phase | Responsibility | Implementation |
+|-------|---------------|----------------|
+| **Scanning** | Character-by-character input, state machine | `pkg/scanner/scanner.go` |
+| **Parsing** | Command extraction, argument parsing | `pkg/scanner/parser.go` |
+| **Evaluation** | Command execution, side effects | `pkg/evaluator/*.go` |
+| **Sandboxing** | Security validation, Docker isolation | `pkg/sandbox/*.go` |
 
 ---
 
-## 2. Target Architecture
+## 2. Architecture
 
 ### 2.1 Component Diagram
 
@@ -84,8 +77,7 @@ Following Aho, Sethi, and Ullman's compiler design principles, we decompose inte
 │  ├─────────────┤     ├─────────────┤     ├─────────────┤                 │
 │  │ • stdin     │────▶│ • Scanner   │────▶│ • stdout    │                 │
 │  │ • file      │     │ • Parser    │     │ • file      │                 │
-│  │ • (future:  │     │ • Evaluator │     │ • JSON      │                 │
-│  │    socket)  │     │ • Printer   │     │             │                 │
+│  │             │     │ • Evaluator │     │             │                 │
 │  └─────────────┘     └──────┬──────┘     └─────────────┘                 │
 │                             │                                             │
 │                             ▼                                             │
@@ -94,7 +86,7 @@ Following Aho, Sethi, and Ullman's compiler design principles, we decompose inte
 │  ├───────────────────────────────────────────────────────────────────┤   │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │   │
 │  │  │ OpenCmd  │  │ WriteCmd │  │ ExecCmd  │  │    SearchCmd     │   │   │
-│  │  │ (read)   │  │ (write)  │  │ (docker) │  │   (embeddings)   │   │   │
+│  │  │ (read)   │  │ (write)  │  │ (docker) │  │    (ollama)      │   │   │
 │  │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘   │   │
 │  │       │             │             │                  │             │   │
 │  │       ▼             ▼             ▼                  ▼             │   │
@@ -109,11 +101,85 @@ Following Aho, Sethi, and Ullman's compiler design principles, we decompose inte
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 The Unified Scanner (State Machine Design)
+### 2.2 Package Structure
 
-The core insight from Steve's review: **the scanner loop needs to be replaced with a state machine loop**.
+```
+llm-runtime/
+├── cmd/llm-runtime/           # Entry point
+│   └── main.go
+│
+├── pkg/                       # Public API (importable)
+│   ├── scanner/               # Command detection and parsing
+│   │   ├── scanner.go         # State machine scanner
+│   │   ├── parser.go          # Command extraction (regex-based)
+│   │   └── types.go           # Command type definitions
+│   │
+│   ├── evaluator/             # Command execution
+│   │   ├── executor.go        # Command dispatch
+│   │   ├── open.go            # <open> implementation
+│   │   ├── write.go           # <write> implementation
+│   │   ├── exec.go            # <exec> implementation
+│   │   └── search.go          # <search> implementation
+│   │
+│   └── sandbox/               # Security and isolation
+│       ├── path.go            # Path validation
+│       ├── extension.go       # Extension whitelist
+│       ├── exec_validation.go # Command whitelist
+│       ├── audit.go           # Audit logging
+│       ├── client.go          # Docker client
+│       └── container.go       # Container management
+│
+├── internal/                  # Private implementation
+│   ├── app/                   # Application bootstrap
+│   ├── cli/                   # Command-line handling
+│   ├── config/                # Configuration loading
+│   ├── infrastructure/        # Database, filesystem
+│   ├── search/                # Semantic search (Ollama integration)
+│   └── session/               # Session management
+│
+└── docs/                      # Documentation
+```
 
-#### 2.2.1 Scanner States
+---
+
+## 3. The Scanner (State Machine Design)
+
+### 3.1 Why State Machines Over Regex
+
+The core insight: **regex-based parsing is fragile for nested or context-sensitive structures**.
+
+**The Chomsky Hierarchy** classifies formal languages by computational power:
+
+| Type | Name | Recognizer | Example |
+|------|------|------------|---------|
+| Type-3 | Regular | Finite Automaton (Regex) | `<open file.txt>` |
+| Type-2 | Context-Free | Pushdown Automaton | `<write f>nested</write>` |
+| Type-1 | Context-Sensitive | Linear Bounded Automaton | Natural language |
+| Type-0 | Recursively Enumerable | Turing Machine | Any computable |
+
+**Problem**: The `<write>` command requires *context-sensitive* parsing because we must track nested content until we see `</write>`. Regular expressions (Type-3) cannot handle this—they lack the "memory" to match arbitrary nesting.
+
+**Example of regex failure:**
+```go
+// This regex CANNOT correctly handle:
+// <write file.txt>content with </write> inside</write>
+writeRegex := regexp.MustCompile(`<write\s+([^>]+)>(.*?)</write>`)
+// The (.*?) will match minimally, breaking on the first </write>
+```
+
+**Solution**: A state machine maintains explicit state, enabling correct handling:
+
+```go
+case StateInWriteBody:
+    s.buffer.WriteString(line)
+    if strings.Contains(line, "</write>") {
+        // Only transition when we see the closing tag
+        s.state = StateText
+        return s.extractWriteCommand()
+    }
+```
+
+### 3.2 Scanner State Machine
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -148,7 +214,7 @@ The core insight from Steve's review: **the scanner loop needs to be replaced wi
 │            │    │       │         │  │        │                  │
 │            │    ▼       ▼         ▼  ▼        │                  │
 │            │  ┌─────────────────────────┐     │                  │
-│            │  │       EXECUTE           │     │                  │
+│            │  │       COMPLETE          │     │                  │
 │            │  └───────────┬─────────────┘     │                  │
 │            │              │                   │                  │
 │            └──────────────┴───────────────────┘                  │
@@ -156,76 +222,35 @@ The core insight from Steve's review: **the scanner loop needs to be replaced wi
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-#### 2.2.2 State Definition (Target Implementation)
+**Scanner States:**
+- `StateText` — Default state, scanning for command start
+- `StateInOpen` — Inside `<open ...>` command
+- `StateInWrite` — Inside `<write ...>` tag, before content
+- `StateInWriteBody` — Accumulating write content until `</write>`
+- `StateInExec` — Inside `<exec ...>` command
+- `StateInSearch` — Inside `<search ...>` command
 
+### 3.3 Command Detection: HasPrefix vs Contains
+
+**Anti-pattern** (breaks on mid-line commands):
 ```go
-// ScannerState represents the current parsing state
-type ScannerState int
+// WRONG: matches "<open" anywhere in the line
+if strings.Contains(line, "<open") { ... }
+```
 
-const (
-    StateScanning   ScannerState = iota  // Default: scanning for commands
-    StateTagOpen                          // Saw '<', determining tag type
-    StateOpen                             // Parsing <open filepath>
-    StateWrite                            // Parsing <write filepath>
-    StateWriteBody                        // Accumulating write content
-    StateExec                             // Parsing <exec command>
-    StateSearch                           // Parsing <search query>
-    StateExecute                          // Ready to execute command
-)
-
-// Scanner implements a state-machine based input processor
-type Scanner struct {
-    state       ScannerState
-    buffer      strings.Builder
-    currentCmd  *Command
-    reader      *bufio.Reader
-    
-    // Configuration
-    showPrompt  bool  // True for interactive mode
+**Correct approach**:
+```go
+// RIGHT: only matches commands at line start (after whitespace)
+func isCommandStart(line string) bool {
+    trimmed := strings.TrimLeft(line, " \t")
+    return strings.HasPrefix(trimmed, "<open") ||
+           strings.HasPrefix(trimmed, "<write") ||
+           strings.HasPrefix(trimmed, "<exec") ||
+           strings.HasPrefix(trimmed, "<search")
 }
 ```
 
-#### 2.2.3 Why This Matters
-
-**Current bug example** (from code review): In `InteractiveMode()`, the code uses `strings.Contains()` to detect commands:
-
-```go
-// CURRENT (BROKEN)
-if strings.Contains(line, "<open") || strings.Contains(line, "<write") ...
-```
-
-This fails when:
-- A command appears mid-line after other text
-- Multiple commands appear on one line
-- The string `<open` appears in a comment or string literal
-
-**State machine approach:**
-
-```go
-// TARGET (CORRECT)
-func (s *Scanner) ProcessByte(b byte) (Command, bool) {
-    switch s.state {
-    case StateScanning:
-        if b == '<' {
-            s.state = StateTagOpen
-            s.buffer.WriteByte(b)
-        } else {
-            // Pass through non-command text
-            s.emitText(b)
-        }
-    case StateTagOpen:
-        s.buffer.WriteByte(b)
-        if s.matchesTagPrefix() {
-            s.transitionToTagState()
-        }
-    // ... other states
-    }
-}
-```
-
-### 2.3 Command Grammar
-
-Following formal language theory, we define the command grammar in BNF:
+### 3.4 Command Grammar (BNF)
 
 ```bnf
 <input>       ::= <segment>*
@@ -239,21 +264,31 @@ Following formal language theory, we define the command grammar in BNF:
 <search-cmd>  ::= '<search' <ws> <query> '>'
 
 <filepath>    ::= <path-char>+
-<shell-cmd>   ::= <cmd-char>+
-<query>       ::= <query-char>+
+<shell-cmd>   ::= [^\>]+
+<query>       ::= [^\>]+
 <content>     ::= (any character except '</write>')*
 
 <ws>          ::= (' ' | '\t' | '\n')+
 <path-char>   ::= [a-zA-Z0-9_./-]
-<cmd-char>    ::= [^\>]
-<query-char>  ::= [^\>]
 ```
 
-**Key insight:** The `<write>` command requires *context-sensitive* parsing because we must track nested content until we see `</write>`. This is why regex-based parsing is fragile—regular expressions cannot handle nested structures (Chomsky hierarchy: Type-3 vs Type-2 languages).
+### 3.5 Command Ordering
 
-### 2.4 Evaluation Model
+Commands are executed in the order they appear in the input. The parser tracks `StartPos` for each command and sorts before returning:
 
-#### 2.4.1 Command Execution Flow
+```go
+sort.Slice(commands, func(i, j int) bool {
+    return commands[i].StartPos < commands[j].StartPos
+})
+```
+
+This ensures `<open a.go><exec go build><open b.go>` executes in that exact order.
+
+---
+
+## 4. Command Execution Flow
+
+### 4.1 Execution Pipeline
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -274,7 +309,6 @@ Following formal language theory, we define the command grammar in BNF:
 │  ┌──────────────────┐                                           │
 │  │ 2. SANDBOX       │  Establish execution boundary             │
 │  │    - Container?  │                                           │
-│  │    - Chroot?     │                                           │
 │  │    - Direct?     │                                           │
 │  └────────┬─────────┘                                           │
 │           │                                                      │
@@ -284,6 +318,7 @@ Following formal language theory, we define the command grammar in BNF:
 │  │    - Read file   │                                           │
 │  │    - Write file  │                                           │
 │  │    - Run command │                                           │
+│  │    - Query Ollama│                                           │
 │  └────────┬─────────┘                                           │
 │           │                                                      │
 │           ▼                                                      │
@@ -300,9 +335,7 @@ Following formal language theory, we define the command grammar in BNF:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-#### 2.4.2 Sandboxing Strategy
-
-**Principle:** All file operations should eventually execute inside the container, not on the host.
+### 4.2 Sandboxing Strategy (Defense in Depth)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -310,204 +343,91 @@ Following formal language theory, we define the command grammar in BNF:
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  LAYER 1: Input Validation (Host)                               │
-│  ├─ Path canonicalization                                        │
-│  ├─ Traversal detection                                          │
-│  └─ Extension whitelist                                          │
+│  ├─ Path canonicalization (resolve symlinks, ../)               │
+│  ├─ Traversal detection (block ../../etc/passwd)                │
+│  └─ Extension whitelist (block .exe, .key, .pem)                │
 │                                                                  │
 │  LAYER 2: Resource Limits (Host + Container)                    │
-│  ├─ File size limits                                             │
-│  ├─ Memory limits (--memory)                                     │
-│  ├─ CPU limits (--cpus)                                          │
-│  └─ Time limits (context.WithTimeout)                            │
+│  ├─ File size limits (default: 1MB read, 100KB write)           │
+│  ├─ Memory limits (--memory 512m)                               │
+│  ├─ CPU limits (--cpus 2)                                       │
+│  └─ Time limits (context.WithTimeout, default 30s)              │
 │                                                                  │
-│  LAYER 3: Isolation (Container)                                 │
+│  LAYER 3: Container Isolation (exec commands only)              │
 │  ├─ No network (--network none)                                  │
 │  ├─ Read-only root filesystem (--read-only)                      │
 │  ├─ Dropped capabilities (--cap-drop ALL)                        │
 │  ├─ Non-root user (--user 1000:1000)                             │
 │  └─ No privilege escalation (--security-opt no-new-privileges)   │
 │                                                                  │
-│  LAYER 4: Audit (Host)                                          │
-│  ├─ All operations logged                                        │
-│  ├─ Session tracking                                             │
-│  └─ Tamper-evident log format                                    │
+│  LAYER 4: Audit Trail (Host)                                    │
+│  ├─ All operations logged with timestamps                        │
+│  ├─ Session tracking for correlation                             │
+│  └─ Structured JSON format for analysis                          │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Current gap:** `<open>` and `<write>` execute on the host. Target: move these inside the container for defense-in-depth.
+**Key principle**: Even if one layer fails, others provide protection. A bug in path validation doesn't compromise the system if Docker isolation catches the attack.
 
 ---
 
-## 3. Refactoring Roadmap
+## 5. Search Architecture
 
-### 3.1 Phase 1: Unify Code Paths (Priority: HIGH)
-
-**Goal:** Eliminate `processPipeMode()` and merge into `ScanInput()`.
+Semantic search uses Ollama for local embedding generation—no external API calls, all processing on your machine.
 
 ```
-BEFORE:                              AFTER:
-┌─────────────────────┐              ┌─────────────────────┐
-│ main()              │              │ main()              │
-│   │                 │              │   │                 │
-│   ├─▶ Interactive?  │              │   └─▶ ScanInput()   │
-│   │   │             │              │         │           │
-│   │   ├─▶ YES ──▶ InteractiveMode()│         ├─▶ Scanner │
-│   │   │             │              │         │   (state  │
-│   │   └─▶ NO ───▶ processPipeMode()│         │   machine)│
-│   │                 │              │         │           │
-└───┴─────────────────┘              │         └─▶ Process │
-                                     │             one cmd │
-                                     │             at a    │
-                                     │             time    │
-                                     └─────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      SEARCH ARCHITECTURE                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────┐     ┌──────────┐     ┌──────────────────────┐     │
+│  │  Query   │────▶│  Ollama  │────▶│  Query Embedding     │     │
+│  │          │     │  API     │     │  (nomic-embed-text)  │     │
+│  └──────────┘     └──────────┘     └──────────┬───────────┘     │
+│                                                │                 │
+│                                                ▼                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                    SQLite Database                        │   │
+│  │  ┌─────────────────────────────────────────────────────┐ │   │
+│  │  │  embeddings table                                    │ │   │
+│  │  │  - filepath (PK)                                     │ │   │
+│  │  │  - content_hash                                      │ │   │
+│  │  │  - embedding (BLOB)                                  │ │   │
+│  │  │  - last_modified                                     │ │   │
+│  │  └─────────────────────────────────────────────────────┘ │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                │                 │
+│                                                ▼                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Cosine Similarity Ranking                    │   │
+│  │         similarity = (A · B) / (||A|| × ||B||)           │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                │                 │
+│                                                ▼                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Top-K Results (default: 10)                  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Changes required:**
-1. Create `Scanner` struct with state machine
-2. `--interactive` flag only controls prompt output
-3. Remove `processPipeMode()` entirely
-4. `ParseCommands()` returns single command (not slice)
+**Components:**
+- **Ollama** — Local LLM server providing `nomic-embed-text` embeddings
+- **SQLite** — Stores file embeddings for fast similarity search
+- **Indexer** — Walks repository, generates embeddings for each file
 
-### 3.2 Phase 2: Fix Command Matching (Priority: HIGH)
-
-**Goal:** Replace `strings.Contains()` with `strings.HasPrefix()` and proper state transitions.
-
-```go
-// BEFORE (line 25-26 in interactive.go)
-if strings.Contains(line, "<open") || strings.Contains(line, "<write") ||
-   strings.Contains(line, "<exec") || strings.Contains(line, "<search") {
-
-// AFTER
-func (s *Scanner) isCommandStart(line string) bool {
-    trimmed := strings.TrimLeft(line, " \t")
-    return strings.HasPrefix(trimmed, "<open") ||
-           strings.HasPrefix(trimmed, "<write") ||
-           strings.HasPrefix(trimmed, "<exec") ||
-           strings.HasPrefix(trimmed, "<search")
-}
-```
-
-### 3.3 Phase 3: Process One Command at a Time (Priority: MEDIUM)
-
-**Goal:** Simplify `ProcessText()` and `ProcessCommands()` to handle single commands.
-
-**Current call tree:**
-```
-ProcessText()
-  └─▶ ParseCommands()      # Returns []Command (ALL commands)
-        └─▶ for each cmd:
-              └─▶ Execute()
-```
-
-**Target call tree:**
-```
-ScanInput()
-  └─▶ Scanner.Next()       # Returns ONE Command
-        └─▶ Validate()
-        └─▶ Execute()
-        └─▶ Print()
-        └─▶ (loop)
-```
-
-### 3.4 Phase 4: Elevate Write Regex (Priority: MEDIUM)
-
-**Problem:** The regex that correctly handles `<write>` is buried in `ParseCommands()`, but the scanner loop doesn't know about write state.
-
-**Solution:** Move write content accumulation into the state machine:
-
-```go
-case StateWrite:
-    // We've seen "<write filepath>"
-    // Now accumulate until "</write>"
-    if s.buffer.String() ends with "</write>" {
-        s.currentCmd.Content = extractContent(s.buffer.String())
-        s.state = StateExecute
-    }
-```
-
-### 3.5 Phase 5: Containerize All I/O (Priority: LOW)
-
-**Goal:** Execute `<open>` and `<write>` inside Docker container.
-
-**Rationale:** Even with path validation, a bug in the host code could allow escape. Running inside the container provides defense-in-depth.
-
-**Implementation sketch:**
-```go
-func (e *Executor) ExecuteOpen(filepath string) Result {
-    // Instead of os.ReadFile() on host:
-    return docker.RunContainer(ContainerConfig{
-        Command: fmt.Sprintf("cat %q", filepath),
-        RepoRoot: e.config.RepositoryRoot,
-        // ... security options
-    })
-}
-```
-
-### 3.6 Phase 6: Replace Python Embeddings (Priority: LOW)
-
-**Goal:** Use pure Go for vector embeddings to eliminate Python dependency.
-
-**Options:**
-| Library | Pros | Cons |
-|---------|------|------|
-| `go-embeddings` | Direct API to OpenAI/etc | External API dependency |
-| `kelindar/search` | Pure Go, no external deps | Less sophisticated models |
-| Ollama | Local inference, good models | Requires Ollama daemon |
-
-**Recommendation:** Start with Ollama for local development, with fallback to `go-embeddings` for production.
+**Why local embeddings?**
+- Privacy: Code never leaves your machine
+- Speed: No network latency after initial model load
+- Cost: No API fees
+- Offline: Works without internet
 
 ---
 
-## 4. Package Structure (Target)
+## 6. Error Handling Strategy
 
-```
-llm-runtime/
-├── cmd/
-│   └── llm-runtime/
-│       └── main.go              # Entry point only
-│
-├── pkg/                         # Public API (importable)
-│   ├── scanner/
-│   │   ├── scanner.go           # State machine scanner
-│   │   ├── states.go            # State definitions
-│   │   └── scanner_test.go
-│   │
-│   ├── parser/
-│   │   ├── parser.go            # Command parsing
-│   │   ├── grammar.go           # Grammar definitions
-│   │   └── parser_test.go
-│   │
-│   ├── evaluator/
-│   │   ├── evaluator.go         # Command dispatch
-│   │   ├── open.go              # <open> implementation
-│   │   ├── write.go             # <write> implementation
-│   │   ├── exec.go              # <exec> implementation
-│   │   ├── search.go            # <search> implementation
-│   │   └── evaluator_test.go
-│   │
-│   └── sandbox/
-│       ├── docker.go            # Docker container management
-│       ├── validation.go        # Security validation
-│       └── sandbox_test.go
-│
-├── internal/                    # Private implementation
-│   ├── config/                  # Configuration loading
-│   ├── audit/                   # Audit logging
-│   └── session/                 # Session management
-│
-└── docs/
-    ├── architecture.md          # This document
-    └── SYSTEM_PROMPT.md         # LLM integration guide
-```
-
-**Key change:** Move reusable components from `internal/` to `pkg/` so other projects can import them. Use lowercase symbols for truly private items.
-
----
-
-## 5. Error Handling Strategy
-
-### 5.1 Error Categories
+### 6.1 Error Categories
 
 ```go
 type ErrorCategory string
@@ -519,94 +439,47 @@ const (
     ErrResource   ErrorCategory = "RESOURCE"    // Limit exceeded
     ErrInternal   ErrorCategory = "INTERNAL"    // Bug in llm-runtime
 )
-
-type RuntimeError struct {
-    Category ErrorCategory
-    Code     string
-    Message  string
-    Cause    error
-    Context  map[string]string
-}
 ```
 
-### 5.2 Error Recovery
+| Category | Code Examples | Description |
+|----------|---------------|-------------|
+| Syntax | `SYNTAX_INVALID_COMMAND` | Malformed command |
+| Validation | `PATH_SECURITY`, `EXEC_VALIDATION` | Security check failed |
+| Execution | `EXEC_FAILED`, `FILE_NOT_FOUND` | Runtime failure |
+| Resource | `RESOURCE_LIMIT`, `EXEC_TIMEOUT` | Limit exceeded |
 
-The interpreter should be **resilient**—a single command failure should not crash the session:
+### 6.2 Error Recovery
+
+The interpreter is **resilient**—a single command failure does not crash the session:
 
 ```go
-func (s *Scanner) Run() {
-    for {
-        cmd, err := s.Next()
-        if err == io.EOF {
-            break
-        }
-        if err != nil {
-            s.printer.PrintError(err)
-            continue  // Keep processing
-        }
-        
-        result := s.evaluator.Execute(cmd)
-        s.printer.PrintResult(result)
+for _, cmd := range commands {
+    result := executor.Execute(cmd)
+    if result.Error != nil {
+        printError(result.Error)
+        continue  // Keep processing remaining commands
     }
+    printResult(result)
 }
 ```
+
+This follows the **robustness principle**: "Be conservative in what you send, be liberal in what you accept."
 
 ---
 
-## 6. Testing Strategy
+## 7. Testing Strategy
 
-### 6.1 Test Categories
+### 7.1 Test Categories
 
 | Category | Purpose | Location |
 |----------|---------|----------|
 | **Unit** | Test individual functions | `*_test.go` next to source |
 | **Integration** | Test component interaction | `tests/integration/` |
 | **Security** | Test sandbox boundaries | `tests/security/` |
-| **Fuzzing** | Find edge cases | `tests/fuzz/` |
 
-### 6.2 Scanner Test Cases
+### 7.2 Security Test Cases
 
-```go
-func TestScanner(t *testing.T) {
-    cases := []struct {
-        name     string
-        input    string
-        expected []Command
-    }{
-        {
-            name:  "simple open",
-            input: "<open README.md>",
-            expected: []Command{{Type: "open", Argument: "README.md"}},
-        },
-        {
-            name:  "open with surrounding text",
-            input: "Please read this: <open main.go> and tell me about it",
-            expected: []Command{{Type: "open", Argument: "main.go"}},
-        },
-        {
-            name:  "write with content",
-            input: "<write test.txt>Hello, World!</write>",
-            expected: []Command{{Type: "write", Argument: "test.txt", Content: "Hello, World!"}},
-        },
-        {
-            name:  "multiple commands",
-            input: "<open a.go><open b.go>",
-            expected: []Command{
-                {Type: "open", Argument: "a.go"},
-                {Type: "open", Argument: "b.go"},
-            },
-        },
-        {
-            name:  "command in comment should still parse",
-            input: "// <open secret.key>",  // Scanner parses; validator rejects
-            expected: []Command{{Type: "open", Argument: "secret.key"}},
-        },
-    }
-    // ...
-}
-```
-
-### 6.3 Security Test Cases
+Path traversal attacks that must be blocked:
 
 ```go
 func TestPathTraversal(t *testing.T) {
@@ -628,63 +501,93 @@ func TestPathTraversal(t *testing.T) {
 }
 ```
 
----
+### 7.3 Scanner Test Cases
 
-## 7. Performance Considerations
-
-### 7.1 Bottlenecks
-
-| Operation | Current | Target | Notes |
-|-----------|---------|--------|-------|
-| Command parsing | <1ms | <1ms | Already fast |
-| Path validation | <1ms | <1ms | Already fast |
-| Docker startup | 1-3s | 200ms | Use warm containers |
-| Embedding generation | 2-5s | 100ms | Use Go-native or cache |
-
-### 7.2 Optimization Opportunities
-
-1. **Container Pool:** Pre-warm Docker containers to eliminate startup latency
-2. **Embedding Cache:** Cache embeddings in SQLite (already implemented)
-3. **Streaming Output:** For large command outputs, stream rather than buffer
-
----
-
-## 8. Future Enhancements
-
-### 8.1 Additional Commands
-
-| Command | Description | Priority |
-|---------|-------------|----------|
-| `<git ...>` | Version control operations | Medium |
-| `<diff file1 file2>` | File comparison | Low |
-| `<grep pattern>` | Search without embeddings | Low |
-| `<tree>` | Directory structure | Low |
-
-### 8.2 Protocol Enhancements
-
-| Enhancement | Description | Priority |
-|-------------|-------------|----------|
-| JSON mode | Structured input/output for programmatic use | Medium |
-| WebSocket | Real-time streaming for long operations | Low |
-| MCP | Model Context Protocol integration | High |
+```go
+func TestScanner(t *testing.T) {
+    cases := []struct {
+        name     string
+        input    string
+        expected []Command
+    }{
+        {
+            name:  "simple open",
+            input: "<open README.md>",
+            expected: []Command{{Type: "open", Argument: "README.md"}},
+        },
+        {
+            name:  "write with content",
+            input: "<write test.txt>Hello, World!</write>",
+            expected: []Command{{Type: "write", Argument: "test.txt", Content: "Hello, World!"}},
+        },
+        {
+            name:  "multiple commands preserve order",
+            input: "<open a.go><exec go build><open b.go>",
+            expected: []Command{
+                {Type: "open", Argument: "a.go"},
+                {Type: "exec", Argument: "go build"},
+                {Type: "open", Argument: "b.go"},
+            },
+        },
+    }
+    // ...
+}
+```
 
 ---
 
-## 9. References
+## 8. Performance Considerations
 
-1. Abelson, H. & Sussman, G.J. (1996). *Structure and Interpretation of Computer Programs* (2nd ed.). MIT Press. ("The Wizard Book")
+### 8.1 Bottlenecks
 
-2. Aho, A.V., Sethi, R., & Ullman, J.D. (1986). *Compilers: Principles, Techniques, and Tools*. Addison-Wesley. ("The Dragon Book")
+| Operation | Typical Time | Notes |
+|-----------|--------------|-------|
+| Command parsing | <1ms | Already fast |
+| Path validation | <1ms | Already fast |
+| File read (1MB) | <10ms | SSD dependent |
+| Docker startup | 1-3s | Main bottleneck for exec |
+| Ollama embedding | 100-500ms | First query slower (model load) |
+| Similarity search | <1ms per file | SQLite is fast |
 
-3. Kernighan, B.W. & Pike, R. (1984). *The UNIX Programming Environment*. Prentice Hall.
+### 8.2 Optimization Opportunities
 
-4. Pike, R. (2012). "Lexical Scanning in Go." https://go.dev/talks/2011/lex.slide
-
-5. Docker Security Best Practices. https://docs.docker.com/engine/security/
+1. **Container Pool**: Pre-warm Docker containers to eliminate startup latency
+2. **Embedding Cache**: Already implemented via SQLite
+3. **Streaming Output**: For large command outputs, stream rather than buffer
+4. **Batch Commands**: Combine multiple exec commands: `<exec cmd1 && cmd2>`
 
 ---
 
-## 10. Appendix: Quick Reference
+## 9. Configuration
+
+Configuration is loaded from `llm-runtime.config.yaml`:
+
+```yaml
+repository:
+  root: "."
+  excluded_paths: [".git", ".env", "*.key"]
+
+commands:
+  open:
+    enabled: true
+    max_file_size: 1048576      # 1MB
+  write:
+    enabled: true
+    backup_before_write: true
+    max_file_size: 102400       # 100KB
+  exec:
+    enabled: false
+    timeout_seconds: 30
+    memory_limit: "512m"
+    whitelist: ["go test", "go build", "npm test"]
+  search:
+    enabled: true
+    vector_db_path: "./embeddings.db"
+```
+
+---
+
+## 10. Quick Reference
 
 ### 10.1 Command Syntax
 
@@ -701,6 +604,7 @@ func TestPathTraversal(t *testing.T) {
 --root PATH          Repository root (default: .)
 --interactive        Enable prompts (default: false)
 --exec-enabled       Enable <exec> command (default: false)
+--reindex            Rebuild search index
 --verbose            Verbose output (default: false)
 ```
 
@@ -715,6 +619,41 @@ func TestPathTraversal(t *testing.T) {
 
 ---
 
-*Document version: 1.0*  
-*Last updated: December 5, 2025*  
-*Author: JJ Salley*
+## 11. Future Considerations
+
+### 11.1 Potential Enhancements
+
+| Enhancement | Description | Priority |
+|-------------|-------------|----------|
+| Container pool | Pre-warm Docker containers for faster exec | Medium |
+| Streaming output | Stream large command outputs | Low |
+| MCP integration | Model Context Protocol support | Medium |
+| Additional commands | `<git>`, `<diff>`, `<tree>` | Low |
+
+### 11.2 Design Principles for Extensions
+
+When extending the system:
+
+1. **Security first** — All new commands must go through validation
+2. **Single code path** — Avoid separate implementations for different modes
+3. **Fail gracefully** — Errors should not crash the interpreter
+4. **Audit everything** — All operations must be logged
+5. **State machine for parsing** — Don't rely on regex for complex structures
+
+---
+
+## 12. References
+
+1. Abelson, H. & Sussman, G.J. (1996). *Structure and Interpretation of Computer Programs* (2nd ed.). MIT Press. — The REPL model and interpreter design.
+
+2. Aho, A.V., Sethi, R., & Ullman, J.D. (1986). *Compilers: Principles, Techniques, and Tools*. Addison-Wesley. — Lexical analysis, parsing phases, the Chomsky hierarchy.
+
+3. Pike, R. (2011). "Lexical Scanning in Go." https://go.dev/talks/2011/lex.slide — State machine design for lexers in Go.
+
+4. Docker Security Best Practices. https://docs.docker.com/engine/security/ — Container isolation techniques.
+
+5. Postel, J. (1980). RFC 761: "Robustness Principle" — "Be conservative in what you send, be liberal in what you accept."
+
+---
+
+*Document version: 2.0*  

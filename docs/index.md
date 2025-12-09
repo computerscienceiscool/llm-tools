@@ -1,94 +1,82 @@
 # LLM File Access Tool Documentation
 
-This directory contains comprehensive documentation for the LLM File Access Tool.
-
-## Main Documentation
-
-### **[README.md](../README.md)**
-Complete project documentation including installation, usage, security features, and examples (located in repository root).
-
-### **[llm-runtime-overview.md](llm-runtime-overview.md)**  
-High-level overview of what the tool does and how all features work together.
-
-### **[SYSTEM_PROMPT.md](SYSTEM_PROMPT.md)**
-System prompt instructions for LLM integration. Use this to configure LLMs to work with the tool.
-
-## Feature Guides
-
-### **[file-reading-guide.md](file-reading-guide.md)**
-Complete guide to the `<open>` command for reading files safely and efficiently.
-
-### **[file-writing-guide.md](file-writing-guide.md)**  
-Complete guide to the `<write>` command for creating and modifying files with automatic backups.
-
-### **[command-execution-guide.md](command-execution-guide.md)**
-Complete guide to the `<exec>` command for running commands in secure Docker containers.
-
-### **[semantic-search-guide.md](semantic-search-guide.md)**
-Complete guide to the `<search>` command for AI-powered semantic search across your codebase.
-
-## Setup and Configuration
-
-### **[installation-guide.md](installation-guide.md)**
-Complete installation guide for all platforms with troubleshooting steps.
-
-### **[configuration.md](configuration.md)**
-Comprehensive configuration reference for all settings and options.
-
-### **[troubleshooting.md](troubleshooting.md)**
-Solutions for common problems and debugging techniques.
-
-### **[faq.md](faq.md)**
-Frequently asked questions and answers.
-
-## Examples and Tutorials
-
-### **[examples/](examples/)**
-Practical examples and tutorials for common use cases (coming soon).
+This directory contains comprehensive documentation for llm-runtime.
 
 ## Quick Start
 
-1. **For Users**: Start with [llm-runtime-overview.md](llm-runtime-overview.md)
-2. **For Installation**: Follow [installation.md](installation.md)
-3. **For LLM Integration**: Use [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md)  
-4. **For Configuration**: Check [configuration.md](configuration.md)
-5. **For Troubleshooting**: See [troubleshooting.md](troubleshooting.md)
-6. **For Questions**: Review [faq.md](faq.md)
+1. **New users**: Start with [llm-runtime-overview.md](llm-runtime-overview.md)
+2. **Installation**: Follow [installation-guide.md](installation-guide.md)
+3. **LLM Integration**: Use [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md)
+4. **Configuration**: Check [configuration.md](configuration.md)
+
+## Main Documentation
+
+| Document | Description |
+|----------|-------------|
+| [llm-runtime-overview.md](llm-runtime-overview.md) | High-level overview of what the tool does |
+| [architecture.md](architecture.md) | Technical architecture and design principles |
+| [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) | System prompt for LLM integration |
+
+## Feature Guides
+
+| Guide | Command | Description |
+|-------|---------|-------------|
+| [file-reading-guide.md](file-reading-guide.md) | `<open>` | Reading files safely |
+| [file-writing-guide.md](file-writing-guide.md) | `<write>` | Creating and modifying files |
+| [command-execution-guide.md](command-execution-guide.md) | `<exec>` | Running commands in Docker |
+| [semantic-search-guide.md](semantic-search-guide.md) | `<search>` | AI-powered code search with Ollama |
+
+## Setup & Configuration
+
+| Document | Description |
+|----------|-------------|
+| [installation-guide.md](installation-guide.md) | Complete installation for all platforms |
+| [configuration.md](configuration.md) | All configuration options |
+| [docker-cheatsheet.md](docker-cheatsheet.md) | Docker basics for beginners |
+
+## Reference & Help
+
+| Document | Description |
+|----------|-------------|
+| [quick-reference.md](quick-reference.md) | Command cheat sheet |
+| [faq.md](faq.md) | Frequently asked questions |
+| [troubleshooting.md](troubleshooting.md) | Common problems and solutions |
+| [TODO.md](TODO.md) | Roadmap and future ideas |
+
+## Examples
+
+The [examples/](examples/) directory contains practical tutorials (coming soon):
+- Basic exploration workflows
+- Language-specific examples
+- Common use cases
 
 ## Documentation Structure
 
 ```
-README.md                        # Complete project documentation (root)
 docs/
-├── index.md                     # Documentation index (this file)
-├── llm-runtime-overview.md         # High-level tool overview
-├── SYSTEM_PROMPT.md             # LLM integration instructions
-├── installation.md              # Installation guide
-├── configuration.md             # Configuration reference
-├── troubleshooting.md           # Troubleshooting guide
-├── faq.md                       # Frequently asked questions
-├── file-reading-guide.md        # <open> command guide
-├── file-writing-guide.md        # <write> command guide  
-├── command-execution-guide.md   # <exec> command guide
-├── semantic-search-guide.md     # <search> command guide
-└── examples/                    # Practical examples (coming soon)
+├── index.md                     # This file
+├── llm-runtime-overview.md      # What the tool does
+├── architecture.md              # How it works (technical)
+├── SYSTEM_PROMPT.md             # LLM integration
+│
+├── file-reading-guide.md        # <open> command
+├── file-writing-guide.md        # <write> command
+├── command-execution-guide.md   # <exec> command
+├── semantic-search-guide.md     # <search> command
+│
+├── installation-guide.md        # Setup instructions
+├── configuration.md             # Config reference
+├── docker-cheatsheet.md         # Docker help
+│
+├── quick-reference.md           # Cheat sheet
+├── faq.md                       # Q&A
+├── troubleshooting.md           # Problem solving
+├── TODO.md                      # Future plans
+│
+└── examples/                    # Tutorials (coming soon)
 ```
 
-Each guide includes:
-- **How it works** - Technical explanation
-- **Syntax & examples** - Clear usage patterns  
-- **Use cases** - Real-world scenarios
-- **Security features** - Safety mechanisms
-- **Configuration** - Customization options
-- **Troubleshooting** - Common issues and solutions
-- **Best practices** - Tips for effective usage
+## External Links
 
-## External Resources
-
-- **Repository**: [GitHub Repository](https://github.com/computerscienceiscool/llm-runtime/)
-- **Issues**: [Report Bugs](https://github.com/computerscienceiscool/llm-runtime/issues)
-- **Discussions**: [Community Discussions](https://github.com/computerscienceiscool/llm-runtime/discussions)
-
----
-
-**Need help?** Start with the [llm-runtime-overview.md](llm-runtime-overview.md) for a complete introduction to the tool.
+- **Repository**: [github.com/computerscienceiscool/llm-runtime](https://github.com/computerscienceiscool/llm-runtime)
+- **Issues**: [Report bugs](https://github.com/computerscienceiscool/llm-runtime/issues)
