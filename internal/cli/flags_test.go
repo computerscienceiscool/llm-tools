@@ -85,9 +85,6 @@ func TestParseFlags_Defaults(t *testing.T) {
 	if flags.SearchUpdate != false {
 		t.Errorf("SearchUpdate = %v, want %v", flags.SearchUpdate, false)
 	}
-	if flags.CheckPythonSetup != false {
-		t.Errorf("CheckPythonSetup = %v, want %v", flags.CheckPythonSetup, false)
-	}
 }
 
 func TestParseFlags_CustomValues(t *testing.T) {
@@ -239,11 +236,7 @@ func TestParseFlags_SearchFlags(t *testing.T) {
 			case "search-update":
 				if !flags.SearchUpdate {
 					t.Error("SearchUpdate should be true")
-				}
-			case "check-python-setup":
-				if !flags.CheckPythonSetup {
-					t.Error("CheckPythonSetup should be true")
-				}
+			}
 			}
 		})
 	}
@@ -364,11 +357,6 @@ func TestHasSearchCommand(t *testing.T) {
 		{
 			name:     "search update set",
 			flags:    CLIFlags{SearchUpdate: true},
-			expected: true,
-		},
-		{
-			name:     "check python setup set",
-			flags:    CLIFlags{CheckPythonSetup: true},
 			expected: true,
 		},
 		{

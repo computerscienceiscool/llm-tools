@@ -26,10 +26,32 @@ func (a *App) Run() error {
 		a.printVerboseInfo()
 	}
 
-	cli.ScanInput(a.executor, a.session.StartTime, a.config.Interactive)
+	// Set up input source
+	input := os.Stdin
+	if a.config.InputFile != "" {
+		file, err := os.Open(a.config.InputFile)
+		if err != nil {
+			return fmt.Errorf("cannot read input file: %w", err)
+		}
+		defer file.Close()
+		input = file
+	}
 
+	// Set up output destination
+	output := os.Stdout
+	if a.config.OutputFile != "" {
+		file, err := os.Create(a.config.OutputFile)
+		if err != nil {
+			return fmt.Errorf("cannot write output file: %w", err)
+		}
+		defer file.Close()
+		output = file
+	}
+
+	cli.ScanInput(a.executor, a.session.StartTime, a.config.Interactive, input, output)
 	return nil
 }
+
 
 // RunSearchCommand handles search-related CLI commands
 func (a *App) RunSearchCommand(flags *cli.CLIFlags) error {

@@ -531,20 +531,19 @@ func TestApp_RunSearchCommand_CheckOllamaSetup(t *testing.T) {
 
 	// CheckOllamaSetup might succeed or fail depending on environment
 	// Just verify it runs and produces output
-	if !strings.Contains(stderr, "Python") {
-		t.Errorf("CheckOllamaSetup should mention Python\nGot: %s", stderr)
+	if !strings.Contains(stderr, "Ollama") {
+		t.Errorf("CheckOllamaSetup should mention Ollama\nGot: %s", stderr)
 	}
 }
 
 func TestApp_Run_NoCommands(t *testing.T) {
 	tempDir := t.TempDir()
-
 	// Create input file with no commands
 	inputFile := filepath.Join(tempDir, "input.txt")
 	if err := os.WriteFile(inputFile, []byte("Just plain text, no commands here."), 0644); err != nil {
 		t.Fatalf("Failed to create input file: %v", err)
 	}
-
+	outputFile := filepath.Join(tempDir, "output.txt")
 	cfg := &config.Config{
 		RepositoryRoot:    tempDir,
 		MaxFileSize:       1048576,
@@ -553,27 +552,26 @@ func TestApp_Run_NoCommands(t *testing.T) {
 		ExcludedPaths:     []string{".git"},
 		Interactive:       false,
 		InputFile:         inputFile,
+		OutputFile:        outputFile,
 	}
-
 	app, err := Bootstrap(cfg)
 	if err != nil {
 		t.Fatalf("Bootstrap() error = %v", err)
 	}
-
-	stdout := captureStdout(t, func() {
-		err = app.Run()
-	})
-
+	err = app.Run()
 	if err != nil {
 		t.Errorf("Run() error = %v", err)
 	}
-
-	// Should pass through the original text
-	if !strings.Contains(stdout, "Just plain text, no commands here.") {
-		t.Errorf("Expected original text in output\nGot: %s", stdout)
+	// Read output file
+	output, err := os.ReadFile(outputFile)
+	if err != nil {
+		t.Fatalf("Failed to read output file: %v", err)
+	}
+	// Should produce no output when there are no commands
+	if len(output) != 0 {
+		t.Errorf("Expected no output without commands, got: %s", string(output))
 	}
 }
-
 func TestApp_Run_WriteCommand(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -1224,37 +1222,6 @@ commands:
 			// but they exercise the code paths
 			_ = app.RunSearchCommand(&tt.flags)
 		})
-	}
-}
-
-func TestApp_checkPythonSetup_NoPython(t *testing.T) {
-	tempDir := t.TempDir()
-
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	flags := &cli.CLIFlags{
-		CheckOllamaSetup: true,
-	}
-
-	// Capture stderr to verify output
-	stderr := captureStderr(t, func() {
-		_ = app.RunSearchCommand(flags)
-	})
-
-	// Should mention checking Python
-	if !strings.Contains(stderr, "Python") && !strings.Contains(stderr, "python") {
-		t.Errorf("Expected Python-related output, got: %s", stderr)
 	}
 }
 

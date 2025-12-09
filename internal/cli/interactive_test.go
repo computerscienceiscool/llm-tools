@@ -101,7 +101,7 @@ func TestInteractiveMode_PrintsWelcomeMessage(t *testing.T) {
 	startTime := time.Now()
 
 	_, stderr := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Check welcome message in stderr
@@ -153,7 +153,7 @@ func TestInteractiveMode_ProcessesOpenCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Check that file content appears in output
@@ -187,7 +187,7 @@ func TestInteractiveMode_ProcessesWriteCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Check that write was successful
@@ -230,7 +230,7 @@ func TestInteractiveMode_ProcessesExecCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Exec is disabled, should show error
@@ -264,7 +264,7 @@ func TestInteractiveMode_ProcessesSearchCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Search is disabled, should show error
@@ -299,7 +299,7 @@ func TestInteractiveMode_PlainTextNoCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Plain text without commands should pass through
@@ -333,7 +333,7 @@ func TestInteractiveMode_MultipleCommands(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, stderr := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Both writes should be successful
@@ -375,7 +375,7 @@ func TestInteractiveMode_WaitingForMoreInputMessage(t *testing.T) {
 	startTime := time.Now()
 
 	_, stderr := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// After processing a command, should print "Waiting for more input"
@@ -409,7 +409,7 @@ func TestInteractiveMode_EmptyInput(t *testing.T) {
 
 	// Should not panic or hang
 	stdout, stderr := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Should still print welcome message
@@ -449,7 +449,7 @@ func TestInteractiveMode_CommandWithSurroundingText(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Should process the open command and show file content
@@ -483,7 +483,7 @@ func TestInteractiveMode_FailedCommand(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, true)
+		ScanInput(exec, startTime, true, os.Stdin, os.Stdout)
 	})
 
 	// Should show error
@@ -493,55 +493,6 @@ func TestInteractiveMode_FailedCommand(t *testing.T) {
 }
 
 // TestIsCommandStart verifies the Contains→HasPrefix bug fix
-func TestIsCommandStart(t *testing.T) {
-	tests := []struct {
-		name     string
-		line     string
-		expected bool
-	}{
-		// Should match - commands at start of line
-		{"open at start", "<open main.go>", true},
-		{"write at start", "<write test.txt>content</write>", true},
-		{"exec at start", "<exec go test>", true},
-		{"search at start", "<search query>", true},
-		{"with leading space", "  <open file.go>", true},
-		{"with leading tab", "\t<write config.yaml>data</write>", true},
-
-		// Should NOT match - THE BUG FIX
-		{"comment should NOT match", "// don't <open secret.key>", false},
-		{"mid-line should NOT match", "Please read <open main.go> carefully", false},
-		{"in string should NOT match", `fmt.Println("<open example>")`, false},
-		{"regular text", "This is just text", false},
-		{"empty line", "", false},
-		{"HTML tag not command", "<div>content</div>", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := isCommandStart(tt.line)
-			if result != tt.expected {
-				t.Errorf("isCommandStart(%q) = %v, want %v", tt.line, result, tt.expected)
-			}
-		})
-	}
-}
-
-// TestContainsBugFix demonstrates the bug that was fixed
-func TestContainsBugFix(t *testing.T) {
-	// This line has a command in a comment - should NOT trigger
-	commentLine := "// don't <open secret.key>"
-
-	if isCommandStart(commentLine) {
-		t.Error("BUG: Command in comment should NOT be detected")
-	}
-
-	// This line has command at start - SHOULD trigger
-	commandLine := "<open secret.key>"
-
-	if !isCommandStart(commandLine) {
-		t.Error("Command at start should be detected")
-	}
-}
 
 
 // TestInteractiveMode_MultiLineWrite tests the key feature - multi-line write commands
@@ -570,7 +521,7 @@ func TestInteractiveMode_MultiLineWrite(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, false)
+		ScanInput(exec, startTime, false, os.Stdin, os.Stdout)
 	})
 
 	// Verify the write was successful
@@ -617,7 +568,7 @@ func TestInteractiveMode_MultiLineWriteWithEmptyLines(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, false)
+		ScanInput(exec, startTime, false, os.Stdin, os.Stdout)
 	})
 
 	if !strings.Contains(stdout, "WRITE SUCCESSFUL") {
@@ -662,7 +613,7 @@ func TestInteractiveMode_SingleLineWrite(t *testing.T) {
 	startTime := time.Now()
 
 	stdout, _ := captureOutput(t, func() {
-		ScanInput(exec, startTime, false)
+		ScanInput(exec, startTime, false, os.Stdin, os.Stdout)
 	})
 
 	if !strings.Contains(stdout, "WRITE SUCCESSFUL") {

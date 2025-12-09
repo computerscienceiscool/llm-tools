@@ -22,15 +22,15 @@ func TestParseCommands_Open(t *testing.T) {
 		},
 		{
 			name:     "open command with surrounding text",
-			input:    "Let me check the file <open README.md> for you",
+			input:    "Let me check the file\n<open README.md>\nfor you",
 			expected: []Command{{Type: "open", Argument: "README.md", StartPos: 22, EndPos: 38, Original: "<open README.md>"}},
 		},
 		{
 			name:  "multiple open commands",
-			input: "<open file1.go> and <open file2.go>",
+			input: "<open file1.go>\n<open file2.go>",
 			expected: []Command{
 				{Type: "open", Argument: "file1.go", StartPos: 0, EndPos: 15, Original: "<open file1.go>"},
-				{Type: "open", Argument: "file2.go", StartPos: 20, EndPos: 35, Original: "<open file2.go>"},
+				{Type: "open", Argument: "file2.go", StartPos: 16, EndPos: 31, Original: "<open file2.go>"},
 			},
 		},
 		{
@@ -118,7 +118,7 @@ func TestParseCommands_Write(t *testing.T) {
 		},
 		{
 			name:  "write with surrounding text",
-			input: "Creating file: <write output.txt>content</write> done!",
+			input: "Creating file:\n<write output.txt>content</write>\ndone!",
 			expected: []Command{{
 				Type:     "write",
 				Argument: "output.txt",
@@ -208,15 +208,15 @@ func TestParseCommands_Exec(t *testing.T) {
 		},
 		{
 			name:     "exec with surrounding text",
-			input:    "Running: <exec make build> please wait",
+			input:    "Running:\n<exec make build>\nplease wait",
 			expected: []Command{{Type: "exec", Argument: "make build", StartPos: 9, EndPos: 26, Original: "<exec make build>"}},
 		},
 		{
 			name:  "multiple exec commands",
-			input: "<exec go build> and <exec go test>",
+			input: "<exec go build>\n<exec go test>",
 			expected: []Command{
 				{Type: "exec", Argument: "go build", StartPos: 0, EndPos: 15, Original: "<exec go build>"},
-				{Type: "exec", Argument: "go test", StartPos: 20, EndPos: 34, Original: "<exec go test>"},
+				{Type: "exec", Argument: "go test", StartPos: 16, EndPos: 30, Original: "<exec go test>"},
 			},
 		},
 	}
@@ -272,15 +272,15 @@ func TestParseCommands_Search(t *testing.T) {
 		},
 		{
 			name:     "search with surrounding text",
-			input:    "Looking for <search error handling> in codebase",
+			input:    "Looking for\n<search error handling>\nin codebase",
 			expected: []Command{{Type: "search", Argument: "error handling", StartPos: 12, EndPos: 35, Original: "<search error handling>"}},
 		},
 		{
 			name:  "multiple search commands",
-			input: "<search auth> and <search login>",
+			input: "<search auth>\n<search login>",
 			expected: []Command{
 				{Type: "search", Argument: "auth", StartPos: 0, EndPos: 13, Original: "<search auth>"},
-				{Type: "search", Argument: "login", StartPos: 18, EndPos: 32, Original: "<search login>"},
+				{Type: "search", Argument: "login", StartPos: 14, EndPos: 28, Original: "<search login>"},
 			},
 		},
 	}
@@ -326,17 +326,17 @@ func TestParseCommands_Mixed(t *testing.T) {
 	}{
 		{
 			name:          "all command types",
-			input:         "<open file.go> <write out.txt>content</write> <exec go test> <search query>",
+			input:         "<open file.go>\n<write out.txt>content</write>\n<exec go test>\n<search query>",
 			expectedTypes: []string{"open", "write", "exec", "search"},
 		},
 		{
 			name:          "open and write",
-			input:         "Check <open config.yaml> then <write output.txt>done</write>",
+			input:         "Check\n<open config.yaml>\nthen\n<write output.txt>done</write>",
 			expectedTypes: []string{"open", "write"},
 		},
 		{
 			name:          "exec and search",
-			input:         "<exec make> followed by <search results>",
+			input:         "<exec make>\nfollowed by\n<search results>",
 			expectedTypes: []string{"exec", "search"},
 		},
 	}
@@ -413,7 +413,7 @@ func TestParseCommands_EdgeCases(t *testing.T) {
 }
 
 func TestParseCommands_Positions(t *testing.T) {
-	input := "prefix <open file.go> suffix"
+	input := "prefix\n<open file.go>\nsuffix"
 	result := ParseCommands(input)
 
 	if len(result) != 1 {

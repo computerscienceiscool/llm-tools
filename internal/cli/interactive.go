@@ -3,19 +3,20 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 
 
 
 // ScanInput handles continuous input/output using state machine scanner
-func ScanInput(exec *evaluator.Executor, startTime time.Time, showPrompts bool) {
-	reader := bufio.NewReader(os.Stdin)
+func ScanInput(exec *evaluator.Executor, startTime time.Time, showPrompts bool, input io.Reader, output io.Writer) {
+	reader := bufio.NewReader(input)
 	sc := scanner.NewScanner(reader, showPrompts)
 
 	if showPrompts {
@@ -34,8 +35,8 @@ func ScanInput(exec *evaluator.Executor, startTime time.Time, showPrompts bool) 
 		result := exec.Execute(*cmd)
 
 		// Format and print result
-		output := formatCommandResult(*cmd, result, exec, startTime)
-		fmt.Print(output)
+		cmdOutput := formatCommandResult(*cmd, result, exec, startTime)
+		fmt.Fprint(output, cmdOutput)
 
 		if showPrompts {
 			fmt.Fprintln(os.Stderr, "\nWaiting for more input...")

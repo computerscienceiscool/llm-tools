@@ -171,7 +171,7 @@ func TestUpdateSearchConfigInFile(t *testing.T) {
 			EmbeddingModel:     "custom-model",
 			MaxPreviewLength:   1000,
 			ChunkSize:          2000,
-			PythonPath:         "/usr/bin/python",
+			OllamaURL:         "/usr/bin/python",
 			IndexExtensions:    []string{".custom"},
 			MaxFileSize:        2048,
 		}
@@ -243,7 +243,7 @@ func TestUpdateSearchConfigInFile(t *testing.T) {
 			MinSimilarityScore: 0.75,
 			MaxPreviewLength:   750,
 			ChunkSize:          1500,
-			PythonPath:         "/custom/python",
+			OllamaURL:         "/custom/python",
 			IndexExtensions:    []string{".go", ".rs", ".py"},
 			MaxFileSize:        5000000,
 		}
@@ -279,8 +279,8 @@ func TestUpdateSearchConfigInFile(t *testing.T) {
 			t.Errorf("ChunkSize = %d, want 1500", loadedConfig.Commands.Search.ChunkSize)
 		}
 
-		if loadedConfig.Commands.Search.PythonPath != "/custom/python" {
-			t.Errorf("PythonPath = %q, want %q", loadedConfig.Commands.Search.PythonPath, "/custom/python")
+		if loadedConfig.Commands.Search.OllamaURL != "/custom/python" {
+			t.Errorf("OllamaURL = %q, want %q", loadedConfig.Commands.Search.OllamaURL, "/custom/python")
 		}
 
 		if len(loadedConfig.Commands.Search.IndexExtensions) != 3 {
@@ -424,7 +424,7 @@ func TestConfigRoundTrip(t *testing.T) {
 		original.Commands.Search.MinSimilarityScore = 0.42
 		original.Commands.Search.MaxPreviewLength = 420
 		original.Commands.Search.ChunkSize = 4200
-		original.Commands.Search.PythonPath = "/custom/python"
+		original.Commands.Search.OllamaURL = "/custom/python"
 		original.Commands.Search.IndexExtensions = []string{".a", ".b", ".c"}
 		original.Commands.Search.MaxFileSize = 42000
 		original.Security.AuditLogPath = "/custom/audit.log"

@@ -24,7 +24,7 @@ func TestGetDefaultSearchConfig(t *testing.T) {
 		{"MinSimilarityScore", cfg.MinSimilarityScore, 0.5},
 		{"MaxPreviewLength", cfg.MaxPreviewLength, 100},
 		{"ChunkSize", cfg.ChunkSize, 1000},
-		{"PythonPath", cfg.PythonPath, "python3"},
+		{"OllamaURL", cfg.OllamaURL, "http://localhost:11434"},
 		{"MaxFileSize", cfg.MaxFileSize, int64(1048576)},
 	}
 
@@ -165,8 +165,8 @@ func TestSetFullConfigDefaults(t *testing.T) {
 		if cfg.Commands.Search.ChunkSize != 1000 {
 			t.Errorf("expected ChunkSize 1000, got %d", cfg.Commands.Search.ChunkSize)
 		}
-		if cfg.Commands.Search.PythonPath != "python3" {
-			t.Errorf("expected PythonPath 'python3', got %q", cfg.Commands.Search.PythonPath)
+		if cfg.Commands.Search.OllamaURL != "http://localhost:11434" {
+			t.Errorf("expected OllamaURL 'python3', got %q", cfg.Commands.Search.OllamaURL)
 		}
 		if cfg.Commands.Search.MaxFileSize != 1048576 {
 			t.Errorf("expected MaxFileSize 1048576, got %d", cfg.Commands.Search.MaxFileSize)
