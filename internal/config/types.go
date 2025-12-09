@@ -26,6 +26,11 @@ type Config struct {
 	ExecCPULimit        int
 	ExecContainerImage  string
 	ExecNetworkEnabled  bool
+	IOContainerized     bool
+	IOContainerImage    string
+	IOTimeout           time.Duration
+	IOMemoryLimit       string
+	IOCPULimit          int
 }
 
 // FullConfig represents the complete configuration structure including search
@@ -65,7 +70,7 @@ type FullConfig struct {
 			MinSimilarityScore float64  `yaml:"min_similarity_score"`
 			MaxPreviewLength   int      `yaml:"max_preview_length"`
 			ChunkSize          int      `yaml:"chunk_size"`
-			OllamaURL 		   string   `yaml:"ollama_url"`
+			OllamaURL          string   `yaml:"ollama_url"`
 			IndexExtensions    []string `yaml:"index_extensions"`
 			MaxFileSize        int64    `yaml:"max_file_size"`
 		} `yaml:"search"`

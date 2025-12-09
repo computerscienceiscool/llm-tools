@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
 	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
@@ -163,33 +164,51 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 		return result
 	}
 
-	// Atomic write using temporary file
-	tempPath := safePath + ".tmp." + strconv.FormatInt(time.Now().UnixNano(), 10)
-
-	// Write to temp file first
-	err = os.WriteFile(tempPath, []byte(formattedContent), 0644)
-	if err != nil {
-		result.Success = false
-		result.Error = fmt.Errorf("WRITE_ERROR: %w", err)
-		result.ExecutionTime = time.Since(startTime)
-		if auditLog != nil {
-			auditLog("write", filePath, false, result.Error.Error())
+	// Write file (containerized or direct)
+	if cfg.IOContainerized {
+		// Use containerized I/O
+		err = sandbox.WriteFileInContainer(
+			safePath,
+			formattedContent,
+			cfg.RepositoryRoot,
+			cfg.IOContainerImage,
+			cfg.IOTimeout,
+			cfg.IOMemoryLimit,
+			cfg.IOCPULimit,
+		)
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Errorf("WRITE_CONTAINER: %w", err)
+			result.ExecutionTime = time.Since(startTime)
+			if auditLog != nil {
+				auditLog("write", filePath, false, result.Error.Error())
+			}
+			return result
 		}
-		return result
-	}
-
-	// Atomically rename temp file to target
-	err = os.Rename(tempPath, safePath)
-	if err != nil {
-		// Clean up temp file
-		os.Remove(tempPath)
-		result.Success = false
-		result.Error = fmt.Errorf("RENAME_ERROR: %w", err)
-		result.ExecutionTime = time.Since(startTime)
-		if auditLog != nil {
-			auditLog("write", filePath, false, result.Error.Error())
+	} else {
+		// Direct atomic write on host
+		tempPath := safePath + ".tmp." + strconv.FormatInt(time.Now().UnixNano(), 10)
+		err = os.WriteFile(tempPath, []byte(formattedContent), 0644)
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Errorf("WRITE_ERROR: %w", err)
+			result.ExecutionTime = time.Since(startTime)
+			if auditLog != nil {
+				auditLog("write", filePath, false, result.Error.Error())
+			}
+			return result
 		}
-		return result
+		err = os.Rename(tempPath, safePath)
+		if err != nil {
+			os.Remove(tempPath)
+			result.Success = false
+			result.Error = fmt.Errorf("RENAME_ERROR: %w", err)
+			result.ExecutionTime = time.Since(startTime)
+			if auditLog != nil {
+				auditLog("write", filePath, false, result.Error.Error())
+			}
+			return result
+		}
 	}
 
 	// Calculate content hash for audit log

@@ -44,6 +44,13 @@ func ParseFlags() *CLIFlags {
 	flag.StringVar(&cfg.ExecContainerImage, "exec-image", "python-go", "Docker image for exec commands")
 	flag.BoolVar(&cfg.ExecNetworkEnabled, "exec-network", false, "Enable network access in containers")
 
+	// I/O Containerization flags
+	flag.BoolVar(&cfg.IOContainerized, "io-containerized", false, "Enable containerized file I/O operations")
+	flag.StringVar(&cfg.IOContainerImage, "io-image", "llm-runtime-io:latest", "Docker image for I/O operations")
+	ioTimeoutStr := flag.String("io-timeout", "10s", "Timeout for I/O operations")
+	flag.StringVar(&cfg.IOMemoryLimit, "io-memory", "256m", "Memory limit for I/O containers")
+	flag.IntVar(&cfg.IOCPULimit, "io-cpu", 1, "CPU limit for I/O containers")
+
 	allowedExts := flag.String("allowed-extensions", ".go,.py,.js,.md,.txt,.json,.yaml,.yml,.toml",
 		"Comma-separated list of allowed file extensions for writing")
 
@@ -67,6 +74,12 @@ func ParseFlags() *CLIFlags {
 	cfg.ExecTimeout, err = time.ParseDuration(*execTimeoutStr)
 	if err != nil {
 		log.Fatalf("Invalid exec timeout: %v", err)
+	}
+
+	// Parse I/O timeout
+	cfg.IOTimeout, err = time.ParseDuration(*ioTimeoutStr)
+	if err != nil {
+		log.Fatalf("Invalid I/O timeout: %v", err)
 	}
 
 	// Set up allowed extensions

@@ -505,7 +505,7 @@ func TestApp_RunSearchCommand_SearchDisabled(t *testing.T) {
 	}
 }
 
-func TestApp_RunSearchCommand_CheckPythonSetup(t *testing.T) {
+func TestApp_RunSearchCommand_CheckOllamaSetup(t *testing.T) {
 	tempDir := t.TempDir()
 
 	cfg := &config.Config{
@@ -522,17 +522,17 @@ func TestApp_RunSearchCommand_CheckPythonSetup(t *testing.T) {
 	}
 
 	flags := &cli.CLIFlags{
-		CheckPythonSetup: true,
+		CheckOllamaSetup: true,
 	}
 
 	stderr := captureStderr(t, func() {
 		err = app.RunSearchCommand(flags)
 	})
 
-	// CheckPythonSetup might succeed or fail depending on environment
+	// CheckOllamaSetup might succeed or fail depending on environment
 	// Just verify it runs and produces output
 	if !strings.Contains(stderr, "Python") {
-		t.Errorf("CheckPythonSetup should mention Python\nGot: %s", stderr)
+		t.Errorf("CheckOllamaSetup should mention Python\nGot: %s", stderr)
 	}
 }
 
@@ -1244,7 +1244,7 @@ func TestApp_checkPythonSetup_NoPython(t *testing.T) {
 	}
 
 	flags := &cli.CLIFlags{
-		CheckPythonSetup: true,
+		CheckOllamaSetup: true,
 	}
 
 	// Capture stderr to verify output

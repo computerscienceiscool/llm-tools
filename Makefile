@@ -258,6 +258,11 @@ help:
 	@echo "  make build-all     - Build for multiple platforms"
 	@echo "  make release       - Create release tarball"
 	@echo "  make check-docker  - Check Docker availability"
+	@echo "  make build-io-image    - Build Docker image for containerized I/O"
+	@echo "  make check-io-image    - Verify IO container image exists"
+	@echo "  make test-io-container - Test containerized I/O operations"
+	@echo "  make clean-io-image    - Remove IO container image"
+	@echo "  make clean-all         - Full clean including Docker images"
 	@echo "  make commit        - Build, test, and commit with auto-generated message"
 	@echo "  make help          - Show this help message"
 
@@ -288,3 +293,52 @@ debug-path:
 # Show only failed tests
 test-failures:
 	@$(GOTEST) ./... 2>&1 | grep -E "^(FAIL|---.*FAIL)" || echo "All tests passed!"
+
+
+
+
+
+# Add after the check-docker target (around line 176):
+
+# Build Docker image for containerized I/O (Phase 5)
+build-io-image:
+	@echo "Building Docker image for containerized I/O..."
+	docker build -f Dockerfile.io -t llm-runtime-io:latest .
+	@echo "IO container image built: llm-runtime-io:latest"
+
+# Verify IO container image exists
+check-io-image:
+	@if docker image inspect llm-runtime-io:latest >/dev/null 2>&1; then \
+		echo "IO container image found: llm-runtime-io:latest"; \
+		docker image inspect llm-runtime-io:latest --format '  Size: {{.Size}} bytes ({{printf "%.1f" (div (div (mul (toFloat64 .Size) 10.0) 1048576.0) 10.0)}} MB)'; \
+		docker image inspect llm-runtime-io:latest --format '  Created: {{.Created}}'; 
+	else \
+		echo "IO container image not found: llm-runtime-io:latest"; \
+		echo "Run 'make build-io-image' to build it"; \
+		exit 1; \
+	fi
+
+# Test containerized I/O operations
+test-io-container: build check-io-image
+	@echo "Testing containerized I/O operations..."
+	@echo "Test: <open README.md>" | $(BINARY_PATH) --io-containerized
+	@echo ""
+	@echo "Testing containerized write..."
+	@echo "Test: <write test_io_output.txt>This file was created using containerized I/O (Phase 5)\nTimestamp: $$(date)</write>" | $(BINARY_PATH) --io-containerized
+	@if [ -f test_io_output.txt ]; then \
+		echo "Containerized write successful"; \
+		echo "File contents:"; \
+		cat test_io_output.txt; \
+		rm test_io_output.txt; \
+	else \
+		echo "Containerized write failed"; \
+	fi
+
+# Clean Docker images for IO
+clean-io-image:
+	@echo "Removing IO container image..."
+	@docker rmi llm-runtime-io:latest 2>/dev/null || echo "Image not found or already removed"
+
+# Full clean including Docker artifacts
+clean-all: clean clean-io-image
+	@echo "Full cleanup complete (including Docker images)"

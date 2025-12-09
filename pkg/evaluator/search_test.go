@@ -147,7 +147,7 @@ func TestExecuteSearch_EmptyQuery(t *testing.T) {
 		VectorDBPath:       filepath.Join(tmpDir, "test.db"),
 		MaxResults:         10,
 		MinSimilarityScore: 0.5,
-		PythonPath:         "/nonexistent/python", // Will fail at search, not init
+		OllamaURL:         "/nonexistent/python", // Will fail at search, not init
 	}
 
 	result := ExecuteSearch("", cfg, searchCfg, nil)
@@ -175,7 +175,7 @@ func TestExecuteSearch_WithValidDB(t *testing.T) {
 		MaxResults:         10,
 		MinSimilarityScore: 0.5,
 		MaxPreviewLength:   100,
-		PythonPath:         "/nonexistent/python", // Will fail at Python check
+		OllamaURL:         "/nonexistent/python", // Will fail at Python check
 	}
 
 	result := ExecuteSearch("test query", cfg, searchCfg, nil)
@@ -370,7 +370,7 @@ func TestExecuteSearch_ConfigValues(t *testing.T) {
 				MaxResults:         25,
 				MinSimilarityScore: 0.75,
 				MaxPreviewLength:   200,
-				PythonPath:         "/nonexistent",
+				OllamaURL:         "/nonexistent",
 			},
 		},
 		{
