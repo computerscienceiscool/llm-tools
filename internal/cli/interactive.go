@@ -11,21 +11,12 @@ import (
 	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 )
 
-// isCommandStart checks if a line starts with a command (ignoring leading whitespace)
-func isCommandStart(line string) bool {
-	trimmed := strings.TrimLeft(line, " \t")
-	return strings.HasPrefix(trimmed, "<open") ||
-		strings.HasPrefix(trimmed, "<write") ||
-		strings.HasPrefix(trimmed, "<exec") ||
-		strings.HasPrefix(trimmed, "<search")
-}
-
 
 
 // ScanInput handles continuous input/output using state machine scanner
 func ScanInput(exec *evaluator.Executor, startTime time.Time, showPrompts bool) {
 	reader := bufio.NewReader(os.Stdin)
-	scanner := NewScanner(reader, showPrompts)
+	sc := scanner.NewScanner(reader, showPrompts)
 
 	if showPrompts {
 		fmt.Fprintln(os.Stderr, "LLM Tool - Interactive Mode")
@@ -34,7 +25,7 @@ func ScanInput(exec *evaluator.Executor, startTime time.Time, showPrompts bool) 
 	}
 
 	for {
-		cmd := scanner.Scan()
+		cmd := sc.Scan()
 		if cmd == nil {
 			break
 		}

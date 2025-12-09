@@ -5,10 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
 	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
-	"github.com/computerscienceiscool/llm-runtime/internal/security"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 
 // ExecuteOpen handles the "open" command
@@ -19,7 +18,7 @@ func ExecuteOpen(filepath string, cfg *config.Config, auditLog func(cmd, arg str
 	}
 
 	// Validate the path
-	safePath, err := security.ValidatePath(filepath, cfg.RepositoryRoot, cfg.ExcludedPaths)
+	safePath, err := sandbox.ValidatePath(filepath, cfg.RepositoryRoot, cfg.ExcludedPaths)
 	if err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("PATH_SECURITY: %w", err)

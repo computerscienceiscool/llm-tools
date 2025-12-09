@@ -14,7 +14,6 @@ import (
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
-	"github.com/computerscienceiscool/llm-runtime/internal/security"
 )
 
 // CreateBackup creates a backup of an existing file
@@ -80,7 +79,7 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 	}
 
 	// Validate the path
-	safePath, err := security.ValidatePath(filePath, cfg.RepositoryRoot, cfg.ExcludedPaths)
+	safePath, err := sandbox.ValidatePath(filePath, cfg.RepositoryRoot, cfg.ExcludedPaths)
 	if err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("PATH_SECURITY: %w", err)
@@ -92,7 +91,7 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 	}
 
 	// Validate file extension
-	if err := security.ValidateWriteExtension(filePath, cfg.AllowedExtensions); err != nil {
+	if err := sandbox.ValidateWriteExtension(filePath, cfg.AllowedExtensions); err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("EXTENSION_DENIED: %w", err)
 		result.ExecutionTime = time.Since(startTime)

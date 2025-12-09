@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -80,5 +81,8 @@ func ParseCommands(text string) []Command {
 		}
 	}
 
+	sort.Slice(commands, func(i, j int) bool {
+		return commands[i].StartPos < commands[j].StartPos
+	})
 	return commands
 }

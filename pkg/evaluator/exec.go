@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
-	"github.com/computerscienceiscool/llm-runtime/internal/docker"
-	"github.com/computerscienceiscool/llm-runtime/internal/security"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
+	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
 )
 
 // ExecuteExec handles the "exec" command
@@ -18,7 +17,7 @@ func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg stri
 	}
 
 	// Validate command
-	if err := security.ValidateExecCommand(cmd, cfg.ExecEnabled, cfg.ExecWhitelist); err != nil {
+	if err := sandbox.ValidateExecCommand(cmd, cfg.ExecEnabled, cfg.ExecWhitelist); err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("EXEC_VALIDATION: %w", err)
 		result.ExecutionTime = time.Since(startTime)
@@ -29,7 +28,7 @@ func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg stri
 	}
 
 	// Check Docker availability
-	if err := docker.CheckDockerAvailability(); err != nil {
+	if err := sandbox.CheckDockerAvailability(); err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("DOCKER_UNAVAILABLE: %w", err)
 		result.ExecutionTime = time.Since(startTime)
@@ -40,7 +39,7 @@ func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg stri
 	}
 
 	// Pull Docker image if needed
-	if err := docker.PullDockerImage(cfg.ExecContainerImage, cfg.Verbose); err != nil {
+	if err := sandbox.PullDockerImage(cfg.ExecContainerImage, cfg.Verbose); err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("DOCKER_IMAGE: %w", err)
 		result.ExecutionTime = time.Since(startTime)
@@ -51,7 +50,7 @@ func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg stri
 	}
 
 	// Configure and run container
-	containerCfg := docker.ContainerConfig{
+	containerCfg := sandbox.ContainerConfig{
 		Image:       cfg.ExecContainerImage,
 		Command:     cmd,
 		RepoRoot:    cfg.RepositoryRoot,
@@ -60,7 +59,7 @@ func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg stri
 		Timeout:     cfg.ExecTimeout,
 	}
 
-	containerResult, err := docker.RunContainer(containerCfg)
+	containerResult, err := sandbox.RunContainer(containerCfg)
 
 	result.Stdout = containerResult.Stdout
 	result.Stderr = containerResult.Stderr
