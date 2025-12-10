@@ -26,7 +26,7 @@ func TestCLIHelp(t *testing.T) {
 	cmd := exec.Command(binary, "--help")
 	output, _ := cmd.CombinedOutput()
 
-	// Help should mention key flags from Phase 11 of refactoring guide
+	// Help should mention key flags
 	expectedFlags := []string{
 		"root",
 		"interactive",
@@ -53,33 +53,35 @@ func TestCLIInvalidFlag(t *testing.T) {
 	}
 }
 
-// TestSearchCommandFlags verifies search-related CLI flags are recognized
-func TestSearchCommandFlags(t *testing.T) {
+// TestSearchSubcommands verifies search subcommands are recognized
+func TestSearchSubcommands(t *testing.T) {
 	binary := buildTestBinary(t)
 	defer os.Remove(binary)
 
-	// These flags should be recognized (may fail due to missing config, but should not fail on flag parsing)
-	searchFlags := []string{
-		"--reindex",
-		"--search-status",
-		"--search-validate",
-		"--search-cleanup",
+	// These subcommands should be recognized (may fail due to missing config, but should not fail on command parsing)
+	subcommands := []string{
+		"reindex",
+		"search-status",
+		"search-validate",
+		"search-cleanup",
+		"search-update",
+		"check-ollama",
 	}
 
-	for _, flag := range searchFlags {
-		t.Run(flag, func(t *testing.T) {
-			cmd := exec.Command(binary, flag)
+	for _, subcmd := range subcommands {
+		t.Run(subcmd, func(t *testing.T) {
+			cmd := exec.Command(binary, subcmd, "--help")
 			output, err := cmd.CombinedOutput()
 			outputStr := string(output)
 
-			// Should not fail with "flag provided but not defined"
-			if strings.Contains(outputStr, "flag provided but not defined") {
-				t.Errorf("flag %s not recognized: %s", flag, outputStr)
+			// Help should work for each subcommand
+			if err != nil && !strings.Contains(outputStr, "Usage:") {
+				t.Errorf("subcommand %s help failed: %v\nOutput: %s", subcmd, err, outputStr)
 			}
 
-			// If it fails, it should be for a legitimate reason (e.g., missing config), not unknown flag
-			if err != nil && strings.Contains(outputStr, "unknown flag") {
-				t.Errorf("flag %s reported as unknown: %s", flag, outputStr)
+			// Should show usage for the subcommand
+			if !strings.Contains(outputStr, subcmd) {
+				t.Errorf("help output for %s doesn't mention the command\nOutput: %s", subcmd, outputStr)
 			}
 		})
 	}
@@ -120,7 +122,7 @@ func TestPipeMode(t *testing.T) {
 
 	outputStr := string(output)
 
-	// Verify output format markers from Phase 16
+	// Verify output format markers
 	expectedMarkers := []string{
 		"=== LLM TOOL START ===",
 		"=== COMMAND:",

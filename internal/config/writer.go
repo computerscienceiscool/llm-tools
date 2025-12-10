@@ -1,11 +1,11 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/computerscienceiscool/llm-runtime/internal/search"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
 
@@ -22,15 +22,27 @@ func SaveConfig(config *FullConfig, configPath string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(configPath, data, 0644)
+	return os.WriteFile(configPath, data, 0644)
 }
 
 // UpdateSearchConfigInFile updates search configuration in existing config file
 func UpdateSearchConfigInFile(configPath string, searchConfig *search.SearchConfig) error {
-	fullConfig, err := LoadConfig(configPath)
-	if err != nil {
-		// Create new config if file doesn't exist
-		fullConfig = &FullConfig{}
+	// Try to read existing config
+	v := viper.New()
+	v.SetConfigFile(configPath)
+
+	fullConfig := &FullConfig{}
+
+	// If file exists, read it
+	if _, err := os.Stat(configPath); err == nil {
+		if err := v.ReadInConfig(); err != nil {
+			return err
+		}
+		if err := v.Unmarshal(fullConfig); err != nil {
+			return err
+		}
+	} else {
+		// File doesn't exist, set defaults
 		SetFullConfigDefaults(fullConfig)
 	}
 
@@ -55,4 +67,55 @@ func EnableSearchInConfig(configPath string) error {
 	searchConfig.Enabled = true
 
 	return UpdateSearchConfigInFile(configPath, searchConfig)
+}
+
+// LoadSearchConfig loads search configuration from the default config file
+func LoadSearchConfig() *search.SearchConfig {
+	// Try to get config path
+	configPath := GetConfigPath()
+
+	v := viper.New()
+	v.SetConfigFile(configPath)
+
+	// Set defaults first
+	SetViperDefaults()
+
+	// Try to read config file
+	if err := v.ReadInConfig(); err != nil {
+		// If can't read, just return defaults
+		return GetDefaultSearchConfig()
+	}
+
+	// Extract search config from viper
+	return &search.SearchConfig{
+		Enabled:            v.GetBool("commands.search.enabled"),
+		VectorDBPath:       v.GetString("commands.search.vector_db_path"),
+		EmbeddingModel:     v.GetString("commands.search.embedding_model"),
+		MaxResults:         v.GetInt("commands.search.max_results"),
+		MinSimilarityScore: v.GetFloat64("commands.search.min_similarity_score"),
+		MaxPreviewLength:   v.GetInt("commands.search.max_preview_length"),
+		ChunkSize:          v.GetInt("commands.search.chunk_size"),
+		OllamaURL:          v.GetString("commands.search.ollama_url"),
+		IndexExtensions:    v.GetStringSlice("commands.search.index_extensions"),
+		MaxFileSize:        v.GetInt64("commands.search.max_file_size"),
+	}
+}
+
+// GetConfigPath returns the path to the configuration file
+func GetConfigPath() string {
+	// Check for config file in current directory first
+	if _, err := os.Stat("llm-runtime.config.yaml"); err == nil {
+		return "llm-runtime.config.yaml"
+	}
+
+	// Check home directory
+	if home, err := os.UserHomeDir(); err == nil {
+		homePath := filepath.Join(home, ".llm-runtime.config.yaml")
+		if _, err := os.Stat(homePath); err == nil {
+			return homePath
+		}
+	}
+
+	// Default to current directory
+	return "llm-runtime.config.yaml"
 }

@@ -1,15 +1,18 @@
 package app
 
 import (
+	"bufio"
 	"fmt"
-	"net/http"
+	"io"
 	"os"
+	"strings"
+	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/cli"
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
 	"github.com/computerscienceiscool/llm-runtime/internal/search"
 	"github.com/computerscienceiscool/llm-runtime/internal/session"
 	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 
 // App represents the main application
@@ -48,79 +51,104 @@ func (a *App) Run() error {
 		output = file
 	}
 
-	cli.ScanInput(a.executor, a.session.StartTime, a.config.Interactive, input, output)
+	a.scanInput(a.executor, a.session.StartTime, a.config.Interactive, input, output)
 	return nil
 }
 
+// scanInput handles continuous input/output using state machine scanner
+func (a *App) scanInput(exec *evaluator.Executor, startTime time.Time, showPrompts bool, input io.Reader, output io.Writer) {
+	reader := bufio.NewReader(input)
+	sc := scanner.NewScanner(reader, showPrompts)
 
-// RunSearchCommand handles search-related CLI commands
-func (a *App) RunSearchCommand(flags *cli.CLIFlags) error {
-	if flags.CheckOllamaSetup {
-		return a.checkOllamaSetup()
-	}
-
-	// Initialize search commands
-	if a.searchCfg == nil || !a.searchCfg.Enabled {
-		return fmt.Errorf("search is not enabled in configuration")
-	}
-
-	searchCmds, err := search.NewSearchCommands(a.searchCfg, a.config.RepositoryRoot)
-	if err != nil {
-		return fmt.Errorf("search not available: %w", err)
-	}
-	defer searchCmds.Close()
-
-	if flags.Reindex {
-		return searchCmds.HandleReindex(a.config.ExcludedPaths, a.config.Verbose)
-	}
-	if flags.SearchStatus {
-		return searchCmds.HandleSearchStatus()
-	}
-	if flags.SearchValidate {
-		return searchCmds.HandleSearchValidate()
-	}
-	if flags.SearchCleanup {
-		return searchCmds.HandleSearchCleanup()
-	}
-	if flags.SearchUpdate {
-		return searchCmds.HandleSearchUpdate(a.config.ExcludedPaths)
+	if showPrompts {
+		fmt.Fprintln(os.Stderr, "LLM Tool - Interactive Mode")
+		fmt.Fprintln(os.Stderr, "Waiting for input (send EOF with Ctrl+D to process)...")
+		fmt.Fprintln(os.Stderr, "Supports commands: <open filepath>, <write filepath>content</write>, <exec command args>, <search query>")
 	}
 
-	return nil
+	for {
+		cmd := sc.Scan()
+		if cmd == nil {
+			break
+		}
+
+		// Execute the command
+		result := exec.Execute(*cmd)
+
+		// Format and print result
+		cmdOutput := a.formatCommandResult(*cmd, result, exec, startTime)
+		fmt.Fprint(output, cmdOutput)
+
+		if showPrompts {
+			fmt.Fprintln(os.Stderr, "\nWaiting for more input...")
+		}
+	}
 }
 
-// checkOllamaSetup verifies Ollama is available
-func (a *App) checkOllamaSetup() error {
-	fmt.Fprintf(os.Stderr, "Checking Ollama setup for search functionality...\n")
+// formatCommandResult formats a single command result
+func (a *App) formatCommandResult(cmd scanner.Command, result scanner.ExecutionResult, exec *evaluator.Executor, startTime time.Time) string {
+	var output strings.Builder
 
-	if err := checkOllamaAvailability(a.searchCfg.OllamaURL); err != nil {
-		fmt.Fprintf(os.Stderr, "\nOllama not available at %s\n", a.searchCfg.OllamaURL)
-		fmt.Fprintf(os.Stderr, "Please install and start Ollama:\n")
-		fmt.Fprintf(os.Stderr, "  curl -fsSL https://ollama.com/install.sh | sh\n")
-		fmt.Fprintf(os.Stderr, "  ollama pull nomic-embed-text\n")
-		fmt.Fprintf(os.Stderr, "\nFor more details, see: https://ollama.com\n")
-		return fmt.Errorf("Ollama not available: %w", err)
+	output.WriteString("=== LLM TOOL START ===\n")
+	output.WriteString(fmt.Sprintf("=== COMMAND: <%s %s> ===\n", cmd.Type, cmd.Argument))
+
+	if result.Success {
+		switch cmd.Type {
+		case "open":
+			output.WriteString(fmt.Sprintf("=== FILE: %s ===\n", cmd.Argument))
+			output.WriteString(result.Result)
+			if !strings.HasSuffix(result.Result, "\n") {
+				output.WriteString("\n")
+			}
+			output.WriteString("=== END FILE ===\n")
+
+		case "write":
+			output.WriteString(fmt.Sprintf("=== WRITE SUCCESSFUL: %s ===\n", cmd.Argument))
+			output.WriteString(fmt.Sprintf("Action: %s\n", result.Action))
+			output.WriteString(fmt.Sprintf("Bytes written: %d\n", result.BytesWritten))
+			if result.BackupFile != "" {
+				output.WriteString(fmt.Sprintf("Backup: %s\n", result.BackupFile))
+			}
+			output.WriteString("=== END WRITE ===\n")
+
+		case "exec":
+			output.WriteString(fmt.Sprintf("=== EXEC SUCCESSFUL: %s ===\n", cmd.Argument))
+			output.WriteString(fmt.Sprintf("Exit code: %d\n", result.ExitCode))
+			output.WriteString(fmt.Sprintf("Duration: %.3fs\n", result.ExecutionTime.Seconds()))
+			if result.Result != "" {
+				output.WriteString("Output:\n")
+				output.WriteString(result.Result)
+				if !strings.HasSuffix(result.Result, "\n") {
+					output.WriteString("\n")
+				}
+			}
+			output.WriteString("=== END EXEC ===\n")
+
+		case "search":
+			output.WriteString(result.Result)
+		}
+	} else {
+		errParts := strings.Split(result.Error.Error(), ":")
+		errType := errParts[0]
+		output.WriteString(fmt.Sprintf("=== ERROR: %s ===\n", errType))
+		output.WriteString(fmt.Sprintf("Message: %s\n", result.Error.Error()))
+		output.WriteString(fmt.Sprintf("Command: <%s %s>\n", cmd.Type, cmd.Argument))
+		if cmd.Type == "exec" && result.ExitCode != 0 {
+			output.WriteString(fmt.Sprintf("Exit code: %d\n", result.ExitCode))
+			if result.Stderr != "" {
+				output.WriteString(fmt.Sprintf("Stderr: %s\n", result.Stderr))
+			}
+		}
+		output.WriteString("=== END ERROR ===\n")
 	}
 
-	fmt.Fprintf(os.Stderr, "Ollama is running at %s\n", a.searchCfg.OllamaURL)
-	fmt.Fprintf(os.Stderr, "\nSearch functionality is ready to use!\n")
+	output.WriteString("=== END COMMAND ===\n")
+	output.WriteString("=== LLM TOOL COMPLETE ===\n")
+	output.WriteString(fmt.Sprintf("Commands executed: %d\n", exec.GetCommandsRun()))
+	output.WriteString(fmt.Sprintf("Time elapsed: %.2fs\n", time.Since(startTime).Seconds()))
+	output.WriteString("=== END ===\n")
 
-	return nil
-}
-
-// checkOllamaAvailability verifies Ollama is running and accessible
-func checkOllamaAvailability(ollamaURL string) error {
-	resp, err := http.Get(ollamaURL + "/api/tags")
-	if err != nil {
-		return fmt.Errorf("cannot connect to Ollama: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Ollama responded with status %d", resp.StatusCode)
-	}
-
-	return nil
+	return output.String()
 }
 
 // printVerboseInfo prints verbose configuration information

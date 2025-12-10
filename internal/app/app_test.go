@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/cli"
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
 )
 
@@ -472,69 +471,69 @@ func TestApp_Run_VerboseMode_ExecDetails(t *testing.T) {
 	}
 }
 
-func TestApp_RunSearchCommand_SearchDisabled(t *testing.T) {
-	tempDir := t.TempDir()
+// func TestApp_RunSearchCommand_SearchDisabled(t *testing.T) {
+// 	tempDir := t.TempDir()
+// 
+// 	cfg := &config.Config{
+// 		RepositoryRoot:    tempDir,
+// 		MaxFileSize:       1048576,
+// 		MaxWriteSize:      102400,
+// 		AllowedExtensions: []string{".txt"},
+// 		ExcludedPaths:     []string{".git"},
+// 	}
+// 
+// 	app, err := Bootstrap(cfg)
+// 	if err != nil {
+// 		t.Fatalf("Bootstrap() error = %v", err)
+// 	}
+// 
+// 	// If search is not enabled in config, RunSearchCommand should fail
+// 	flags := &cli.CLIFlags{
+// 		Reindex: true,
+// 	}
+// 
+// 	err = app.RunSearchCommand(flags)
+// 	// Should fail because search is not enabled
+// 	if err == nil {
+// 		// Search might be enabled by default config, which is okay
+// 		return
+// 	}
+// 
+// 	if !strings.Contains(err.Error(), "search") {
+// 		t.Errorf("Error should mention search, got: %v", err)
+// 	}
+// }
 
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	// If search is not enabled in config, RunSearchCommand should fail
-	flags := &cli.CLIFlags{
-		Reindex: true,
-	}
-
-	err = app.RunSearchCommand(flags)
-	// Should fail because search is not enabled
-	if err == nil {
-		// Search might be enabled by default config, which is okay
-		return
-	}
-
-	if !strings.Contains(err.Error(), "search") {
-		t.Errorf("Error should mention search, got: %v", err)
-	}
-}
-
-func TestApp_RunSearchCommand_CheckOllamaSetup(t *testing.T) {
-	tempDir := t.TempDir()
-
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	flags := &cli.CLIFlags{
-		CheckOllamaSetup: true,
-	}
-
-	stderr := captureStderr(t, func() {
-		err = app.RunSearchCommand(flags)
-	})
-
-	// CheckOllamaSetup might succeed or fail depending on environment
-	// Just verify it runs and produces output
-	if !strings.Contains(stderr, "Ollama") {
-		t.Errorf("CheckOllamaSetup should mention Ollama\nGot: %s", stderr)
-	}
-}
+// func TestApp_RunSearchCommand_CheckOllamaSetup(t *testing.T) {
+// 	tempDir := t.TempDir()
+// 
+// 	cfg := &config.Config{
+// 		RepositoryRoot:    tempDir,
+// 		MaxFileSize:       1048576,
+// 		MaxWriteSize:      102400,
+// 		AllowedExtensions: []string{".txt"},
+// 		ExcludedPaths:     []string{".git"},
+// 	}
+// 
+// 	app, err := Bootstrap(cfg)
+// 	if err != nil {
+// 		t.Fatalf("Bootstrap() error = %v", err)
+// 	}
+// 
+// 	flags := &cli.CLIFlags{
+// 		CheckOllamaSetup: true,
+// 	}
+// 
+// 	stderr := captureStderr(t, func() {
+// 		err = app.RunSearchCommand(flags)
+// 	})
+// 
+// 	// CheckOllamaSetup might succeed or fail depending on environment
+// 	// Just verify it runs and produces output
+// 	if !strings.Contains(stderr, "Ollama") {
+// 		t.Errorf("CheckOllamaSetup should mention Ollama\nGot: %s", stderr)
+// 	}
+// }
 
 func TestApp_Run_NoCommands(t *testing.T) {
 	tempDir := t.TempDir()
@@ -743,182 +742,182 @@ func TestApp_Run_VerboseMode_ExecDisabled(t *testing.T) {
 	}
 }
 
-func TestApp_RunSearchCommand_Reindex_SearchDisabled(t *testing.T) {
-	tempDir := t.TempDir()
+// func TestApp_RunSearchCommand_Reindex_SearchDisabled(t *testing.T) {
+// 	tempDir := t.TempDir()
+// 
+// 	cfg := &config.Config{
+// 		RepositoryRoot:    tempDir,
+// 		MaxFileSize:       1048576,
+// 		MaxWriteSize:      102400,
+// 		AllowedExtensions: []string{".txt"},
+// 		ExcludedPaths:     []string{".git"},
+// 	}
+// 
+// 	app, err := Bootstrap(cfg)
+// 	if err != nil {
+// 		t.Fatalf("Bootstrap() error = %v", err)
+// 	}
+// 
+// 	flags := &cli.CLIFlags{
+// 		Reindex: true,
+// 	}
+// 
+// 	err = app.RunSearchCommand(flags)
+// 	// Should fail because search config is not enabled
+// 	if err == nil {
+// 		// If search happens to be enabled via config file, skip this test
+// 		t.Skip("Search is enabled, skipping disabled test")
+// 	}
+// 
+// 	if !strings.Contains(err.Error(), "search") {
+// 		t.Errorf("Error should mention search, got: %v", err)
+// 	}
+// }
 
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
+// func TestApp_RunSearchCommand_SearchStatus_SearchDisabled(t *testing.T) {
+// 	tempDir := t.TempDir()
+// 
+// 	cfg := &config.Config{
+// 		RepositoryRoot:    tempDir,
+// 		MaxFileSize:       1048576,
+// 		MaxWriteSize:      102400,
+// 		AllowedExtensions: []string{".txt"},
+// 		ExcludedPaths:     []string{".git"},
+// 	}
+// 
+// 	app, err := Bootstrap(cfg)
+// 	if err != nil {
+// 		t.Fatalf("Bootstrap() error = %v", err)
+// 	}
+// 
+// 	flags := &cli.CLIFlags{
+// 		SearchStatus: true,
+// 	}
+// 
+// 	err = app.RunSearchCommand(flags)
+// 	if err == nil {
+// 		t.Skip("Search is enabled, skipping disabled test")
+// 	}
+// 
+// 	if !strings.Contains(err.Error(), "search") {
+// 		t.Errorf("Error should mention search, got: %v", err)
+// 	}
+// }
 
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
+// func TestApp_RunSearchCommand_SearchValidate_SearchDisabled(t *testing.T) {
+// 	tempDir := t.TempDir()
+// 
+// 	cfg := &config.Config{
+// 		RepositoryRoot:    tempDir,
+// 		MaxFileSize:       1048576,
+// 		MaxWriteSize:      102400,
+// 		AllowedExtensions: []string{".txt"},
+// 		ExcludedPaths:     []string{".git"},
+// 	}
+// 
+// 	app, err := Bootstrap(cfg)
+// 	if err != nil {
+// 		t.Fatalf("Bootstrap() error = %v", err)
+// 	}
+// 
+// 	flags := &cli.CLIFlags{
+// 		SearchValidate: true,
+// 	}
+// 
+// 	err = app.RunSearchCommand(flags)
+// 	if err == nil {
+// 		t.Skip("Search is enabled, skipping disabled test")
+// 	}
+// 
+// 	if !strings.Contains(err.Error(), "search") {
+// 		t.Errorf("Error should mention search, got: %v", err)
+// 	}
+// }
 
-	flags := &cli.CLIFlags{
-		Reindex: true,
-	}
+// func TestApp_RunSearchCommand_SearchCleanup_SearchDisabled(t *testing.T) {
+// 	tempDir := t.TempDir()
+// 
+// 	cfg := &config.Config{
+// 		RepositoryRoot:    tempDir,
+// 		MaxFileSize:       1048576,
+// 		MaxWriteSize:      102400,
+// 		AllowedExtensions: []string{".txt"},
+// 		ExcludedPaths:     []string{".git"},
+// 	}
+// 
+// 	app, err := Bootstrap(cfg)
+// 	if err != nil {
+// 		t.Fatalf("Bootstrap() error = %v", err)
+// 	}
+// 
+// 	flags := &cli.CLIFlags{
+// 		SearchCleanup: true,
+// 	}
+// 
+// 	err = app.RunSearchCommand(flags)
+// 	if err == nil {
+// 		t.Skip("Search is enabled, skipping disabled test")
+// 	}
+// 
+// 	if !strings.Contains(err.Error(), "search") {
+// 		t.Errorf("Error should mention search, got: %v", err)
+// 	}
+// }
 
-	err = app.RunSearchCommand(flags)
-	// Should fail because search config is not enabled
-	if err == nil {
-		// If search happens to be enabled via config file, skip this test
-		t.Skip("Search is enabled, skipping disabled test")
-	}
+// func TestApp_RunSearchCommand_SearchUpdate_SearchDisabled(t *testing.T) {
+// 	tempDir := t.TempDir()
+// 
+// 	cfg := &config.Config{
+// 		RepositoryRoot:    tempDir,
+// 		MaxFileSize:       1048576,
+// 		MaxWriteSize:      102400,
+// 		AllowedExtensions: []string{".txt"},
+// 		ExcludedPaths:     []string{".git"},
+// 	}
+// 
+// 	app, err := Bootstrap(cfg)
+// 	if err != nil {
+// 		t.Fatalf("Bootstrap() error = %v", err)
+// 	}
+// 
+// 	flags := &cli.CLIFlags{
+// 		SearchUpdate: true,
+// 	}
+// 
+// 	err = app.RunSearchCommand(flags)
+// 	if err == nil {
+// 		t.Skip("Search is enabled, skipping disabled test")
+// 	}
+// 
+// 	if !strings.Contains(err.Error(), "search") {
+// 		t.Errorf("Error should mention search, got: %v", err)
+// 	}
+// }
 
-	if !strings.Contains(err.Error(), "search") {
-		t.Errorf("Error should mention search, got: %v", err)
-	}
-}
-
-func TestApp_RunSearchCommand_SearchStatus_SearchDisabled(t *testing.T) {
-	tempDir := t.TempDir()
-
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	flags := &cli.CLIFlags{
-		SearchStatus: true,
-	}
-
-	err = app.RunSearchCommand(flags)
-	if err == nil {
-		t.Skip("Search is enabled, skipping disabled test")
-	}
-
-	if !strings.Contains(err.Error(), "search") {
-		t.Errorf("Error should mention search, got: %v", err)
-	}
-}
-
-func TestApp_RunSearchCommand_SearchValidate_SearchDisabled(t *testing.T) {
-	tempDir := t.TempDir()
-
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	flags := &cli.CLIFlags{
-		SearchValidate: true,
-	}
-
-	err = app.RunSearchCommand(flags)
-	if err == nil {
-		t.Skip("Search is enabled, skipping disabled test")
-	}
-
-	if !strings.Contains(err.Error(), "search") {
-		t.Errorf("Error should mention search, got: %v", err)
-	}
-}
-
-func TestApp_RunSearchCommand_SearchCleanup_SearchDisabled(t *testing.T) {
-	tempDir := t.TempDir()
-
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	flags := &cli.CLIFlags{
-		SearchCleanup: true,
-	}
-
-	err = app.RunSearchCommand(flags)
-	if err == nil {
-		t.Skip("Search is enabled, skipping disabled test")
-	}
-
-	if !strings.Contains(err.Error(), "search") {
-		t.Errorf("Error should mention search, got: %v", err)
-	}
-}
-
-func TestApp_RunSearchCommand_SearchUpdate_SearchDisabled(t *testing.T) {
-	tempDir := t.TempDir()
-
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	flags := &cli.CLIFlags{
-		SearchUpdate: true,
-	}
-
-	err = app.RunSearchCommand(flags)
-	if err == nil {
-		t.Skip("Search is enabled, skipping disabled test")
-	}
-
-	if !strings.Contains(err.Error(), "search") {
-		t.Errorf("Error should mention search, got: %v", err)
-	}
-}
-
-func TestApp_RunSearchCommand_NoFlags(t *testing.T) {
-	tempDir := t.TempDir()
-
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	// No search flags set
-	flags := &cli.CLIFlags{}
-
-	err = app.RunSearchCommand(flags)
-	// With no flags, behavior depends on search being enabled or not
-	// Either way, it shouldn't panic
-	_ = err
-}
+// func TestApp_RunSearchCommand_NoFlags(t *testing.T) {
+// 	tempDir := t.TempDir()
+// 
+// 	cfg := &config.Config{
+// 		RepositoryRoot:    tempDir,
+// 		MaxFileSize:       1048576,
+// 		MaxWriteSize:      102400,
+// 		AllowedExtensions: []string{".txt"},
+// 		ExcludedPaths:     []string{".git"},
+// 	}
+// 
+// 	app, err := Bootstrap(cfg)
+// 	if err != nil {
+// 		t.Fatalf("Bootstrap() error = %v", err)
+// 	}
+// 
+// 	// No search flags set
+// 	flags := &cli.CLIFlags{}
+// 
+// 	err = app.RunSearchCommand(flags)
+// 	// With no flags, behavior depends on search being enabled or not
+// 	// Either way, it shouldn't panic
+// 	_ = err
+// }
 
 func TestApp_Run_InteractiveMode(t *testing.T) {
 	tempDir := t.TempDir()
@@ -1162,68 +1161,68 @@ func TestApp_Run_LargeInput(t *testing.T) {
 	}
 }
 
-func TestApp_RunSearchCommand_WithSearchConfig(t *testing.T) {
-	tempDir := t.TempDir()
-
-	// Create a config file that enables search
-	configContent := `
-repository:
-  root: "."
-  excluded_paths: [".git"]
-commands:
-  search:
-    enabled: true
-    vector_db_path: "test_search.db"
-    embedding_model: "all-MiniLM-L6-v2"
-    max_results: 10
-    min_similarity_score: 0.5
-    python_path: "python3"
-`
-	configPath := filepath.Join(tempDir, "llm-runtime.config.yaml")
-	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
-		t.Fatalf("Failed to create config file: %v", err)
-	}
-
-	// Change to tempDir so config is found
-	oldDir, _ := os.Getwd()
-	defer os.Chdir(oldDir)
-	os.Chdir(tempDir)
-
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	// Test various search commands - they may fail due to missing Python/DB
-	// but should at least attempt to run (covering more code paths)
-
-	searchTests := []struct {
-		name  string
-		flags cli.CLIFlags
-	}{
-		{"Reindex", cli.CLIFlags{Reindex: true}},
-		{"SearchStatus", cli.CLIFlags{SearchStatus: true}},
-		{"SearchValidate", cli.CLIFlags{SearchValidate: true}},
-		{"SearchCleanup", cli.CLIFlags{SearchCleanup: true}},
-		{"SearchUpdate", cli.CLIFlags{SearchUpdate: true}},
-	}
-
-	for _, tt := range searchTests {
-		t.Run(tt.name, func(t *testing.T) {
-			// These will likely fail due to Python not being available,
-			// but they exercise the code paths
-			_ = app.RunSearchCommand(&tt.flags)
-		})
-	}
-}
+// func TestApp_RunSearchCommand_WithSearchConfig(t *testing.T) {
+// 	tempDir := t.TempDir()
+// 
+// 	// Create a config file that enables search
+// 	configContent := `
+// repository:
+//   root: "."
+//   excluded_paths: [".git"]
+// commands:
+//   search:
+//     enabled: true
+//     vector_db_path: "test_search.db"
+//     embedding_model: "all-MiniLM-L6-v2"
+//     max_results: 10
+//     min_similarity_score: 0.5
+//     python_path: "python3"
+// `
+// 	configPath := filepath.Join(tempDir, "llm-runtime.config.yaml")
+// 	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+// 		t.Fatalf("Failed to create config file: %v", err)
+// 	}
+// 
+// 	// Change to tempDir so config is found
+// 	oldDir, _ := os.Getwd()
+// 	defer os.Chdir(oldDir)
+// 	os.Chdir(tempDir)
+// 
+// 	cfg := &config.Config{
+// 		RepositoryRoot:    tempDir,
+// 		MaxFileSize:       1048576,
+// 		MaxWriteSize:      102400,
+// 		AllowedExtensions: []string{".txt"},
+// 		ExcludedPaths:     []string{".git"},
+// 	}
+// 
+// 	app, err := Bootstrap(cfg)
+// 	if err != nil {
+// 		t.Fatalf("Bootstrap() error = %v", err)
+// 	}
+// 
+// 	// Test various search commands - they may fail due to missing Python/DB
+// 	// but should at least attempt to run (covering more code paths)
+// 
+// 	searchTests := []struct {
+// 		name  string
+// 		flags cli.CLIFlags
+// 	}{
+// 		{"Reindex", cli.CLIFlags{Reindex: true}},
+// 		{"SearchStatus", cli.CLIFlags{SearchStatus: true}},
+// 		{"SearchValidate", cli.CLIFlags{SearchValidate: true}},
+// 		{"SearchCleanup", cli.CLIFlags{SearchCleanup: true}},
+// 		{"SearchUpdate", cli.CLIFlags{SearchUpdate: true}},
+// 	}
+// 
+// 	for _, tt := range searchTests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			// These will likely fail due to Python not being available,
+// 			// but they exercise the code paths
+// 			_ = app.RunSearchCommand(&tt.flags)
+// 		})
+// 	}
+// }
 
 func TestApp_Run_PipeMode_StdinError(t *testing.T) {
 	tempDir := t.TempDir()
