@@ -3,43 +3,99 @@ package sandbox
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/strslice"
+	"github.com/docker/docker/client"
 )
 
 // RunIOContainer executes a containerized I/O operation
 func RunIOContainer(repoRoot, containerImage, command string, timeout time.Duration, memLimit string, cpuLimit int) (string, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return "", fmt.Errorf("failed to create Docker client: %w", err)
+	}
+	defer cli.Close()
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	dockerArgs := []string{
-		"run",
-		"--rm",
-		"--network", "none",
-		"--memory", memLimit,
-		"--cpus", fmt.Sprintf("%d", cpuLimit),
-		"--cap-drop", "ALL",
-		"--security-opt", "no-new-privileges",
-		"--user", "1000:1000",
-		"-v", fmt.Sprintf("%s:/workspace:ro", repoRoot),
-		containerImage,
-		"sh", "-c", command,
+	// Configure container
+	containerConfig := &container.Config{
+		Image:      containerImage,
+		Cmd:        strslice.StrSlice{"sh", "-c", command},
+		WorkingDir: "/workspace",
+		User:       "1000:1000",
 	}
 
-	cmd := exec.CommandContext(ctx, "docker", dockerArgs...)
-	output, err := cmd.CombinedOutput()
+	// Configure host
+	hostConfig := &container.HostConfig{
+		NetworkMode: "none",
+		Resources: container.Resources{
+			Memory:   parseMemoryLimitIO(memLimit),
+			NanoCPUs: int64(cpuLimit) * 1000000000,
+		},
+		Mounts: []mount.Mount{
+			{
+				Type:     mount.TypeBind,
+				Source:   repoRoot,
+				Target:   "/workspace",
+				ReadOnly: true,
+			},
+		},
+		CapDrop:     strslice.StrSlice{"ALL"},
+		SecurityOpt: []string{"no-new-privileges"},
+	}
 
-	if ctx.Err() == context.DeadlineExceeded {
+	// Create container
+	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
+	if err != nil {
+		return "", fmt.Errorf("failed to create container: %w", err)
+	}
+	defer cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{Force: true})
+
+	// Start container
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		return "", fmt.Errorf("failed to start container: %w", err)
+	}
+
+	// Wait for completion
+	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return "", fmt.Errorf("container execution failed: %w", err)
+		}
+	case <-statusCh:
+		// Container finished
+	case <-ctx.Done():
 		return "", fmt.Errorf("I/O operation timed out after %v", timeout)
 	}
 
+	// Get logs
+	logReader, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+	})
 	if err != nil {
-		return "", fmt.Errorf("container execution failed: %w\nOutput: %s", err, string(output))
+		return "", fmt.Errorf("failed to get container logs: %w", err)
+	}
+	defer logReader.Close()
+
+	// Read output
+	var stdout strings.Builder
+	if err := readDockerLogs(logReader, &stdout); err != nil {
+		return "", fmt.Errorf("failed to read container output: %w", err)
 	}
 
-	return string(output), nil
+	return stdout.String(), nil
 }
 
 // ReadFileInContainer reads a file using the I/O container
@@ -56,7 +112,12 @@ func ReadFileInContainer(filePath, repoRoot, containerImage string, timeout time
 
 // WriteFileInContainer writes a file using the I/O container
 func WriteFileInContainer(filePath, content, repoRoot, containerImage string, timeout time.Duration, memLimit string, cpuLimit int) error {
-	// For writes, we need read-write mount
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return fmt.Errorf("failed to create Docker client: %w", err)
+	}
+	defer cli.Close()
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -75,29 +136,55 @@ func WriteFileInContainer(filePath, content, repoRoot, containerImage string, ti
 	command := fmt.Sprintf("printf '%%s' %q > /workspace/%s && mv /workspace/%s /workspace/%s",
 		content, relPath+".tmp", relPath+".tmp", relPath)
 
-	dockerArgs := []string{
-		"run",
-		"--rm",
-		"--network", "none",
-		"--memory", memLimit,
-		"--cpus", fmt.Sprintf("%d", cpuLimit),
-		"--cap-drop", "ALL",
-		"--security-opt", "no-new-privileges",
-		"--user", "1000:1000",
-		"-v", fmt.Sprintf("%s:/workspace:rw", repoRoot), // Read-write for writes
-		containerImage,
-		"sh", "-c", command,
+	// Configure container with read-write mount
+	containerConfig := &container.Config{
+		Image:      containerImage,
+		Cmd:        strslice.StrSlice{"sh", "-c", command},
+		WorkingDir: "/workspace",
+		User:       "1000:1000",
 	}
 
-	cmd := exec.CommandContext(ctx, "docker", dockerArgs...)
-	output, err := cmd.CombinedOutput()
-
-	if ctx.Err() == context.DeadlineExceeded {
-		return fmt.Errorf("write operation timed out after %v", timeout)
+	hostConfig := &container.HostConfig{
+		NetworkMode: "none",
+		Resources: container.Resources{
+			Memory:   parseMemoryLimitIO(memLimit),
+			NanoCPUs: int64(cpuLimit) * 1000000000,
+		},
+		Mounts: []mount.Mount{
+			{
+				Type:     mount.TypeBind,
+				Source:   repoRoot,
+				Target:   "/workspace",
+				ReadOnly: false, // Read-write for writes
+			},
+		},
+		CapDrop:     strslice.StrSlice{"ALL"},
+		SecurityOpt: []string{"no-new-privileges"},
 	}
 
+	// Create container
+	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
 	if err != nil {
-		return fmt.Errorf("container write failed: %w\nOutput: %s", err, string(output))
+		return fmt.Errorf("failed to create container: %w", err)
+	}
+	defer cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{Force: true})
+
+	// Start container
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		return fmt.Errorf("failed to start container: %w", err)
+	}
+
+	// Wait for completion
+	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return fmt.Errorf("container write failed: %w", err)
+		}
+	case <-statusCh:
+		// Container finished
+	case <-ctx.Done():
+		return fmt.Errorf("write operation timed out after %v", timeout)
 	}
 
 	return nil
@@ -105,8 +192,15 @@ func WriteFileInContainer(filePath, content, repoRoot, containerImage string, ti
 
 // EnsureIOContainerImage verifies the I/O container image exists
 func EnsureIOContainerImage(imageName string) error {
-	cmd := exec.Command("docker", "image", "inspect", imageName)
-	if err := cmd.Run(); err != nil {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return fmt.Errorf("failed to create Docker client: %w", err)
+	}
+	defer cli.Close()
+
+	ctx := context.Background()
+	_, _, err = cli.ImageInspectWithRaw(ctx, imageName)
+	if err != nil {
 		return fmt.Errorf("I/O container image not found: %s\nRun: docker build -f Dockerfile.io -t %s .", imageName, imageName)
 	}
 	return nil
@@ -130,4 +224,45 @@ func ValidateIOContainer(repoRoot, containerImage string) error {
 	}
 
 	return nil
+}
+
+// parseMemoryLimitIO converts memory limit string to bytes (for io_container)
+func parseMemoryLimitIO(limit string) int64 {
+	if limit == "" {
+		return 0
+	}
+	if strings.HasSuffix(limit, "m") || strings.HasSuffix(limit, "M") {
+		var mb int64
+		fmt.Sscanf(limit, "%d", &mb)
+		return mb * 1024 * 1024
+	}
+	if strings.HasSuffix(limit, "g") || strings.HasSuffix(limit, "G") {
+		var gb int64
+		fmt.Sscanf(limit, "%d", &gb)
+		return gb * 1024 * 1024 * 1024
+	}
+	return 0
+}
+
+// readDockerLogs reads Docker logs and extracts stdout
+func readDockerLogs(reader io.Reader, stdout io.Writer) error {
+	buf := make([]byte, 8)
+	for {
+		_, err := io.ReadFull(reader, buf)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		size := int(buf[4])<<24 | int(buf[5])<<16 | int(buf[6])<<8 | int(buf[7])
+		payload := make([]byte, size)
+		_, err = io.ReadFull(reader, payload)
+		if err != nil {
+			return err
+		}
+
+		stdout.Write(payload)
+	}
 }

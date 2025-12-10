@@ -1,14 +1,12 @@
 package sandbox
 
 import (
-	"os/exec"
 	"testing"
 )
 
 // Helper to check if Docker is available for integration tests
 func dockerAvailable() bool {
-	cmd := exec.Command("docker", "version")
-	return cmd.Run() == nil
+	return CheckDockerAvailability() == nil
 }
 
 func TestCheckDockerAvailability_Integration(t *testing.T) {

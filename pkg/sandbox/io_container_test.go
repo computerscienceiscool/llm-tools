@@ -47,7 +47,8 @@ func TestRunIOContainer_Timeout(t *testing.T) {
 	if err == nil {
 		t.Error("Expected timeout error")
 	}
-	if !strings.Contains(err.Error(), "timed out") {
+	// Accept either timeout message or context deadline exceeded
+	if !strings.Contains(err.Error(), "timed out") && !strings.Contains(err.Error(), "context deadline exceeded") {
 		t.Errorf("Expected timeout error, got: %v", err)
 	}
 }
