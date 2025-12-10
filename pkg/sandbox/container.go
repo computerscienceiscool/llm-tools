@@ -23,6 +23,7 @@ type ContainerConfig struct {
 	MemoryLimit string
 	CPULimit    int
 	Timeout     time.Duration
+	Stdin       string // NEW: stdin content to pass to container
 }
 
 // ContainerResult holds the result of container execution
@@ -64,6 +65,13 @@ func RunContainer(cfg ContainerConfig) (ContainerResult, error) {
 		User:       "1000:1000",
 	}
 
+	// Enable stdin if provided
+	if cfg.Stdin != "" {
+		containerConfig.OpenStdin = true
+		containerConfig.AttachStdin = true
+		containerConfig.StdinOnce = true
+	}
+
 	// Configure host (mounts, resources, security)
 	hostConfig := &container.HostConfig{
 		NetworkMode: "none",
@@ -101,9 +109,34 @@ func RunContainer(cfg ContainerConfig) (ContainerResult, error) {
 	}
 	defer cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{Force: true})
 
+	// Attach stdin if provided
+	var hijackedResp types.HijackedResponse
+	if cfg.Stdin != "" {
+		attachOpts := types.ContainerAttachOptions{
+			Stream: true,
+			Stdin:  true,
+			Stdout: true,
+			Stderr: true,
+		}
+		hijackedResp, err = cli.ContainerAttach(ctx, resp.ID, attachOpts)
+		if err != nil {
+			return result, fmt.Errorf("failed to attach to container: %w", err)
+		}
+		defer hijackedResp.Close()
+	}
+
 	// Start container
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return result, fmt.Errorf("failed to start container: %w", err)
+	}
+
+	// Write stdin if provided
+	if cfg.Stdin != "" {
+		_, err = hijackedResp.Conn.Write([]byte(cfg.Stdin))
+		if err != nil {
+			return result, fmt.Errorf("failed to write stdin: %w", err)
+		}
+		hijackedResp.CloseWrite()
 	}
 
 	// Wait for container to finish

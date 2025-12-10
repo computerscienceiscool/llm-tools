@@ -3,7 +3,6 @@ package scanner
 import (
 	"bufio"
 	"strings"
-
 )
 
 // ScannerState represents the current parsing state
@@ -11,13 +10,13 @@ type ScannerState int
 
 const (
 	StateScanning  ScannerState = iota // Default: scanning for commands or plain text
-	StateTagOpen                        // Saw '<', determining tag type
-	StateOpen                           // Parsing <open filepath>
-	StateWrite                          // Parsing <write filepath>
-	StateWriteBody                      // Accumulating write content until </write>
-	StateExec                           // Parsing <exec command>
-	StateSearch                         // Parsing <search query>
-	StateExecute                        // Ready to execute command
+	StateTagOpen                       // Saw '<', determining tag type
+	StateOpen                          // Parsing <open filepath>
+	StateWrite                         // Parsing <write filepath>
+	StateWriteBody                     // Accumulating write content until </write>
+	StateExec                          // Parsing <exec command>
+	StateSearch                        // Parsing <search query>
+	StateExecute                       // Ready to execute command
 )
 
 // String returns the name of the state (for debugging)
@@ -46,10 +45,10 @@ func (s ScannerState) String() string {
 
 // Scanner implements a state-machine based input processor
 type Scanner struct {
-	state      ScannerState
-	buffer     strings.Builder
-	currentCmd *Command
-	reader     *bufio.Reader
+	state       ScannerState
+	buffer      strings.Builder
+	currentCmd  *Command
+	reader      *bufio.Reader
 	showPrompts bool
 }
 
@@ -81,9 +80,6 @@ func (s *Scanner) startCommand(cmdType string) {
 	s.buffer.Reset()
 }
 
-
-
-
 // Scan reads input and returns the next complete command
 // Returns nil when EOF or no command found
 func (s *Scanner) Scan() *Command {
@@ -108,11 +104,10 @@ func (s *Scanner) Scan() *Command {
 					s.buffer.WriteByte(ch)
 				}
 
-
 			case StateTagOpen:
 				s.buffer.WriteByte(ch)
 				buffered := s.buffer.String()
-				
+
 				// Wait until we have enough characters to determine command type
 				if ch == ' ' || ch == '>' {
 					if strings.HasPrefix(buffered, "<open") {
@@ -138,7 +133,6 @@ func (s *Scanner) Scan() *Command {
 					}
 				}
 
-
 			case StateOpen:
 				if ch == '>' {
 					s.currentCmd.Argument = strings.TrimSpace(s.buffer.String())
@@ -162,7 +156,7 @@ func (s *Scanner) Scan() *Command {
 			case StateWriteBody:
 				// KEY STATE: accumulate everything until </write>
 				s.buffer.WriteByte(ch)
-				
+
 				buffered := s.buffer.String()
 				if strings.Contains(buffered, "</write>") {
 					idx := strings.Index(buffered, "</write>")
@@ -173,9 +167,9 @@ func (s *Scanner) Scan() *Command {
 					s.resetCommand()
 					return cmd
 				}
-
 			case StateExec:
 				if ch == '>' {
+					// Single-line exec (completed on this line)
 					s.currentCmd.Argument = strings.TrimSpace(s.buffer.String())
 					s.transitionTo(StateScanning)
 					cmd := s.currentCmd
@@ -184,7 +178,6 @@ func (s *Scanner) Scan() *Command {
 				} else {
 					s.buffer.WriteByte(ch)
 				}
-
 			case StateSearch:
 				if ch == '>' {
 					s.currentCmd.Argument = strings.TrimSpace(s.buffer.String())

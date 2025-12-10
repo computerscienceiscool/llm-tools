@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
 	"github.com/computerscienceiscool/llm-runtime/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 
 // Executor handles command execution
@@ -37,7 +37,7 @@ func (e *Executor) Execute(cmd scanner.Command) scanner.ExecutionResult {
 	case "write":
 		result = ExecuteWrite(cmd.Argument, cmd.Content, e.config, e.auditLog)
 	case "exec":
-		result = ExecuteExec(cmd.Argument, e.config, e.auditLog)
+		result = ExecuteExec(cmd, e.config, e.auditLog)
 	case "search":
 		result = ExecuteSearch(cmd.Argument, e.config, e.searchCfg, e.auditLog)
 	default:

@@ -5,24 +5,24 @@ import (
 	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
-	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 
 // ExecuteExec handles the "exec" command
-func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg string, success bool, errMsg string)) scanner.ExecutionResult {
+func ExecuteExec(cmd scanner.Command, cfg *config.Config, auditLog func(cmdType, arg string, success bool, errMsg string)) scanner.ExecutionResult {
 	startTime := time.Now()
 	result := scanner.ExecutionResult{
-		Command: scanner.Command{Type: "exec", Argument: cmd},
+		Command: cmd,
 	}
 
 	// Validate command
-	if err := sandbox.ValidateExecCommand(cmd, cfg.ExecEnabled, cfg.ExecWhitelist); err != nil {
+	if err := sandbox.ValidateExecCommand(cmd.Argument, cfg.ExecEnabled, cfg.ExecWhitelist); err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("EXEC_VALIDATION: %w", err)
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("exec", cmd, false, result.Error.Error())
+			auditLog("exec", cmd.Argument, false, result.Error.Error())
 		}
 		return result
 	}
@@ -33,7 +33,7 @@ func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg stri
 		result.Error = fmt.Errorf("DOCKER_UNAVAILABLE: %w", err)
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("exec", cmd, false, result.Error.Error())
+			auditLog("exec", cmd.Argument, false, result.Error.Error())
 		}
 		return result
 	}
@@ -44,7 +44,7 @@ func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg stri
 		result.Error = fmt.Errorf("DOCKER_IMAGE: %w", err)
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("exec", cmd, false, result.Error.Error())
+			auditLog("exec", cmd.Argument, false, result.Error.Error())
 		}
 		return result
 	}
@@ -52,11 +52,12 @@ func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg stri
 	// Configure and run container
 	containerCfg := sandbox.ContainerConfig{
 		Image:       cfg.ExecContainerImage,
-		Command:     cmd,
+		Command:     cmd.Argument,
 		RepoRoot:    cfg.RepositoryRoot,
 		MemoryLimit: cfg.ExecMemoryLimit,
 		CPULimit:    cfg.ExecCPULimit,
 		Timeout:     cfg.ExecTimeout,
+		Stdin:       cmd.Content, // NEW: Pass stdin content if present
 	}
 
 	containerResult, err := sandbox.RunContainer(containerCfg)
@@ -95,9 +96,12 @@ func ExecuteExec(cmd string, cfg *config.Config, auditLog func(cmdType, arg stri
 	} else {
 		auditMsg += ",status:failed"
 	}
+	if cmd.Content != "" {
+		auditMsg += ",stdin:provided"
+	}
 
 	if auditLog != nil {
-		auditLog("exec", cmd, result.Success, auditMsg)
+		auditLog("exec", cmd.Argument, result.Success, auditMsg)
 	}
 
 	return result

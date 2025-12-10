@@ -505,6 +505,93 @@ func TestRunContainer_LargeOutput(t *testing.T) {
 	}
 }
 
+func TestRunContainer_WithStdin(t *testing.T) {
+	if !isDockerAvailable() {
+		t.Skip("Docker not available, skipping integration test")
+	}
+	ensureTestImage(t)
+
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name     string
+		command  string
+		stdin    string
+		expected string
+	}{
+		{
+			name:     "cat with stdin",
+			command:  "cat",
+			stdin:    "hello from stdin",
+			expected: "hello from stdin",
+		},
+		{
+			name:     "wc -l counts lines",
+			command:  "wc -l",
+			stdin:    "line1\nline2\nline3\n",
+			expected: "3",
+		},
+		{
+			name:     "grep filters stdin",
+			command:  "grep test",
+			stdin:    "test line\nother line\ntest again\n",
+			expected: "test line",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := ContainerConfig{
+				Image:       "alpine:latest",
+				Command:     tt.command,
+				RepoRoot:    tmpDir,
+				MemoryLimit: "128m",
+				CPULimit:    1,
+				Timeout:     30 * time.Second,
+				Stdin:       tt.stdin,
+			}
+
+			result, err := RunContainer(cfg)
+			if err != nil {
+				t.Fatalf("RunContainer failed: %v", err)
+			}
+
+			if !strings.Contains(result.Stdout, tt.expected) {
+				t.Errorf("expected stdout to contain %q, got %q", tt.expected, result.Stdout)
+			}
+		})
+	}
+}
+
+func TestRunContainer_NoStdin(t *testing.T) {
+	if !isDockerAvailable() {
+		t.Skip("Docker not available, skipping integration test")
+	}
+	ensureTestImage(t)
+
+	tmpDir := t.TempDir()
+
+	// Ensure commands without stdin still work (empty Stdin field)
+	cfg := ContainerConfig{
+		Image:       "alpine:latest",
+		Command:     "echo no stdin",
+		RepoRoot:    tmpDir,
+		MemoryLimit: "128m",
+		CPULimit:    1,
+		Timeout:     30 * time.Second,
+		Stdin:       "", // Empty stdin
+	}
+
+	result, err := RunContainer(cfg)
+	if err != nil {
+		t.Fatalf("RunContainer failed: %v", err)
+	}
+
+	if !strings.Contains(result.Stdout, "no stdin") {
+		t.Errorf("expected stdout to contain 'no stdin', got %q", result.Stdout)
+	}
+}
+
 // Benchmark tests
 func BenchmarkRunContainer_Echo(b *testing.B) {
 	if !isDockerAvailable() {
