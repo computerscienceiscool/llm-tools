@@ -1,6 +1,7 @@
 package sandbox
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -171,5 +172,164 @@ func TestParseMemoryLimitIO(t *testing.T) {
 				t.Errorf("parseMemoryLimitIO(%q) = %d, want %d", tt.limit, result, tt.expected)
 			}
 		})
+	}
+}
+
+// BenchmarkReadFile_Native benchmarks direct file reading
+func BenchmarkReadFile_Native(b *testing.B) {
+	tmpDir := b.TempDir()
+
+	// Create test file
+	testFile := filepath.Join(tmpDir, "bench.txt")
+	testContent := strings.Repeat("benchmark content\n", 100)
+	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
+		b.Fatalf("failed to create test file: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := os.ReadFile(testFile)
+		if err != nil {
+			b.Fatalf("read failed: %v", err)
+		}
+	}
+}
+
+// BenchmarkReadFile_Containerized benchmarks containerized file reading
+func BenchmarkReadFile_Containerized(b *testing.B) {
+	if !isDockerAvailable() {
+		b.Skip("Docker not available")
+	}
+
+	tmpDir := b.TempDir()
+
+	// Create test file
+	testFile := filepath.Join(tmpDir, "bench.txt")
+	testContent := strings.Repeat("benchmark content\n", 100)
+	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
+		b.Fatalf("failed to create test file: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := ReadFileInContainer(
+			testFile,
+			tmpDir,
+			"alpine:latest",
+			5*time.Second,
+			"128m",
+			1,
+		)
+		if err != nil {
+			b.Fatalf("containerized read failed: %v", err)
+		}
+	}
+}
+
+// BenchmarkWriteFile_Native benchmarks direct file writing
+func BenchmarkWriteFile_Native(b *testing.B) {
+	tmpDir := b.TempDir()
+	testContent := strings.Repeat("benchmark content\n", 100)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		testFile := filepath.Join(tmpDir, fmt.Sprintf("bench_%d.txt", i))
+		err := os.WriteFile(testFile, []byte(testContent), 0644)
+		if err != nil {
+			b.Fatalf("write failed: %v", err)
+		}
+	}
+}
+
+// BenchmarkWriteFile_Containerized benchmarks containerized file writing
+func BenchmarkWriteFile_Containerized(b *testing.B) {
+	if !isDockerAvailable() {
+		b.Skip("Docker not available")
+	}
+
+	tmpDir := b.TempDir()
+	testContent := strings.Repeat("benchmark content\n", 100)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		testFile := filepath.Join(tmpDir, fmt.Sprintf("bench_%d.txt", i))
+		err := WriteFileInContainer(
+			testFile,
+			testContent,
+			tmpDir,
+			"alpine:latest",
+			5*time.Second,
+			"128m",
+			1,
+		)
+		if err != nil {
+			b.Fatalf("containerized write failed: %v", err)
+		}
+	}
+}
+
+// BenchmarkReadFile_SmallFile_Native benchmarks native read of small file
+func BenchmarkReadFile_SmallFile_Native(b *testing.B) {
+	tmpDir := b.TempDir()
+	testFile := filepath.Join(tmpDir, "small.txt")
+	if err := os.WriteFile(testFile, []byte("small"), 0644); err != nil {
+		b.Fatalf("failed to create test file: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		os.ReadFile(testFile)
+	}
+}
+
+// BenchmarkReadFile_SmallFile_Containerized benchmarks containerized read of small file
+func BenchmarkReadFile_SmallFile_Containerized(b *testing.B) {
+	if !isDockerAvailable() {
+		b.Skip("Docker not available")
+	}
+
+	tmpDir := b.TempDir()
+	testFile := filepath.Join(tmpDir, "small.txt")
+	if err := os.WriteFile(testFile, []byte("small"), 0644); err != nil {
+		b.Fatalf("failed to create test file: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ReadFileInContainer(testFile, tmpDir, "alpine:latest", 5*time.Second, "128m", 1)
+	}
+}
+
+// BenchmarkReadFile_LargeFile_Native benchmarks native read of large file
+func BenchmarkReadFile_LargeFile_Native(b *testing.B) {
+	tmpDir := b.TempDir()
+	testFile := filepath.Join(tmpDir, "large.txt")
+	largeContent := strings.Repeat("x", 100*1024) // 100KB
+	if err := os.WriteFile(testFile, []byte(largeContent), 0644); err != nil {
+		b.Fatalf("failed to create test file: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		os.ReadFile(testFile)
+	}
+}
+
+// BenchmarkReadFile_LargeFile_Containerized benchmarks containerized read of large file
+func BenchmarkReadFile_LargeFile_Containerized(b *testing.B) {
+	if !isDockerAvailable() {
+		b.Skip("Docker not available")
+	}
+
+	tmpDir := b.TempDir()
+	testFile := filepath.Join(tmpDir, "large.txt")
+	largeContent := strings.Repeat("x", 100*1024) // 100KB
+	if err := os.WriteFile(testFile, []byte(largeContent), 0644); err != nil {
+		b.Fatalf("failed to create test file: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ReadFileInContainer(testFile, tmpDir, "alpine:latest", 5*time.Second, "128m", 1)
 	}
 }
