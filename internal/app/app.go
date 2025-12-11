@@ -75,80 +75,70 @@ func (a *App) scanInput(exec *evaluator.Executor, startTime time.Time, showPromp
 		// Execute the command
 		result := exec.Execute(*cmd)
 
-		// Format and print result
-		cmdOutput := a.formatCommandResult(*cmd, result, exec, startTime)
-		fmt.Fprint(output, cmdOutput)
+		// Print result directly - no intermediate formatting function
+		fmt.Fprint(output, "=== LLM TOOL START ===\n")
+		fmt.Fprintf(output, "=== COMMAND: <%s %s> ===\n", cmd.Type, cmd.Argument)
+
+		if result.Success {
+			switch cmd.Type {
+			case "open":
+				fmt.Fprintf(output, "=== FILE: %s ===\n", cmd.Argument)
+				fmt.Fprint(output, result.Result)
+				if !strings.HasSuffix(result.Result, "\n") {
+					fmt.Fprint(output, "\n")
+				}
+				fmt.Fprint(output, "=== END FILE ===\n")
+
+			case "write":
+				fmt.Fprintf(output, "=== WRITE SUCCESSFUL: %s ===\n", cmd.Argument)
+				fmt.Fprintf(output, "Action: %s\n", result.Action)
+				fmt.Fprintf(output, "Bytes written: %d\n", result.BytesWritten)
+				if result.BackupFile != "" {
+					fmt.Fprintf(output, "Backup: %s\n", result.BackupFile)
+				}
+				fmt.Fprint(output, "=== END WRITE ===\n")
+
+			case "exec":
+				fmt.Fprintf(output, "=== EXEC SUCCESSFUL: %s ===\n", cmd.Argument)
+				fmt.Fprintf(output, "Exit code: %d\n", result.ExitCode)
+				fmt.Fprintf(output, "Duration: %.3fs\n", result.ExecutionTime.Seconds())
+				if result.Result != "" {
+					fmt.Fprint(output, "Output:\n")
+					fmt.Fprint(output, result.Result)
+					if !strings.HasSuffix(result.Result, "\n") {
+						fmt.Fprint(output, "\n")
+					}
+				}
+				fmt.Fprint(output, "=== END EXEC ===\n")
+
+			case "search":
+				fmt.Fprint(output, result.Result)
+			}
+		} else {
+			errParts := strings.Split(result.Error.Error(), ":")
+			errType := errParts[0]
+			fmt.Fprintf(output, "=== ERROR: %s ===\n", errType)
+			fmt.Fprintf(output, "Message: %s\n", result.Error.Error())
+			fmt.Fprintf(output, "Command: <%s %s>\n", cmd.Type, cmd.Argument)
+			if cmd.Type == "exec" && result.ExitCode != 0 {
+				fmt.Fprintf(output, "Exit code: %d\n", result.ExitCode)
+				if result.Stderr != "" {
+					fmt.Fprintf(output, "Stderr: %s\n", result.Stderr)
+				}
+			}
+			fmt.Fprint(output, "=== END ERROR ===\n")
+		}
+
+		fmt.Fprint(output, "=== END COMMAND ===\n")
+		fmt.Fprint(output, "=== LLM TOOL COMPLETE ===\n")
+		fmt.Fprintf(output, "Commands executed: %d\n", exec.GetCommandsRun())
+		fmt.Fprintf(output, "Time elapsed: %.2fs\n", time.Since(startTime).Seconds())
+		fmt.Fprint(output, "=== END ===\n")
 
 		if showPrompts {
 			fmt.Fprintln(os.Stderr, "\nWaiting for more input...")
 		}
 	}
-}
-
-// formatCommandResult formats a single command result
-func (a *App) formatCommandResult(cmd scanner.Command, result scanner.ExecutionResult, exec *evaluator.Executor, startTime time.Time) string {
-	var output strings.Builder
-
-	output.WriteString("=== LLM TOOL START ===\n")
-	output.WriteString(fmt.Sprintf("=== COMMAND: <%s %s> ===\n", cmd.Type, cmd.Argument))
-
-	if result.Success {
-		switch cmd.Type {
-		case "open":
-			output.WriteString(fmt.Sprintf("=== FILE: %s ===\n", cmd.Argument))
-			output.WriteString(result.Result)
-			if !strings.HasSuffix(result.Result, "\n") {
-				output.WriteString("\n")
-			}
-			output.WriteString("=== END FILE ===\n")
-
-		case "write":
-			output.WriteString(fmt.Sprintf("=== WRITE SUCCESSFUL: %s ===\n", cmd.Argument))
-			output.WriteString(fmt.Sprintf("Action: %s\n", result.Action))
-			output.WriteString(fmt.Sprintf("Bytes written: %d\n", result.BytesWritten))
-			if result.BackupFile != "" {
-				output.WriteString(fmt.Sprintf("Backup: %s\n", result.BackupFile))
-			}
-			output.WriteString("=== END WRITE ===\n")
-
-		case "exec":
-			output.WriteString(fmt.Sprintf("=== EXEC SUCCESSFUL: %s ===\n", cmd.Argument))
-			output.WriteString(fmt.Sprintf("Exit code: %d\n", result.ExitCode))
-			output.WriteString(fmt.Sprintf("Duration: %.3fs\n", result.ExecutionTime.Seconds()))
-			if result.Result != "" {
-				output.WriteString("Output:\n")
-				output.WriteString(result.Result)
-				if !strings.HasSuffix(result.Result, "\n") {
-					output.WriteString("\n")
-				}
-			}
-			output.WriteString("=== END EXEC ===\n")
-
-		case "search":
-			output.WriteString(result.Result)
-		}
-	} else {
-		errParts := strings.Split(result.Error.Error(), ":")
-		errType := errParts[0]
-		output.WriteString(fmt.Sprintf("=== ERROR: %s ===\n", errType))
-		output.WriteString(fmt.Sprintf("Message: %s\n", result.Error.Error()))
-		output.WriteString(fmt.Sprintf("Command: <%s %s>\n", cmd.Type, cmd.Argument))
-		if cmd.Type == "exec" && result.ExitCode != 0 {
-			output.WriteString(fmt.Sprintf("Exit code: %d\n", result.ExitCode))
-			if result.Stderr != "" {
-				output.WriteString(fmt.Sprintf("Stderr: %s\n", result.Stderr))
-			}
-		}
-		output.WriteString("=== END ERROR ===\n")
-	}
-
-	output.WriteString("=== END COMMAND ===\n")
-	output.WriteString("=== LLM TOOL COMPLETE ===\n")
-	output.WriteString(fmt.Sprintf("Commands executed: %d\n", exec.GetCommandsRun()))
-	output.WriteString(fmt.Sprintf("Time elapsed: %.2fs\n", time.Since(startTime).Seconds()))
-	output.WriteString("=== END ===\n")
-
-	return output.String()
 }
 
 // printVerboseInfo prints verbose configuration information
