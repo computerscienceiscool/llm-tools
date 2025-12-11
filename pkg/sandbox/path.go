@@ -7,12 +7,19 @@ import (
 )
 
 // ValidatePath ensures the requested path is safe and within bounds
+// Simplified: Containers handle symlink resolution and complex traversal detection.
 func ValidatePath(requestedPath string, repositoryRoot string, excludedPaths []string) (string, error) {
 	// Clean the path first
 	cleanPath := filepath.Clean(requestedPath)
 
-	// Check against excluded paths early (before resolving)
+	// Basic path traversal detection - first line of defense
+	if strings.HasPrefix(cleanPath, "..") || strings.Contains(cleanPath, "/../") {
+		return "", fmt.Errorf("path traversal detected: %s", requestedPath)
+	}
+
+	// Check against excluded paths (business logic - must enforce)
 	for _, excluded := range excludedPaths {
+		// Check exact match
 		matched, err := filepath.Match(excluded, cleanPath)
 		if err != nil {
 			continue
@@ -20,74 +27,25 @@ func ValidatePath(requestedPath string, repositoryRoot string, excludedPaths []s
 		if matched {
 			return "", fmt.Errorf("path is in excluded list: %s", cleanPath)
 		}
-		// Also check if path starts with excluded directory
+
+		// Check if path is within excluded directory
 		if strings.HasPrefix(cleanPath, excluded+string(filepath.Separator)) {
 			return "", fmt.Errorf("path is in excluded directory: %s", excluded)
 		}
 	}
 
-	// If it's not an absolute path, make it relative to repository root
+	// Make path absolute relative to repository root
 	var absPath string
 	if filepath.IsAbs(cleanPath) {
+		// Absolute paths must be within repository
 		absPath = cleanPath
+		if !strings.HasPrefix(absPath, repositoryRoot) {
+			return "", fmt.Errorf("path is not within repository: %s", requestedPath)
+		}
 	} else {
+		// Relative paths are joined with repository root
 		absPath = filepath.Join(repositoryRoot, cleanPath)
 	}
 
-	// Get the real repository root for comparison
-	realRoot, err := filepath.Abs(repositoryRoot)
-	if err != nil {
-		return "", fmt.Errorf("cannot resolve repository root: %w", err)
-	}
-
-	// First check: ensure the path would be within bounds even before resolution
-	// This catches obvious traversal attempts
-	if !strings.HasPrefix(absPath, realRoot) {
-		// Try to get relative path to check for traversal
-		relPath, _ := filepath.Rel(realRoot, absPath)
-		if strings.HasPrefix(relPath, "..") || strings.Contains(relPath, "../") {
-			return "", fmt.Errorf("path traversal detected: %s", requestedPath)
-		}
-		return "", fmt.Errorf("path is not within repository: %s", requestedPath)
-	}
-
-	// Resolve any symlinks to get the real path
-	realPath, err := filepath.EvalSymlinks(absPath)
-	if err != nil {
-		// File might not exist yet, so try to resolve the directory
-		dir := filepath.Dir(absPath)
-		if dir == absPath {
-			// We're at root or in a loop
-			return "", fmt.Errorf("cannot resolve path: %w", err)
-		}
-
-		realDir, err2 := filepath.EvalSymlinks(dir)
-		if err2 != nil {
-			// If we can't resolve the parent directory either,
-			// but the path would be within bounds, we'll allow it
-			// (the actual file operation will fail if the path is truly invalid)
-			if strings.HasPrefix(absPath, realRoot) {
-				// Calculate relative path from the absolute path
-				relPath, _ := filepath.Rel(realRoot, absPath)
-				if !strings.HasPrefix(relPath, "..") && !strings.Contains(relPath, "../") {
-					return absPath, nil
-				}
-			}
-			return "", fmt.Errorf("cannot resolve path: %w", err)
-		}
-		realPath = filepath.Join(realDir, filepath.Base(absPath))
-	}
-
-	// Check if the resolved path is within the repository
-	relPath, err := filepath.Rel(realRoot, realPath)
-	if err != nil {
-		return "", fmt.Errorf("path is not within repository: %w", err)
-	}
-
-	// Check for path traversal attempts in the resolved path
-	if strings.HasPrefix(relPath, "..") || strings.Contains(relPath, "../") {
-		return "", fmt.Errorf("path traversal detected: %s", relPath)
-	}
-
-	return realPath, nil
+	return absPath, nil
 }

@@ -15,6 +15,7 @@ const (
 	StateWrite                         // Parsing <write filepath>
 	StateWriteBody                     // Accumulating write content until </write>
 	StateExec                          // Parsing <exec command>
+	StateExecBody                      // Accumulating exec body
 	StateSearch                        // Parsing <search query>
 	StateExecute                       // Ready to execute command
 )
@@ -34,6 +35,8 @@ func (s ScannerState) String() string {
 		return "StateWriteBody"
 	case StateExec:
 		return "StateExec"
+	case StateExecBody:
+		return "StateExecBody"
 	case StateSearch:
 		return "StateSearch"
 	case StateExecute:
@@ -169,14 +172,54 @@ func (s *Scanner) Scan() *Command {
 				}
 			case StateExec:
 				if ch == '>' {
-					// Single-line exec (completed on this line)
+					// Save the command argument
 					s.currentCmd.Argument = strings.TrimSpace(s.buffer.String())
+					s.buffer.Reset()
+
+					// Peek ahead to see if there's content after '>'
+					remainingLine := strings.TrimSpace(line[i+1:])
+					if remainingLine == "" {
+						// Line ends after '>', transition to ExecBody to check for stdin
+						s.transitionTo(StateExecBody)
+						break // Exit the inner loop to read next line
+					} else {
+						// Content on same line after '>' - single-line exec
+						s.transitionTo(StateScanning)
+						cmd := s.currentCmd
+						s.resetCommand()
+						return cmd
+					}
+				} else {
+					s.buffer.WriteByte(ch)
+				}
+			case StateExecBody:
+				// Accumulate everything until </exec> or detect it's single-line
+				s.buffer.WriteByte(ch)
+				buffered := s.buffer.String()
+
+				// Check if this line starts with </exec> (means it was single-line)
+				trimmed := strings.TrimSpace(buffered)
+				if trimmed == "" || strings.HasPrefix(trimmed, "</exec>") {
+					if strings.HasPrefix(trimmed, "</exec>") {
+						// Empty stdin case: <exec cmd>\n</exec>
+						s.currentCmd.Content = ""
+					}
+					// Single-line exec (no stdin)
 					s.transitionTo(StateScanning)
 					cmd := s.currentCmd
 					s.resetCommand()
 					return cmd
-				} else {
-					s.buffer.WriteByte(ch)
+				}
+
+				// Check for closing tag in the middle of content
+				if strings.Contains(buffered, "</exec>") {
+					idx := strings.Index(buffered, "</exec>")
+					content := buffered[:idx]
+					s.currentCmd.Content = strings.TrimSpace(content)
+					s.transitionTo(StateScanning)
+					cmd := s.currentCmd
+					s.resetCommand()
+					return cmd
 				}
 			case StateSearch:
 				if ch == '>' {
