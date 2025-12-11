@@ -56,7 +56,6 @@ Following Aho, Sethi, and Ullman's compiler design principles, we decompose inte
 | Phase | Responsibility | Implementation |
 |-------|---------------|----------------|
 | **Scanning** | Character-by-character input, state machine | `pkg/scanner/scanner.go` |
-| **Parsing** | Command extraction, argument parsing | `pkg/scanner/parser.go` |
 | **Evaluation** | Command execution, side effects | `pkg/evaluator/*.go` |
 | **Sandboxing** | Security validation, Docker isolation | `pkg/sandbox/*.go` |
 
@@ -111,7 +110,6 @@ llm-runtime/
 ├── pkg/                       # Public API (importable)
 │   ├── scanner/               # Command detection and parsing
 │   │   ├── scanner.go         # State machine scanner
-│   │   ├── parser.go          # Command extraction (regex-based)
 │   │   └── types.go           # Command type definitions
 │   │
 │   ├── evaluator/             # Command execution
@@ -133,7 +131,6 @@ llm-runtime/
 │   ├── app/                   # Application bootstrap
 │   ├── cli/                   # Command-line handling
 │   ├── config/                # Configuration loading
-│   ├── infrastructure/        # Database, filesystem
 │   ├── search/                # Semantic search (Ollama integration)
 │   └── session/               # Session management
 │

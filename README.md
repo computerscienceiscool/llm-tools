@@ -45,7 +45,6 @@ llm-runtime/
 │   ├── app/               # Application bootstrap
 │   ├── cli/               # Command-line handling
 │   ├── config/            # Configuration loading
-│   ├── infrastructure/    # Database, filesystem
 │   ├── search/            # Semantic search (Ollama)
 │   └── session/           # Session management
 ├── pkg/                   # Public API (importable)
@@ -53,6 +52,8 @@ llm-runtime/
 │   ├── sandbox/           # Security, Docker isolation
 │   └── scanner/           # Command parsing
 └── docs/                  # Documentation
+    └── examples/          # Example workflows (coming soon)
+
 ```
 
 ## Available Commands
