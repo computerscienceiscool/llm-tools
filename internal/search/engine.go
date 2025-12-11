@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 // SearchEngine provides semantic search functionality
@@ -30,7 +28,7 @@ func NewSearchEngine(cfg *SearchConfig, repoRoot string) (*SearchEngine, error) 
 	}
 
 	// Initialize database
-	db, err := infrastructure.InitSearchDB(cfg.VectorDBPath)
+	db, err := InitSearchDB(cfg.VectorDBPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize search database: %w", err)
 	}

@@ -4,8 +4,6 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 // Helper to create a test database
@@ -23,7 +21,7 @@ func createTestDB(t *testing.T) (*SearchEngine, func()) {
 		MaxPreviewLength:   100,
 	}
 
-	db, err := infrastructure.InitSearchDB(dbPath)
+	db, err := InitSearchDB(dbPath)
 	if err != nil {
 		t.Fatalf("failed to init test db: %v", err)
 	}
@@ -600,7 +598,7 @@ func BenchmarkStoreFileInfo(b *testing.B) {
 	tmpDir := b.TempDir()
 	dbPath := filepath.Join(tmpDir, "bench.db")
 
-	db, err := infrastructure.InitSearchDB(dbPath)
+	db, err := InitSearchDB(dbPath)
 	if err != nil {
 		b.Fatalf("InitSearchDB failed: %v", err)
 	}
@@ -626,7 +624,7 @@ func BenchmarkGetFileInfo(b *testing.B) {
 	tmpDir := b.TempDir()
 	dbPath := filepath.Join(tmpDir, "bench.db")
 
-	db, err := infrastructure.InitSearchDB(dbPath)
+	db, err := InitSearchDB(dbPath)
 	if err != nil {
 		b.Fatalf("InitSearchDB failed: %v", err)
 	}
@@ -653,7 +651,7 @@ func BenchmarkGetAllIndexedFiles(b *testing.B) {
 	tmpDir := b.TempDir()
 	dbPath := filepath.Join(tmpDir, "bench.db")
 
-	db, err := infrastructure.InitSearchDB(dbPath)
+	db, err := InitSearchDB(dbPath)
 	if err != nil {
 		b.Fatalf("InitSearchDB failed: %v", err)
 	}

@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 func TestShouldIndexFile_ValidExtensions(t *testing.T) {
@@ -576,7 +574,7 @@ func BenchmarkFileNeedsIndexing_CacheHit(b *testing.B) {
 	tmpDir := b.TempDir()
 	dbPath := filepath.Join(tmpDir, "bench.db")
 
-	db, err := infrastructure.InitSearchDB(dbPath)
+	db, err := InitSearchDB(dbPath)
 	if err != nil {
 		b.Fatalf("InitSearchDB failed: %v", err)
 	}

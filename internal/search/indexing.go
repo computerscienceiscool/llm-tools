@@ -3,12 +3,11 @@ package search
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 )
 
 // IndexStats holds statistics about indexing operation
@@ -64,7 +63,7 @@ func IndexRepository(db *sql.DB, cfg *SearchConfig, repoRoot string, excludedPat
 		}
 
 		// Check if file is text
-		if !infrastructure.IsTextFile(path) {
+		if !isTextFile(path) {
 			stats.SkippedFiles++
 			return nil
 		}
@@ -247,7 +246,7 @@ func UpdateIndex(db *sql.DB, cfg *SearchConfig, repoRoot string, excludedPaths [
 			return nil
 		}
 
-		if !infrastructure.IsTextFile(path) {
+		if !isTextFile(path) {
 			return nil
 		}
 
@@ -357,4 +356,28 @@ func printIndexStats(stats *IndexStats) {
 		avgTime := duration.Seconds() / float64(stats.IndexedFiles)
 		fmt.Fprintf(os.Stderr, "Average time per file: %.3fs\n", avgTime)
 	}
+}
+
+// isTextFile checks if a file is text-based by looking for null bytes in the first 8KB
+func isTextFile(filePath string) bool {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	buffer := make([]byte, 8192)
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return false
+	}
+
+	// Check for null bytes (indicates binary)
+	for i := 0; i < n; i++ {
+		if buffer[i] == 0 {
+			return false
+		}
+	}
+
+	return true
 }

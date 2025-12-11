@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/infrastructure"
 	"github.com/computerscienceiscool/llm-runtime/internal/search"
 )
 
@@ -147,7 +146,7 @@ func TestExecuteSearch_EmptyQuery(t *testing.T) {
 		VectorDBPath:       filepath.Join(tmpDir, "test.db"),
 		MaxResults:         10,
 		MinSimilarityScore: 0.5,
-		OllamaURL:         "/nonexistent/python", // Will fail at search, not init
+		OllamaURL:          "/nonexistent/python", // Will fail at search, not init
 	}
 
 	result := ExecuteSearch("", cfg, searchCfg, nil)
@@ -163,7 +162,7 @@ func TestExecuteSearch_WithValidDB(t *testing.T) {
 	dbPath := filepath.Join(tmpDir, "search.db")
 
 	// Initialize database
-	db, err := infrastructure.InitSearchDB(dbPath)
+	db, err := search.InitSearchDB(dbPath)
 	if err != nil {
 		t.Fatalf("failed to init db: %v", err)
 	}
@@ -175,7 +174,7 @@ func TestExecuteSearch_WithValidDB(t *testing.T) {
 		MaxResults:         10,
 		MinSimilarityScore: 0.5,
 		MaxPreviewLength:   100,
-		OllamaURL:         "/nonexistent/python", // Will fail at Python check
+		OllamaURL:          "/nonexistent/python", // Will fail at Python check
 	}
 
 	result := ExecuteSearch("test query", cfg, searchCfg, nil)
@@ -370,7 +369,7 @@ func TestExecuteSearch_ConfigValues(t *testing.T) {
 				MaxResults:         25,
 				MinSimilarityScore: 0.75,
 				MaxPreviewLength:   200,
-				OllamaURL:         "/nonexistent",
+				OllamaURL:          "/nonexistent",
 			},
 		},
 		{

@@ -124,3 +124,42 @@ func SetFullConfigDefaults(config *FullConfig) {
 	config.Logging.File = "./llm-runtime.log"
 	config.Logging.Format = "json"
 }
+
+// LoadSearchConfig loads search configuration from viper (config file + defaults)
+func LoadSearchConfig() *search.SearchConfig {
+	cfg := GetDefaultSearchConfig()
+
+	// Override with values from config file if present
+	if viper.IsSet("commands.search.enabled") {
+		cfg.Enabled = viper.GetBool("commands.search.enabled")
+	}
+	if viper.IsSet("commands.search.vector_db_path") {
+		cfg.VectorDBPath = viper.GetString("commands.search.vector_db_path")
+	}
+	if viper.IsSet("commands.search.embedding_model") {
+		cfg.EmbeddingModel = viper.GetString("commands.search.embedding_model")
+	}
+	if viper.IsSet("commands.search.max_results") {
+		cfg.MaxResults = viper.GetInt("commands.search.max_results")
+	}
+	if viper.IsSet("commands.search.min_similarity_score") {
+		cfg.MinSimilarityScore = viper.GetFloat64("commands.search.min_similarity_score")
+	}
+	if viper.IsSet("commands.search.max_preview_length") {
+		cfg.MaxPreviewLength = viper.GetInt("commands.search.max_preview_length")
+	}
+	if viper.IsSet("commands.search.chunk_size") {
+		cfg.ChunkSize = viper.GetInt("commands.search.chunk_size")
+	}
+	if viper.IsSet("commands.search.ollama_url") {
+		cfg.OllamaURL = viper.GetString("commands.search.ollama_url")
+	}
+	if viper.IsSet("commands.search.index_extensions") {
+		cfg.IndexExtensions = viper.GetStringSlice("commands.search.index_extensions")
+	}
+	if viper.IsSet("commands.search.max_file_size") {
+		cfg.MaxFileSize = viper.GetInt64("commands.search.max_file_size")
+	}
+
+	return cfg
+}
