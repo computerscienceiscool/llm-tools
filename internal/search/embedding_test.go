@@ -214,3 +214,54 @@ func pythonAvailable(t *testing.T) bool {
 	err := cmd.Run()
 	return err == nil
 }
+
+// TestTruncateText tests the truncateText function
+func TestTruncateText(t *testing.T) {
+	tests := []struct {
+		name      string
+		text      string
+		maxTokens int
+		expected  string
+	}{
+		{
+			name:      "short text no truncation",
+			text:      "hello world",
+			maxTokens: 100,
+			expected:  "hello world",
+		},
+		{
+			name:      "exact length",
+			text:      "1234",
+			maxTokens: 1, // maxChars = 1 * 4 = 4
+			expected:  "1234",
+		},
+		{
+			name:      "needs truncation",
+			text:      "12345678",
+			maxTokens: 1, // maxChars = 1 * 4 = 4
+			expected:  "1234",
+		},
+		{
+			name:      "empty text",
+			text:      "",
+			maxTokens: 100,
+			expected:  "",
+		},
+		{
+			name:      "large text",
+			text:      strings.Repeat("a", 1000),
+			maxTokens: 10, // maxChars = 10 * 4 = 40
+			expected:  strings.Repeat("a", 40),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := truncateText(tt.text, tt.maxTokens)
+			if result != tt.expected {
+				t.Errorf("truncateText() = %q (len=%d), want %q (len=%d)",
+					result, len(result), tt.expected, len(tt.expected))
+			}
+		})
+	}
+}

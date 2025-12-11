@@ -176,3 +176,37 @@ func buildTestBinary(t *testing.T) string {
 
 	return binary
 }
+
+// TestRun_WithHelpFlag tests run function with --help flag
+func TestRun_WithHelpFlag(t *testing.T) {
+	// Save original args
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	// Set args to show help
+	os.Args = []string{"llm-runtime", "--help"}
+
+	// run() should return 0 for --help
+	exitCode := run()
+
+	if exitCode != 0 {
+		t.Errorf("run() with --help = %d, want 0", exitCode)
+	}
+}
+
+// TestRun_WithInvalidFlag tests run function with invalid flag
+func TestRun_WithInvalidFlag(t *testing.T) {
+	// Save original args
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	// Set invalid args
+	os.Args = []string{"llm-runtime", "--invalid-flag-that-does-not-exist"}
+
+	// run() should return 1 for invalid flags
+	exitCode := run()
+
+	if exitCode != 1 {
+		t.Errorf("run() with invalid flag = %d, want 1", exitCode)
+	}
+}

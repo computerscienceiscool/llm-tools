@@ -145,3 +145,31 @@ func TestValidateIOContainer_NonExistentRepo(t *testing.T) {
 		t.Error("Expected error for non-existent repository")
 	}
 }
+
+// TestParseMemoryLimitIO tests memory limit string parsing for IO containers
+func TestParseMemoryLimitIO(t *testing.T) {
+	tests := []struct {
+		name     string
+		limit    string
+		expected int64
+	}{
+		{"empty string", "", 0},
+		{"128 megabytes lowercase", "128m", 128 * 1024 * 1024},
+		{"128 megabytes uppercase", "128M", 128 * 1024 * 1024},
+		{"512 megabytes", "512m", 512 * 1024 * 1024},
+		{"1 gigabyte lowercase", "1g", 1 * 1024 * 1024 * 1024},
+		{"1 gigabyte uppercase", "1G", 1 * 1024 * 1024 * 1024},
+		{"2 gigabytes", "2g", 2 * 1024 * 1024 * 1024},
+		{"invalid format", "invalid", 0},
+		{"no suffix", "256", 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseMemoryLimitIO(tt.limit)
+			if result != tt.expected {
+				t.Errorf("parseMemoryLimitIO(%q) = %d, want %d", tt.limit, result, tt.expected)
+			}
+		})
+	}
+}

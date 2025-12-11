@@ -8,8 +8,13 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	if err := cli.Execute(); err != nil {
-		log.Fatalf("Error: %v", err)
-		os.Exit(1)
+		log.Printf("Error: %v", err)
+		return 1
 	}
+	return 0
 }

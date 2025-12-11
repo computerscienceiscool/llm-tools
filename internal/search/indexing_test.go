@@ -603,3 +603,68 @@ func BenchmarkFileNeedsIndexing_CacheHit(b *testing.B) {
 		fileNeedsIndexing(db, "test.go", info, false)
 	}
 }
+
+// TestIsTextFile tests the isTextFile function
+func TestIsTextFile(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name     string
+		content  []byte
+		expected bool
+	}{
+		{
+			name:     "plain text file",
+			content:  []byte("Hello, this is plain text\nWith multiple lines"),
+			expected: true,
+		},
+		{
+			name:     "text with unicode",
+			content:  []byte("Hello 世界 🌍"),
+			expected: true,
+		},
+		{
+			name:     "binary file with null bytes",
+			content:  []byte{0x00, 0x01, 0x02, 0xFF, 0xFE},
+			expected: false,
+		},
+		{
+			name:     "empty file",
+			content:  []byte{},
+			expected: true,
+		},
+		{
+			name:     "text file with special chars",
+			content:  []byte("Line1\nLine2\tTabbed\r\nWindows"),
+			expected: true,
+		},
+		{
+			name:     "binary in middle",
+			content:  append([]byte("text before"), append([]byte{0x00}, []byte("text after")...)...),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create test file
+			filePath := filepath.Join(tmpDir, tt.name+".test")
+			if err := os.WriteFile(filePath, tt.content, 0644); err != nil {
+				t.Fatalf("failed to create test file: %v", err)
+			}
+
+			result := isTextFile(filePath)
+			if result != tt.expected {
+				t.Errorf("isTextFile() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestIsTextFile_NonexistentFile tests isTextFile with file that doesn't exist
+func TestIsTextFile_NonexistentFile(t *testing.T) {
+	result := isTextFile("/nonexistent/path/file.txt")
+	if result {
+		t.Error("isTextFile() should return false for nonexistent file")
+	}
+}

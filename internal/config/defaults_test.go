@@ -2,6 +2,8 @@ package config
 
 import (
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func TestGetDefaultSearchConfig(t *testing.T) {
@@ -287,5 +289,154 @@ func BenchmarkSetFullConfigDefaults(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		cfg := &FullConfig{}
 		SetFullConfigDefaults(cfg)
+	}
+}
+
+// TestSetViperDefaults tests that viper defaults are set correctly
+func TestSetViperDefaults(t *testing.T) {
+	viper.Reset()
+
+	SetViperDefaults()
+
+	// Check repository defaults
+	if viper.GetString("repository.root") != "." {
+		t.Errorf("repository.root = %q, want '.'", viper.GetString("repository.root"))
+	}
+
+	excludedPaths := viper.GetStringSlice("repository.excluded_paths")
+	if len(excludedPaths) == 0 {
+		t.Error("repository.excluded_paths should not be empty")
+	}
+
+	// Check open command defaults
+	if !viper.GetBool("commands.open.enabled") {
+		t.Error("commands.open.enabled should be true by default")
+	}
+
+	if viper.GetInt("commands.open.max_file_size") != 1048576 {
+		t.Errorf("commands.open.max_file_size = %d, want 1048576", viper.GetInt("commands.open.max_file_size"))
+	}
+
+	// Check write command defaults
+	if !viper.GetBool("commands.write.enabled") {
+		t.Error("commands.write.enabled should be true by default")
+	}
+
+	if viper.GetInt("commands.write.max_file_size") != 102400 {
+		t.Errorf("commands.write.max_file_size = %d, want 102400", viper.GetInt("commands.write.max_file_size"))
+	}
+
+	if !viper.GetBool("commands.write.backup_before_write") {
+		t.Error("commands.write.backup_before_write should be true by default")
+	}
+
+	// Check exec command defaults
+	if viper.GetBool("commands.exec.enabled") {
+		t.Error("commands.exec.enabled should be false by default")
+	}
+
+	if viper.GetInt("commands.exec.timeout_seconds") != 30 {
+		t.Errorf("commands.exec.timeout_seconds = %d, want 30", viper.GetInt("commands.exec.timeout_seconds"))
+	}
+}
+
+// TestLoadSearchConfig_Defaults tests LoadSearchConfig with default values
+func TestLoadSearchConfig_Defaults(t *testing.T) {
+	viper.Reset()
+
+	cfg := LoadSearchConfig()
+
+	if cfg == nil {
+		t.Fatal("LoadSearchConfig() returned nil")
+	}
+
+	// Should return default config when no viper values are set
+	defaultCfg := GetDefaultSearchConfig()
+
+	if cfg.Enabled != defaultCfg.Enabled {
+		t.Errorf("Enabled = %v, want %v", cfg.Enabled, defaultCfg.Enabled)
+	}
+
+	if cfg.MaxResults != defaultCfg.MaxResults {
+		t.Errorf("MaxResults = %d, want %d", cfg.MaxResults, defaultCfg.MaxResults)
+	}
+}
+
+// TestLoadSearchConfig_CustomValues tests LoadSearchConfig with custom viper values
+func TestLoadSearchConfig_CustomValues(t *testing.T) {
+	viper.Reset()
+
+	// Set custom values
+	viper.Set("commands.search.enabled", true)
+	viper.Set("commands.search.max_results", 25)
+	viper.Set("commands.search.min_similarity_score", 0.8)
+	viper.Set("commands.search.ollama_url", "http://custom:11434")
+
+	cfg := LoadSearchConfig()
+
+	if !cfg.Enabled {
+		t.Error("Enabled should be true")
+	}
+
+	if cfg.MaxResults != 25 {
+		t.Errorf("MaxResults = %d, want 25", cfg.MaxResults)
+	}
+
+	if cfg.MinSimilarityScore != 0.8 {
+		t.Errorf("MinSimilarityScore = %f, want 0.8", cfg.MinSimilarityScore)
+	}
+
+	if cfg.OllamaURL != "http://custom:11434" {
+		t.Errorf("OllamaURL = %q, want 'http://custom:11434'", cfg.OllamaURL)
+	}
+}
+
+// TestLoadSearchConfig_PartialOverride tests partial config override
+func TestLoadSearchConfig_PartialOverride(t *testing.T) {
+	viper.Reset()
+
+	// Override only some values
+	viper.Set("commands.search.max_results", 50)
+	viper.Set("commands.search.chunk_size", 2000)
+
+	cfg := LoadSearchConfig()
+	defaultCfg := GetDefaultSearchConfig()
+
+	// Overridden values
+	if cfg.MaxResults != 50 {
+		t.Errorf("MaxResults = %d, want 50", cfg.MaxResults)
+	}
+
+	if cfg.ChunkSize != 2000 {
+		t.Errorf("ChunkSize = %d, want 2000", cfg.ChunkSize)
+	}
+
+	// Non-overridden values should still be defaults
+	if cfg.Enabled != defaultCfg.Enabled {
+		t.Error("Non-overridden Enabled should match default")
+	}
+
+	if cfg.EmbeddingModel != defaultCfg.EmbeddingModel {
+		t.Error("Non-overridden EmbeddingModel should match default")
+	}
+}
+
+// TestLoadSearchConfig_IndexExtensions tests loading custom index extensions
+func TestLoadSearchConfig_IndexExtensions(t *testing.T) {
+	viper.Reset()
+
+	customExtensions := []string{".rs", ".cpp", ".java"}
+	viper.Set("commands.search.index_extensions", customExtensions)
+
+	cfg := LoadSearchConfig()
+
+	if len(cfg.IndexExtensions) != 3 {
+		t.Errorf("IndexExtensions length = %d, want 3", len(cfg.IndexExtensions))
+	}
+
+	for i, ext := range customExtensions {
+		if cfg.IndexExtensions[i] != ext {
+			t.Errorf("IndexExtensions[%d] = %q, want %q", i, cfg.IndexExtensions[i], ext)
+		}
 	}
 }
