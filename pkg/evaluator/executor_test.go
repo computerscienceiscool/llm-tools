@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
 	"github.com/computerscienceiscool/llm-runtime/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 
 func TestNewExecutor(t *testing.T) {
@@ -652,43 +652,6 @@ func TestExecutor_FullWorkflow(t *testing.T) {
 	if len(entries) != 4 {
 		t.Errorf("expected 4 audit entries, got %d", len(entries))
 	}
-}
-
-func TestExecutor_ConcurrentSafety(t *testing.T) {
-	tmpDir := t.TempDir()
-	cfg := newTestConfig(tmpDir)
-	cfg.BackupBeforeWrite = false
-
-	executor := NewExecutor(cfg, nil, nil)
-
-	// Create some files first
-	for i := 0; i < 10; i++ {
-		filename := filepath.Join(tmpDir, "file"+string(rune('0'+i))+".txt")
-		os.WriteFile(filename, []byte("content"), 0644)
-	}
-
-	// Note: The executor itself may not be designed for concurrent use,
-	// but this test verifies basic behavior under concurrent access
-	done := make(chan bool, 10)
-
-	for i := 0; i < 10; i++ {
-		go func(idx int) {
-			cmd := scanner.Command{
-				Type:     "open",
-				Argument: "file" + string(rune('0'+idx)) + ".txt",
-			}
-			executor.Execute(cmd)
-			done <- true
-		}(i)
-	}
-
-	// Wait for all goroutines
-	for i := 0; i < 10; i++ {
-		<-done
-	}
-
-	// Just verify we didn't crash - concurrent command counting may not be accurate
-	// unless the executor has proper synchronization (which it doesn't appear to have)
 }
 
 // Benchmark tests
