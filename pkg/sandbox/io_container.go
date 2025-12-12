@@ -126,15 +126,10 @@ func WriteFileInContainer(filePath, content, repoRoot, containerImage string, ti
 		return fmt.Errorf("failed to get relative path: %w", err)
 	}
 
-	// Create directory if needed (on host, before container)
-	dir := filepath.Dir(filePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
 	// Write to temp file first, then move (atomic)
-	command := fmt.Sprintf("printf '%%s' %q > /workspace/%s && mv /workspace/%s /workspace/%s",
-		content, relPath+".tmp", relPath+".tmp", relPath)
+	// Directory creation happens inside container
+	command := fmt.Sprintf("mkdir -p $(dirname /workspace/%s) && printf '%%s' %q > /workspace/%s.tmp && mv /workspace/%s.tmp /workspace/%s",
+		relPath, content, relPath, relPath, relPath)
 
 	// Configure container with read-write mount
 	containerConfig := &container.Config{

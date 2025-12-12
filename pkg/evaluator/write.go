@@ -9,11 +9,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
+	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
+
 	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 
 // CreateBackup creates a backup of an existing file
@@ -151,18 +152,6 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 		return result
 	}
 
-	// Create directory if it doesn't exist
-	dir := filepath.Dir(safePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		result.Success = false
-		result.Error = fmt.Errorf("DIRECTORY_CREATION_FAILED: %w", err)
-		result.ExecutionTime = time.Since(startTime)
-		if auditLog != nil {
-			auditLog("write", filePath, false, result.Error.Error())
-		}
-		return result
-	}
-
 	// Write file (containerized or direct)
 	if cfg.IOContainerized {
 		// Use containerized I/O
@@ -186,6 +175,19 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 		}
 	} else {
 		// Direct atomic write on host
+
+		// Create directory if it doesn't exist
+		dir := filepath.Dir(safePath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			result.Success = false
+			result.Error = fmt.Errorf("DIRECTORY_CREATION_FAILED: %w", err)
+			result.ExecutionTime = time.Since(startTime)
+			if auditLog != nil {
+				auditLog("write", filePath, false, result.Error.Error())
+			}
+			return result
+		}
+
 		tempPath := safePath + ".tmp." + strconv.FormatInt(time.Now().UnixNano(), 10)
 		err = os.WriteFile(tempPath, []byte(formattedContent), 0644)
 		if err != nil {
