@@ -10,6 +10,13 @@ import (
 )
 
 // Executor handles command execution
+//
+// Security Model:
+// - Container is the security boundary (all mounted repo is sacrificial on compromise)
+// - No path-level validation; LLM has unrestricted filesystem access within container
+// - Symlinks are treated as normal filesystem objects
+// - All operations audited to audit.log
+// - Host protected by container namespace isolation and read-only mounts where appropriate
 type Executor struct {
 	config      *config.Config
 	searchCfg   *search.SearchConfig
