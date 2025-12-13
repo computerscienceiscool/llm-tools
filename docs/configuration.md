@@ -30,8 +30,10 @@ commands:
     max_file_size: 102400
     
   exec:
-    enabled: false
     timeout_seconds: 30
+    whitelist:
+      - "go test"
+      - "npm test"
     
   search:
     enabled: true
@@ -135,9 +137,7 @@ commands:
 
 ## Exec Command Configuration
 
-### `commands.exec.enabled`
-**Default**: `false`  
-**Description**: Enable/disable command execution (requires Docker)  
+**Note**: Exec is always enabled. Control access through the whitelist.
 
 ### `commands.exec.container_image`
 **Default**: `"ubuntu:22.04"`  
@@ -342,7 +342,6 @@ commands:
     enabled: true
     backup_before_write: true
   exec:
-    enabled: true
     timeout_seconds: 60
     whitelist: ["go test", "npm test", "make", "python3"]
   search:
@@ -375,7 +374,6 @@ commands:
   write:
     enabled: false  # Disable writes in production
   exec:
-    enabled: true
     timeout_seconds: 30
     memory_limit: "256m"
     whitelist: ["go test", "go build"]
@@ -418,8 +416,8 @@ All configuration options can be overridden via command line:
 # Override repository root
 ./llm-runtime --root /path/to/project
 
-# Enable exec with custom settings
-./llm-runtime --exec-enabled --exec-timeout 60s --exec-memory 1g
+# Custom exec settings
+./llm-runtime --exec-timeout 60s --exec-memory 1g
 
 # Custom excluded paths
 ./llm-runtime --exclude ".git,node_modules,*.secret"
@@ -438,10 +436,10 @@ Test your configuration:
 # Check current configuration
 ./llm-runtime --help
 
-# Validate Docker setup (if exec enabled)
+# Validate Docker setup (for exec)
 docker run --rm hello-world
 
-# Validate Ollama setup (if search enabled)
+# Validate Ollama setup (for search)
 ollama list
 curl http://localhost:11434/api/tags
 ```

@@ -223,30 +223,24 @@ Command: <exec rm -rf />
 
 ## Configuration
 
-### **Enable Exec Commands**
+### **Command Line Options**
 ```bash
-# Enable exec functionality
-./llm-runtime --exec-enabled
-
-# With custom settings
-./llm-runtime --exec-enabled \
-           --exec-timeout 60s \
-           --exec-memory 1g \
-           --exec-cpu 4
+# Run with custom settings
+./llm-runtime --exec-timeout 60s \
+              --exec-memory 1g \
+              --exec-cpu 4
 ```
 
 ### **Custom Whitelist**
 ```bash
 # Add custom commands
-./llm-runtime --exec-enabled \
-           --exec-whitelist "go test,npm build,python -m pytest,make clean"
+./llm-runtime --exec-whitelist "go test,npm build,python -m pytest,make clean"
 ```
 
 ### **Configuration File**
 ```yaml
 commands:
   exec:
-    enabled: true
     container_image: "ubuntu:22.04"
     timeout_seconds: 30
     memory_limit: "512m"

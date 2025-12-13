@@ -16,7 +16,7 @@ It allows LLMs to explore and work with local code repositories by parsing speci
 No. Enable what you need:
 - **Minimum**: Just `<open>` for file reading
 - **Documentation**: Add `<write>` for creating/updating files
-- **Development**: Add `<exec>` for running tests and builds
+- **Development**: Add `<exec>` for running tests and builds (controlled by whitelist)
 - **Large codebases**: Add `<search>` for semantic discovery
 
 ### Is this secure?
@@ -45,7 +45,7 @@ The tool works fine without it:
 - File reading (`<open>`) works
 - File writing (`<write>`) works
 - Search (`<search>`) works
-- Only `<exec>` is disabled
+- Only `<exec>` requires Docker
 
 ### Can dangerous commands run?
 No. Multiple safety layers:
@@ -178,8 +178,7 @@ Use relative paths within your repo.
 Check:
 1. Command in whitelist?
 2. Docker running?
-3. Exec enabled? (`--exec-enabled`)
-4. Correct syntax? (`<exec go test>` not `<exec> go test</exec>`)
+3. Correct syntax? (`<exec go test>` not `<exec> go test</exec>`)
 
 ### Search returns nothing?
 1. Ollama running? `ollama list`

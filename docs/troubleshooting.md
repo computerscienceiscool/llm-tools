@@ -164,9 +164,9 @@ commands:
 **Debug:**
 ```bash
 # Check what's in container
-echo "<exec ls -la>" | ./llm-runtime --exec-enabled
-echo "<exec which go>" | ./llm-runtime --exec-enabled
-echo "<exec whoami>" | ./llm-runtime --exec-enabled
+echo "<exec ls -la>" | ./llm-runtime
+echo "<exec which go>" | ./llm-runtime
+echo "<exec whoami>" | ./llm-runtime
 ```
 
 ---

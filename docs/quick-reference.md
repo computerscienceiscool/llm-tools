@@ -51,18 +51,19 @@ echo "<open README.md>" | ./llm-runtime
 # Interactive mode
 ./llm-runtime --interactive
 
-# With exec enabled
-./llm-runtime --exec-enabled --interactive
+# With custom timeout
+./llm-runtime --exec-timeout 60s
 ```
 
 ### Common Flags
 ```bash
 --root /path/to/repo      # Set repository root
 --interactive             # Interactive mode
---exec-enabled            # Enable exec commands
 --reindex                 # Rebuild search index
 --verbose                 # Detailed output
 --config file.yaml        # Custom config file
+--exec-timeout 60s        # Exec timeout
+--exec-memory 1g          # Exec memory limit
 ```
 
 ---
@@ -83,7 +84,7 @@ echo "<open README.md>" | ./llm-runtime
 docker run hello-world
 
 # Test exec
-echo "<exec echo hello>" | ./llm-runtime --exec-enabled
+echo "<exec echo hello>" | ./llm-runtime
 ```
 
 ### With Search (Ollama)
@@ -180,7 +181,10 @@ commands:
   write:
     enabled: true
   exec:
-    enabled: true
+    timeout_seconds: 30
+    whitelist:
+      - "go test"
+      - "npm test"
   search:
     enabled: true
 ```
@@ -193,7 +197,7 @@ commands:
   write:
     enabled: false
   exec:
-    enabled: false
+    whitelist: []  # No exec commands
   search:
     enabled: true
 ```

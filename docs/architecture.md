@@ -305,8 +305,7 @@ This ensures `<open a.go><exec go build><open b.go>` executes in that exact orde
 │           ▼                                                      │
 │  ┌──────────────────┐                                           │
 │  │ 2. SANDBOX       │  Establish execution boundary             │
-│  │    - Container?  │                                           │
-│  │    - Direct?     │                                           │
+│  │    - Container   │  (All I/O is containerized)               │
 │  └────────┬─────────┘                                           │
 │           │                                                      │
 │           ▼                                                      │
@@ -350,7 +349,7 @@ This ensures `<open a.go><exec go build><open b.go>` executes in that exact orde
 │  ├─ CPU limits (--cpus 2)                                       │
 │  └─ Time limits (context.WithTimeout, default 30s)              │
 │                                                                  │
-│  LAYER 3: Container Isolation (exec commands only)              │
+│  LAYER 3: Container Isolation (all I/O and exec)                │
 │  ├─ No network (--network none)                                  │
 │  ├─ Read-only root filesystem (--read-only)                      │
 │  ├─ Dropped capabilities (--cap-drop ALL)                        │
@@ -573,7 +572,6 @@ commands:
     backup_before_write: true
     max_file_size: 102400       # 100KB
   exec:
-    enabled: false
     timeout_seconds: 30
     memory_limit: "512m"
     whitelist: ["go test", "go build", "npm test"]
@@ -600,7 +598,6 @@ commands:
 ```
 --root PATH          Repository root (default: .)
 --interactive        Enable prompts (default: false)
---exec-enabled       Enable <exec> command (default: false)
 --reindex            Rebuild search index
 --verbose            Verbose output (default: false)
 ```
@@ -653,4 +650,4 @@ When extending the system:
 
 ---
 
-*Document version: 2.0*  
+*Document version: 3.0*  
