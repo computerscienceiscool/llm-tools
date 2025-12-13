@@ -7,7 +7,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.18.2
-	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

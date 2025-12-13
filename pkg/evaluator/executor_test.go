@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/config"
-	"github.com/computerscienceiscool/llm-runtime/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/pkg/config"
+	"github.com/computerscienceiscool/llm-runtime/pkg/search"
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 

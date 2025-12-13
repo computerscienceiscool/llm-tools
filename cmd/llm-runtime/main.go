@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/cli"
+	"github.com/computerscienceiscool/llm-runtime/pkg/cli"
 )
 
 func main() {

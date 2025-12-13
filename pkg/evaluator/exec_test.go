@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/pkg/config"
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
 

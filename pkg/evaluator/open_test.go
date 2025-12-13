@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/config"
+	"github.com/computerscienceiscool/llm-runtime/pkg/config"
 )
 
 // testAuditLog is a helper to capture audit log calls during tests

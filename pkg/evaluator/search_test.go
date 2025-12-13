@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/internal/search"
+	"github.com/computerscienceiscool/llm-runtime/pkg/search"
 )
 
 func TestExecuteSearch_Disabled(t *testing.T) {
