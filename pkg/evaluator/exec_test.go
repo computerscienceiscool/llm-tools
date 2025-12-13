@@ -16,39 +16,37 @@ func dockerAvailable() bool {
 	return cmd.Run() == nil
 }
 
-func TestExecuteExec_Disabled(t *testing.T) {
-	cfg := &config.Config{
-		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    false,
-		ExecWhitelist:  []string{"ls"},
-	}
-
-	audit := &testAuditLog{}
-	cmd := scanner.Command{Type: "exec", Argument: "ls"}
-	result := ExecuteExec(cmd, cfg, audit.log)
-
-	if result.Success {
-		t.Error("expected failure when exec is disabled")
-	}
-
-	if !strings.Contains(result.Error.Error(), "EXEC_VALIDATION") {
-		t.Errorf("expected EXEC_VALIDATION error, got: %v", result.Error)
-	}
-
-	// Check audit log
-	entries := audit.getEntries()
-	if len(entries) != 1 {
-		t.Fatalf("expected 1 audit entry, got %d", len(entries))
-	}
-	if entries[0].success {
-		t.Error("audit should show failure")
-	}
-}
+// REMOVED: func TestExecuteExec_Disabled(t *testing.T) {
+// REMOVED: 	cfg := &config.Config{
+// REMOVED: 		RepositoryRoot: t.TempDir(),
+// REMOVED: 		ExecWhitelist:  []string{"ls"},
+// REMOVED: 	}
+// REMOVED: 
+// REMOVED: 	audit := &testAuditLog{}
+// REMOVED: 	cmd := scanner.Command{Type: "exec", Argument: "ls"}
+// REMOVED: 	result := ExecuteExec(cmd, cfg, audit.log)
+// REMOVED: 
+// REMOVED: 	if result.Success {
+// REMOVED: 		t.Error("expected failure when exec is disabled")
+// REMOVED: 	}
+// REMOVED: 
+// REMOVED: 	if !strings.Contains(result.Error.Error(), "EXEC_VALIDATION") {
+// REMOVED: 		t.Errorf("expected EXEC_VALIDATION error, got: %v", result.Error)
+// REMOVED: 	}
+// REMOVED: 
+// REMOVED: 	// Check audit log
+// REMOVED: 	entries := audit.getEntries()
+// REMOVED: 	if len(entries) != 1 {
+// REMOVED: 		t.Fatalf("expected 1 audit entry, got %d", len(entries))
+// REMOVED: 	}
+// REMOVED: 	if entries[0].success {
+// REMOVED: 		t.Error("audit should show failure")
+// REMOVED: 	}
+// REMOVED: }
 
 func TestExecuteExec_EmptyWhitelist(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    true,
 		ExecWhitelist:  []string{}, // Empty whitelist
 	}
 
@@ -67,7 +65,6 @@ func TestExecuteExec_EmptyWhitelist(t *testing.T) {
 func TestExecuteExec_CommandNotWhitelisted(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    true,
 		ExecWhitelist:  []string{"go test", "npm test"},
 	}
 
@@ -86,7 +83,6 @@ func TestExecuteExec_CommandNotWhitelisted(t *testing.T) {
 func TestExecuteExec_EmptyCommand(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    true,
 		ExecWhitelist:  []string{"ls"},
 	}
 
@@ -105,7 +101,6 @@ func TestExecuteExec_EmptyCommand(t *testing.T) {
 func TestExecuteExec_WhitelistPrefixMatch(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
-		ExecEnabled:        true,
 		ExecWhitelist:      []string{"go test"},
 		ExecContainerImage: "golang:alpine",
 		ExecTimeout:        30 * time.Second,
@@ -130,7 +125,6 @@ func TestExecuteExec_WhitelistPrefixMatch(t *testing.T) {
 func TestExecuteExec_CommandType(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    false,
 	}
 
 	cmd := scanner.Command{Type: "exec", Argument: "any command"}
@@ -148,7 +142,6 @@ func TestExecuteExec_CommandType(t *testing.T) {
 func TestExecuteExec_ExecutionTime(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    false,
 	}
 
 	cmd := scanner.Command{Type: "exec", Argument: "test"}
@@ -162,7 +155,6 @@ func TestExecuteExec_ExecutionTime(t *testing.T) {
 func TestExecuteExec_NilAuditLog(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    false,
 	}
 
 	// Should not panic with nil audit log
@@ -177,7 +169,6 @@ func TestExecuteExec_NilAuditLog(t *testing.T) {
 func TestExecuteExec_AuditLogOnValidationFailure(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    false,
 	}
 
 	audit := &testAuditLog{}
@@ -211,7 +202,6 @@ func TestExecuteExec_DockerNotAvailable(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
-		ExecEnabled:        true,
 		ExecWhitelist:      []string{"echo"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -239,7 +229,6 @@ func TestExecuteExec_Integration_Echo(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
-		ExecEnabled:        true,
 		ExecWhitelist:      []string{"echo"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -286,7 +275,6 @@ func TestExecuteExec_Integration_FailingCommand(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
-		ExecEnabled:        true,
 		ExecWhitelist:      []string{"exit"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -319,7 +307,6 @@ func TestExecuteExec_Integration_Timeout(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
-		ExecEnabled:        true,
 		ExecWhitelist:      []string{"sleep"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        2 * time.Second, // Short timeout
@@ -359,7 +346,6 @@ func TestExecuteExec_Integration_Stderr(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
-		ExecEnabled:        true,
 		ExecWhitelist:      []string{"sh"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -388,7 +374,6 @@ func TestExecuteExec_Integration_CombinedOutput(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
-		ExecEnabled:        true,
 		ExecWhitelist:      []string{"sh"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -421,7 +406,6 @@ func TestExecuteExec_WithStdin(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
-		ExecEnabled:        true,
 		ExecWhitelist:      []string{"cat", "wc"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -490,7 +474,6 @@ func TestExecuteExec_WhitelistVariations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &config.Config{
 				RepositoryRoot:     t.TempDir(),
-				ExecEnabled:        true,
 				ExecWhitelist:      tt.whitelist,
 				ExecContainerImage: "alpine:latest",
 				ExecTimeout:        30 * time.Second,
@@ -520,7 +503,6 @@ func TestExecuteExec_WhitelistVariations(t *testing.T) {
 func BenchmarkExecuteExec_ValidationOnly(b *testing.B) {
 	cfg := &config.Config{
 		RepositoryRoot: b.TempDir(),
-		ExecEnabled:    false,
 	}
 
 	cmd := scanner.Command{Type: "exec", Argument: "test command"}
@@ -534,7 +516,6 @@ func BenchmarkExecuteExec_ValidationOnly(b *testing.B) {
 func BenchmarkExecuteExec_WhitelistCheck(b *testing.B) {
 	cfg := &config.Config{
 		RepositoryRoot: b.TempDir(),
-		ExecEnabled:    true,
 		ExecWhitelist:  []string{"go test", "npm test", "make", "cargo test", "pytest"},
 	}
 
@@ -553,7 +534,6 @@ func TestExecuteExec_ResultOutputFormatting(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    false, // Will fail early, but we can test command setup
 	}
 
 	cmd := scanner.Command{Type: "exec", Argument: "test command"}
@@ -571,7 +551,6 @@ func TestExecuteExec_ResultOutputFormatting(t *testing.T) {
 func TestExecuteExec_AuditLogFormat(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
-		ExecEnabled:    true,
 		ExecWhitelist:  []string{}, // Empty whitelist causes validation failure
 	}
 

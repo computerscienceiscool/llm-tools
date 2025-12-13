@@ -7,7 +7,6 @@ import (
 	"go/format"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -152,64 +151,24 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 		return result
 	}
 
-	// Write file (containerized or direct)
-	if cfg.IOContainerized {
-		// Use containerized I/O
-		err = sandbox.WriteFileInContainer(
-			safePath,
-			formattedContent,
-			cfg.RepositoryRoot,
-			cfg.IOContainerImage,
-			cfg.IOTimeout,
-			cfg.IOMemoryLimit,
-			cfg.IOCPULimit,
-		)
-		if err != nil {
-			result.Success = false
-			result.Error = fmt.Errorf("WRITE_CONTAINER: %w", err)
-			result.ExecutionTime = time.Since(startTime)
-			if auditLog != nil {
-				auditLog("write", filePath, false, result.Error.Error())
-			}
-			return result
+	// Write file using container
+	err = sandbox.WriteFileInContainer(
+		safePath,
+		formattedContent,
+		cfg.RepositoryRoot,
+		cfg.IOContainerImage,
+		cfg.IOTimeout,
+		cfg.IOMemoryLimit,
+		cfg.IOCPULimit,
+	)
+	if err != nil {
+		result.Success = false
+		result.Error = fmt.Errorf("WRITE_CONTAINER: %w", err)
+		result.ExecutionTime = time.Since(startTime)
+		if auditLog != nil {
+			auditLog("write", filePath, false, result.Error.Error())
 		}
-	} else {
-		// Direct atomic write on host
-
-		// Create directory if it doesn't exist
-		dir := filepath.Dir(safePath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			result.Success = false
-			result.Error = fmt.Errorf("DIRECTORY_CREATION_FAILED: %w", err)
-			result.ExecutionTime = time.Since(startTime)
-			if auditLog != nil {
-				auditLog("write", filePath, false, result.Error.Error())
-			}
-			return result
-		}
-
-		tempPath := safePath + ".tmp." + strconv.FormatInt(time.Now().UnixNano(), 10)
-		err = os.WriteFile(tempPath, []byte(formattedContent), 0644)
-		if err != nil {
-			result.Success = false
-			result.Error = fmt.Errorf("WRITE_ERROR: %w", err)
-			result.ExecutionTime = time.Since(startTime)
-			if auditLog != nil {
-				auditLog("write", filePath, false, result.Error.Error())
-			}
-			return result
-		}
-		err = os.Rename(tempPath, safePath)
-		if err != nil {
-			os.Remove(tempPath)
-			result.Success = false
-			result.Error = fmt.Errorf("RENAME_ERROR: %w", err)
-			result.ExecutionTime = time.Since(startTime)
-			if auditLog != nil {
-				auditLog("write", filePath, false, result.Error.Error())
-			}
-			return result
-		}
+		return result
 	}
 
 	// Calculate content hash for audit log

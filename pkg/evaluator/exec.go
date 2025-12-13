@@ -17,7 +17,7 @@ func ExecuteExec(cmd scanner.Command, cfg *config.Config, auditLog func(cmdType,
 	}
 
 	// Validate command
-	if err := sandbox.ValidateExecCommand(cmd.Argument, cfg.ExecEnabled, cfg.ExecWhitelist); err != nil {
+	if err := sandbox.ValidateExecCommand(cmd.Argument, cfg.ExecWhitelist); err != nil {
 		result.Success = false
 		result.Error = fmt.Errorf("EXEC_VALIDATION: %w", err)
 		result.ExecutionTime = time.Since(startTime)

@@ -150,7 +150,6 @@ func TestExecutor_Execute_WriteCommand(t *testing.T) {
 func TestExecutor_Execute_ExecCommand_Disabled(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
-	cfg.ExecEnabled = false
 
 	executor := NewExecutor(cfg, nil, nil)
 
@@ -539,7 +538,6 @@ func TestExecutor_Execute_CaseSensitiveCommandType(t *testing.T) {
 func TestExecutor_Execute_ExecWithEmptyWhitelist(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
-	cfg.ExecEnabled = true
 	cfg.ExecWhitelist = []string{} // Empty whitelist
 
 	executor := NewExecutor(cfg, nil, nil)
@@ -564,7 +562,6 @@ func TestExecutor_Execute_ExecWithEmptyWhitelist(t *testing.T) {
 func TestExecutor_Execute_ExecWithEmptyCommand(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
-	cfg.ExecEnabled = true
 	cfg.ExecWhitelist = []string{"ls"}
 
 	executor := NewExecutor(cfg, nil, nil)

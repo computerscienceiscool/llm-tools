@@ -15,10 +15,10 @@ func TestValidateExecCommand(t *testing.T) {
 		errContains string
 	}{
 		{
-			name:        "exec disabled",
-			command:     "go test",
-			execEnabled: false,
-			whitelist:   []string{"go test"},
+// REMOVED: 			name:        "exec disabled",
+// REMOVED: 			command:     "go test",
+// REMOVED: 			execEnabled: false,
+// REMOVED: 			whitelist:   []string{"go test"},
 			wantErr:     true,
 			errContains: "disabled",
 		},
@@ -265,7 +265,7 @@ func TestValidateExecCommand_SecurityScenarios(t *testing.T) {
 
 	for _, cmd := range dangerousCommands {
 		t.Run("blocks: "+cmd, func(t *testing.T) {
-			err := ValidateExecCommand(cmd, true, whitelist)
+			err := ValidateExecCommand(cmd, whitelist)
 			if err == nil {
 				t.Errorf("ValidateExecCommand() should block dangerous command: %s", cmd)
 			}
@@ -281,7 +281,7 @@ func TestValidateExecCommand_CommandInjectionViaPrefix(t *testing.T) {
 
 	t.Run("command injection via semicolon passes due to HasPrefix", func(t *testing.T) {
 		// This is a known limitation of the current implementation
-		err := ValidateExecCommand("go test; rm -rf /", true, whitelist)
+		err := ValidateExecCommand("go test; rm -rf /", whitelist)
 		// Current implementation allows this because HasPrefix matches
 		if err != nil {
 			t.Logf("Implementation correctly blocks injection: %v", err)
@@ -293,7 +293,7 @@ func TestValidateExecCommand_CommandInjectionViaPrefix(t *testing.T) {
 
 func TestValidateExecCommand_WhitelistVariations(t *testing.T) {
 	t.Run("whitelist with single entry", func(t *testing.T) {
-		err := ValidateExecCommand("go test", true, []string{"go test"})
+		err := ValidateExecCommand("go test", []string{"go test"})
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -311,7 +311,7 @@ func TestValidateExecCommand_WhitelistVariations(t *testing.T) {
 			"cargo build",
 			"cargo test",
 		}
-		err := ValidateExecCommand("cargo test", true, whitelist)
+		err := ValidateExecCommand("cargo test", whitelist)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -319,7 +319,7 @@ func TestValidateExecCommand_WhitelistVariations(t *testing.T) {
 
 	t.Run("base command matches", func(t *testing.T) {
 		// When whitelist contains just "go", any go command should work
-		err := ValidateExecCommand("go version", true, []string{"go"})
+		err := ValidateExecCommand("go version", []string{"go"})
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -328,7 +328,7 @@ func TestValidateExecCommand_WhitelistVariations(t *testing.T) {
 
 func TestValidateExecCommand_DisabledTakesPrecedence(t *testing.T) {
 	// Even with valid whitelist, disabled should block
-	err := ValidateExecCommand("go test", false, []string{"go test"})
+	err := ValidateExecCommand("go test", []string{"go test"})
 	if err == nil {
 		t.Error("expected error when exec is disabled")
 	}
@@ -344,6 +344,6 @@ func BenchmarkValidateExecCommand(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ValidateExecCommand(command, true, whitelist)
+		ValidateExecCommand(command, whitelist)
 	}
 }

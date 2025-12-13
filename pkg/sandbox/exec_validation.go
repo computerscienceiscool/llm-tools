@@ -6,11 +6,8 @@ import (
 )
 
 // ValidateExecCommand checks if the command is allowed to execute
-func ValidateExecCommand(command string, execEnabled bool, whitelist []string) error {
-	if !execEnabled {
-		return fmt.Errorf("exec command is disabled")
-	}
-
+// Note: Exec is always enabled in container-only mode
+func ValidateExecCommand(command string, whitelist []string) error {
 	if len(whitelist) == 0 {
 		return fmt.Errorf("no commands are whitelisted")
 	}

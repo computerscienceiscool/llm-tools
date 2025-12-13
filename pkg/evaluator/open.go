@@ -56,41 +56,27 @@ func ExecuteOpen(filepath string, cfg *config.Config, auditLog func(cmd, arg str
 		}
 		return result
 	}
-	// Read the file (containerized or direct)
-	var content []byte
-	if cfg.IOContainerized {
-		// Use containerized I/O
-		contentStr, err := sandbox.ReadFileInContainer(
-			safePath,
-			cfg.RepositoryRoot,
-			cfg.IOContainerImage,
-			cfg.IOTimeout,
-			cfg.IOMemoryLimit,
-			cfg.IOCPULimit,
-		)
-		if err != nil {
-			result.Success = false
-			result.Error = fmt.Errorf("READ_CONTAINER: %w", err)
-			result.ExecutionTime = time.Since(startTime)
-			if auditLog != nil {
-				auditLog("open", filepath, false, result.Error.Error())
-			}
-			return result
+	// Read the file using container
+var content []byte
+	// Use containerized I/O
+	contentStr, err := sandbox.ReadFileInContainer(
+		safePath,
+		cfg.RepositoryRoot,
+		cfg.IOContainerImage,
+		cfg.IOTimeout,
+		cfg.IOMemoryLimit,
+		cfg.IOCPULimit,
+	)
+	if err != nil {
+		result.Success = false
+		result.Error = fmt.Errorf("READ_CONTAINER: %w", err)
+		result.ExecutionTime = time.Since(startTime)
+		if auditLog != nil {
+			auditLog("open", filepath, false, result.Error.Error())
 		}
-		content = []byte(contentStr)
-	} else {
-		// Direct file read on host
-		content, err = os.ReadFile(safePath)
-		if err != nil {
-			result.Success = false
-			result.Error = fmt.Errorf("READ_ERROR: %w", err)
-			result.ExecutionTime = time.Since(startTime)
-			if auditLog != nil {
-				auditLog("open", filepath, false, result.Error.Error())
-			}
-			return result
-		}
+		return result
 	}
+	content = []byte(contentStr)
 
 	result.Success = true
 	result.Result = string(content)
