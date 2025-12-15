@@ -1,12 +1,12 @@
 package evaluator
 
 import (
+	"time"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
 )
@@ -51,6 +51,8 @@ func newTestConfig(tmpDir string) *config.Config {
 		ExcludedPaths:     []string{".git", ".env", "*.key", "*.pem"},
 		AllowedExtensions: []string{".go", ".py", ".js", ".md", ".txt", ".json", ".yaml"},
 		BackupBeforeWrite: true,
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 }
 

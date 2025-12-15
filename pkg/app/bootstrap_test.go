@@ -270,37 +270,7 @@ func TestBootstrap_SearchConfigLoaded(t *testing.T) {
 	}
 }
 
-// func TestBootstrap_ConfigWithExecEnabled(t *testing.T) {
-// 	tempDir := t.TempDir()
-// 
-// 	cfg := &config.Config{
-// 		RepositoryRoot:     tempDir,
-// 		MaxFileSize:        1048576,
-// 		MaxWriteSize:       102400,
-// 		AllowedExtensions:  []string{".txt"},
-// 		ExcludedPaths:      []string{".git"},
-// 		ExecWhitelist:      []string{"go test", "make"},
-// 		ExecContainerImage: "alpine:latest",
-// 		ExecMemoryLimit:    "256m",
-// 		ExecCPULimit:       1,
-// 	}
-// 
-// 	app, err := Bootstrap(cfg)
-// 	if err != nil {
-// 		t.Fatalf("Bootstrap() error = %v", err)
-// 	}
-// 
-// 	execCfg := app.GetExecutor().GetConfig()
-// 	if !execCfg.ExecEnabled {
-// 		t.Error("ExecEnabled should be true")
-// 	}
-// 	if len(execCfg.ExecWhitelist) != 2 {
-// 		t.Errorf("ExecWhitelist length = %d, want 2", len(execCfg.ExecWhitelist))
-// 	}
-// 	if execCfg.ExecContainerImage != "alpine:latest" {
-// 		t.Errorf("ExecContainerImage = %q, want %q", execCfg.ExecContainerImage, "alpine:latest")
-// 	}
-// }
+// REMOVED: TestBootstrap_ConfigWithExecEnabled - exec is always enabled in container mode
 
 func TestBootstrap_EmptyConfig(t *testing.T) {
 	tempDir := t.TempDir()
@@ -426,7 +396,6 @@ func TestBootstrap_PreservesAllConfigFields(t *testing.T) {
 	}
 	if appCfg.ForceWrite != cfg.ForceWrite {
 		t.Errorf("ForceWrite = %v, want %v", appCfg.ForceWrite, cfg.ForceWrite)
-	}
 	}
 	if appCfg.ExecNetworkEnabled != cfg.ExecNetworkEnabled {
 		t.Errorf("ExecNetworkEnabled = %v, want %v", appCfg.ExecNetworkEnabled, cfg.ExecNetworkEnabled)

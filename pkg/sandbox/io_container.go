@@ -30,7 +30,7 @@ func RunIOContainer(repoRoot, containerImage, command string, timeout time.Durat
 	// Configure container
 	containerConfig := &container.Config{
 		Image:      containerImage,
-		Cmd:        strslice.StrSlice{"sh", "-c", command},
+		Cmd:        strslice.StrSlice{"/bin/sh", "-c", command},
 		WorkingDir: "/workspace",
 		User:       "1000:1000",
 	}
@@ -134,7 +134,7 @@ func WriteFileInContainer(filePath, content, repoRoot, containerImage string, ti
 	// Configure container with read-write mount
 	containerConfig := &container.Config{
 		Image:      containerImage,
-		Cmd:        strslice.StrSlice{"sh", "-c", command},
+		Cmd:        strslice.StrSlice{"/bin/sh", "-c", command},
 		WorkingDir: "/workspace",
 		User:       "1000:1000",
 	}

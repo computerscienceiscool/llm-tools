@@ -50,7 +50,7 @@ func init() {
 
 	// I/O Containerization flags
 	rootCmd.PersistentFlags().String("io-image", "llm-runtime-io:latest", "Docker image for I/O operations")
-	rootCmd.PersistentFlags().String("io-timeout", "10s", "Timeout for I/O operations")
+	rootCmd.PersistentFlags().String("io-timeout", "60s", "Timeout for I/O operations")
 	rootCmd.PersistentFlags().String("io-memory", "256m", "Memory limit for I/O containers")
 	rootCmd.PersistentFlags().Int("io-cpu", 1, "CPU limit for I/O containers")
 

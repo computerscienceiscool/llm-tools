@@ -1,10 +1,10 @@
 package evaluator
 
 import (
+	"time"
 	"os/exec"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
@@ -47,6 +47,8 @@ func dockerAvailable() bool {
 func TestExecuteExec_EmptyWhitelist(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:  []string{}, // Empty whitelist
 	}
 
@@ -65,6 +67,8 @@ func TestExecuteExec_EmptyWhitelist(t *testing.T) {
 func TestExecuteExec_CommandNotWhitelisted(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:  []string{"go test", "npm test"},
 	}
 
@@ -83,6 +87,8 @@ func TestExecuteExec_CommandNotWhitelisted(t *testing.T) {
 func TestExecuteExec_EmptyCommand(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:  []string{"ls"},
 	}
 
@@ -101,6 +107,8 @@ func TestExecuteExec_EmptyCommand(t *testing.T) {
 func TestExecuteExec_WhitelistPrefixMatch(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:      []string{"go test"},
 		ExecContainerImage: "golang:alpine",
 		ExecTimeout:        30 * time.Second,
@@ -125,6 +133,8 @@ func TestExecuteExec_WhitelistPrefixMatch(t *testing.T) {
 func TestExecuteExec_CommandType(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	cmd := scanner.Command{Type: "exec", Argument: "any command"}
@@ -142,6 +152,8 @@ func TestExecuteExec_CommandType(t *testing.T) {
 func TestExecuteExec_ExecutionTime(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	cmd := scanner.Command{Type: "exec", Argument: "test"}
@@ -155,6 +167,8 @@ func TestExecuteExec_ExecutionTime(t *testing.T) {
 func TestExecuteExec_NilAuditLog(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	// Should not panic with nil audit log
@@ -169,6 +183,8 @@ func TestExecuteExec_NilAuditLog(t *testing.T) {
 func TestExecuteExec_AuditLogOnValidationFailure(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	audit := &testAuditLog{}
@@ -202,6 +218,8 @@ func TestExecuteExec_DockerNotAvailable(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:      []string{"echo"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -229,6 +247,8 @@ func TestExecuteExec_Integration_Echo(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:      []string{"echo"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -275,6 +295,8 @@ func TestExecuteExec_Integration_FailingCommand(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:      []string{"exit"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -307,6 +329,8 @@ func TestExecuteExec_Integration_Timeout(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:      []string{"sleep"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        2 * time.Second, // Short timeout
@@ -346,6 +370,8 @@ func TestExecuteExec_Integration_Stderr(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:      []string{"sh"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -374,6 +400,8 @@ func TestExecuteExec_Integration_CombinedOutput(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:      []string{"sh"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -406,6 +434,8 @@ func TestExecuteExec_WithStdin(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot:     t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:      []string{"cat", "wc"},
 		ExecContainerImage: "alpine:latest",
 		ExecTimeout:        30 * time.Second,
@@ -474,6 +504,8 @@ func TestExecuteExec_WhitelistVariations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &config.Config{
 				RepositoryRoot:     t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 				ExecWhitelist:      tt.whitelist,
 				ExecContainerImage: "alpine:latest",
 				ExecTimeout:        30 * time.Second,
@@ -503,6 +535,8 @@ func TestExecuteExec_WhitelistVariations(t *testing.T) {
 func BenchmarkExecuteExec_ValidationOnly(b *testing.B) {
 	cfg := &config.Config{
 		RepositoryRoot: b.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	cmd := scanner.Command{Type: "exec", Argument: "test command"}
@@ -516,6 +550,8 @@ func BenchmarkExecuteExec_ValidationOnly(b *testing.B) {
 func BenchmarkExecuteExec_WhitelistCheck(b *testing.B) {
 	cfg := &config.Config{
 		RepositoryRoot: b.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:  []string{"go test", "npm test", "make", "cargo test", "pytest"},
 	}
 
@@ -534,6 +570,8 @@ func TestExecuteExec_ResultOutputFormatting(t *testing.T) {
 
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	cmd := scanner.Command{Type: "exec", Argument: "test command"}
@@ -551,6 +589,8 @@ func TestExecuteExec_ResultOutputFormatting(t *testing.T) {
 func TestExecuteExec_AuditLogFormat(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: t.TempDir(),
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		ExecWhitelist:  []string{}, // Empty whitelist causes validation failure
 	}
 

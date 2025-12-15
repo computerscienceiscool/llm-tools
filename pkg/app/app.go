@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
-	"github.com/computerscienceiscool/llm-runtime/pkg/search"
-	"github.com/computerscienceiscool/llm-runtime/pkg/session"
 	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
+	"github.com/computerscienceiscool/llm-runtime/pkg/search"
+	"github.com/computerscienceiscool/llm-runtime/pkg/session"
 )
 
 // App represents the main application
@@ -149,6 +149,18 @@ func (a *App) printVerboseInfo() {
 	fmt.Fprintf(os.Stderr, "Allowed extensions: %v\n", a.config.AllowedExtensions)
 	fmt.Fprintf(os.Stderr, "Excluded paths: %v\n", a.config.ExcludedPaths)
 	fmt.Fprintf(os.Stderr, "Backup enabled: %v\n", a.config.BackupBeforeWrite)
+
+	// Exec is always enabled in container mode - controlled by whitelist only
+	fmt.Fprintf(os.Stderr, "Exec enabled: true (container mode)\n")
+	if len(a.config.ExecWhitelist) > 0 {
+		fmt.Fprintf(os.Stderr, "Exec whitelist: %v\n", a.config.ExecWhitelist)
+	}
+	if a.config.ExecContainerImage != "" {
+		fmt.Fprintf(os.Stderr, "Exec image: %s\n", a.config.ExecContainerImage)
+	}
+	if a.config.ExecTimeout > 0 {
+		fmt.Fprintf(os.Stderr, "Exec timeout: %v\n", a.config.ExecTimeout)
+	}
 }
 
 // GetSession returns the app's session

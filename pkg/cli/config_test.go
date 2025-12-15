@@ -68,7 +68,6 @@ func TestBuildConfig_CustomValues(t *testing.T) {
 	viper.Set("root", "/custom/path")
 	viper.Set("max-size", int64(2048))
 	viper.Set("verbose", true)
-	viper.Set("exec-enabled", true)
 	viper.Set("exec-timeout", "60s")
 	viper.Set("io-timeout", "20s")
 
@@ -89,6 +88,7 @@ func TestBuildConfig_CustomValues(t *testing.T) {
 		t.Error("Verbose should be true")
 	}
 
+	if cfg.ExecTimeout != 60*time.Second {
 		t.Errorf("ExecTimeout = %v, want %v", cfg.ExecTimeout, 60*time.Second)
 	}
 }

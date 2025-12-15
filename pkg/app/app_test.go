@@ -1,6 +1,7 @@
 package app
 
 import (
+	"time"
 	"bytes"
 	"fmt"
 	"io"
@@ -67,6 +68,8 @@ func TestApp_GetConfig(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	app, err := Bootstrap(cfg)
@@ -93,6 +96,8 @@ func TestApp_GetSession(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	app, err := Bootstrap(cfg)
@@ -123,6 +128,8 @@ func TestApp_GetExecutor(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	app, err := Bootstrap(cfg)
@@ -149,6 +156,8 @@ func TestApp_GetSearchConfig(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	app, err := Bootstrap(cfg)
@@ -177,6 +186,8 @@ func TestApp_Run_PipeMode_Stdin(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		// No InputFile - should read from stdin
 	}
@@ -237,6 +248,8 @@ func TestApp_Run_PipeMode_InputFile(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 	}
@@ -282,6 +295,8 @@ func TestApp_Run_PipeMode_OutputFile(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 		OutputFile:        outputFile,
@@ -317,6 +332,8 @@ func TestApp_Run_PipeMode_NonExistentInputFile(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         "/nonexistent/input.txt",
 	}
@@ -351,6 +368,8 @@ func TestApp_Run_PipeMode_CannotWriteOutputFile(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 		OutputFile:        "/nonexistent/directory/output.txt",
@@ -433,6 +452,8 @@ func TestApp_Run_VerboseMode_ExecDetails(t *testing.T) {
 		MaxWriteSize:       102400,
 		AllowedExtensions:  []string{".txt"},
 		ExcludedPaths:      []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:        false,
 		Verbose:            true,
 		ExecWhitelist:      []string{"go test", "make"},
@@ -460,7 +481,10 @@ func TestApp_Run_VerboseMode_ExecDetails(t *testing.T) {
 	os.Stdin = oldStdin
 	r.Close()
 
-	// Should show exec details when exec is enabled
+	// Exec is always enabled in container mode
+	if !strings.Contains(stderr, "Exec enabled: true") {
+		t.Errorf("Verbose output should show exec enabled\nGot: %s", stderr)
+	}
 	if !strings.Contains(stderr, "Exec whitelist:") {
 		t.Errorf("Verbose output should show exec whitelist\nGot: %s", stderr)
 	}
@@ -468,8 +492,6 @@ func TestApp_Run_VerboseMode_ExecDetails(t *testing.T) {
 		t.Errorf("Verbose output should show exec image\nGot: %s", stderr)
 	}
 }
-
-
 
 func TestApp_Run_NoCommands(t *testing.T) {
 	tempDir := t.TempDir()
@@ -485,6 +507,8 @@ func TestApp_Run_NoCommands(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 		OutputFile:        outputFile,
@@ -522,6 +546,8 @@ func TestApp_Run_WriteCommand(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 	}
@@ -569,6 +595,8 @@ func TestApp_Run_EmptyInput(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 	}
@@ -605,6 +633,8 @@ func TestApp_MultipleRuns(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 	}
@@ -630,58 +660,7 @@ func TestApp_MultipleRuns(t *testing.T) {
 	}
 }
 
-func TestApp_Run_VerboseMode_ExecDisabled(t *testing.T) {
-	tempDir := t.TempDir()
-
-	cfg := &config.Config{
-		RepositoryRoot:    tempDir,
-		MaxFileSize:       1048576,
-		MaxWriteSize:      102400,
-		AllowedExtensions: []string{".txt"},
-		ExcludedPaths:     []string{".git"},
-		Interactive:       false,
-		Verbose:           true,
-	}
-
-	app, err := Bootstrap(cfg)
-	if err != nil {
-		t.Fatalf("Bootstrap() error = %v", err)
-	}
-
-	// Mock stdin with empty input
-	oldStdin := os.Stdin
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("Failed to create stdin pipe: %v", err)
-	}
-	os.Stdin = r
-	w.Close()
-
-	stderr := captureStderr(t, func() {
-		_ = app.Run()
-	})
-
-	os.Stdin = oldStdin
-	r.Close()
-
-	// Should show basic info but NOT exec details when exec is disabled
-	if !strings.Contains(stderr, "Repository root:") {
-		t.Errorf("Verbose output should show repository root\nGot: %s", stderr)
-	}
-	if !strings.Contains(stderr, "Exec enabled: false") {
-		t.Errorf("Verbose output should show exec disabled\nGot: %s", stderr)
-	}
-	// Should NOT show exec whitelist when exec is disabled
-	if strings.Contains(stderr, "Exec whitelist:") {
-		t.Errorf("Verbose output should NOT show exec whitelist when disabled\nGot: %s", stderr)
-	}
-}
-
-
-
-
-
-
+// REMOVED: TestApp_Run_VerboseMode_ExecDisabled - exec is always enabled in container mode
 
 func TestApp_Run_InteractiveMode(t *testing.T) {
 	tempDir := t.TempDir()
@@ -698,6 +677,8 @@ func TestApp_Run_InteractiveMode(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       true, // Enable interactive mode
 	}
 
@@ -833,6 +814,8 @@ func TestApp_GettersAfterMultipleOperations(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	app, err := Bootstrap(cfg)
@@ -892,6 +875,8 @@ func TestApp_Run_LargeInput(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 	}
@@ -924,7 +909,6 @@ func TestApp_Run_LargeInput(t *testing.T) {
 	}
 }
 
-
 func TestApp_Run_PipeMode_StdinError(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -934,6 +918,8 @@ func TestApp_Run_PipeMode_StdinError(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		// No InputFile - reads from stdin
 	}
@@ -995,6 +981,8 @@ Try search (will fail):
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 	}
@@ -1037,6 +1025,8 @@ func TestApp_Run_Verbose_BackupDisabled(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		Verbose:           true,
 		BackupBeforeWrite: false, // Backup disabled
@@ -1075,6 +1065,8 @@ func TestApp_SessionConfigReference(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	app, err := Bootstrap(cfg)
@@ -1103,6 +1095,8 @@ func TestApp_ExecutorSearchConfig(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	app, err := Bootstrap(cfg)
@@ -1137,6 +1131,8 @@ func TestApp_Run_OutputToFile_Success(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       false,
 		InputFile:         inputFile,
 		OutputFile:        outputFile,
@@ -1176,6 +1172,8 @@ func TestApp_Run_InteractiveMode_EmptyInput(t *testing.T) {
 		MaxWriteSize:      102400,
 		AllowedExtensions: []string{".txt"},
 		ExcludedPaths:     []string{".git"},
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		Interactive:       true,
 	}
 

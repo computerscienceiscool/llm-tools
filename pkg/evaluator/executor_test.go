@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"time"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +15,8 @@ import (
 func TestNewExecutor(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: "/tmp/test",
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		MaxFileSize:    1024,
 	}
 
@@ -50,6 +53,8 @@ func TestNewExecutor(t *testing.T) {
 func TestNewExecutor_NilSearchConfig(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: "/tmp/test",
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	executor := NewExecutor(cfg, nil, nil)
@@ -66,6 +71,8 @@ func TestNewExecutor_NilSearchConfig(t *testing.T) {
 func TestNewExecutor_NilAuditLog(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: "/tmp/test",
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 
 	executor := NewExecutor(cfg, nil, nil)
@@ -346,6 +353,8 @@ func TestExecutor_GetCommandsRun_FailedCommandsNotCounted(t *testing.T) {
 func TestExecutor_GetConfig(t *testing.T) {
 	cfg := &config.Config{
 		RepositoryRoot: "/custom/path",
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 		MaxFileSize:    12345,
 		Verbose:        true,
 	}
@@ -656,6 +665,8 @@ func TestExecutor_FullWorkflow(t *testing.T) {
 func BenchmarkNewExecutor(b *testing.B) {
 	cfg := &config.Config{
 		RepositoryRoot: "/tmp",
+		IOTimeout:         60 * time.Second,
+		IOContainerImage:    "llm-runtime-io:latest",
 	}
 	searchCfg := &search.SearchConfig{}
 	auditFn := func(cmd, arg string, success bool, errMsg string) {}

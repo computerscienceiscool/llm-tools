@@ -1,13 +1,13 @@
 package evaluator
 
 import (
+	"time"
 	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 )
 
 func TestCreateBackup_Success(t *testing.T) {
