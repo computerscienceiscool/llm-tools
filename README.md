@@ -112,13 +112,13 @@ echo "Let me check the main file <open main.go>" | ./llm-runtime
 ### With Exec Commands Enabled
 
 ```bash
-echo "Check code and run tests: <open main.go> <exec go test>" | ./llm-runtime --exec-enabled
+echo "Check code and run tests: <open main.go> <exec go test>" | ./llm-runtime 
 ```
 
 ### Interactive Mode
 
 ```bash
-./llm-runtime --interactive --exec-enabled
+./llm-runtime --interactive 
 ```
 
 In interactive mode, the tool continuously processes input and executes commands as they appear.
@@ -126,7 +126,7 @@ In interactive mode, the tool continuously processes input and executes commands
 ### File Mode
 
 ```bash
-./llm-runtime --input llm_output.txt --output results.txt --exec-enabled
+./llm-runtime --input llm_output.txt --output results.txt 
 ```
 
 ## Command Line Options
@@ -146,11 +146,11 @@ In interactive mode, the tool continuously processes input and executes commands
 - `--force`: Force write even if conflicts exist
 
 ### Exec Command Options
-- `--exec-enabled`: Enable exec command (default: false)
+**Note**: Exec is always enabled via containers. Access controlled by whitelist only.
 - `--exec-timeout DURATION`: Timeout for exec commands (default: 30s)
 - `--exec-memory LIMIT`: Memory limit for containers (default: 512m)
 - `--exec-cpu LIMIT`: CPU limit for containers (default: 2)
-- `--exec-image IMAGE`: Docker image for exec commands (default: ubuntu:22.04)
+- `--exec-image IMAGE`: Docker image 
 - `--exec-whitelist`: Comma-separated list of allowed commands
 
 ### Security Options
@@ -382,6 +382,34 @@ make exec-demo
 make example
 ```
 
+
+### Example Usage
+```bash
+make example
+```
+
+## I/O Container Management
+
+### Build I/O Container Image
+```bash
+make build-io-image
+```
+
+### Verify I/O Image
+```bash
+make check-io-image
+```
+
+### Test I/O Operations
+```bash
+make test-io-container
+```
+
+### Clean I/O Image
+```bash
+make clean-io-image
+```
+
 ## Performance
 
 - Command parsing: <1ms for typical input
@@ -394,7 +422,7 @@ make example
 
 Edit `llm-runtime.config.yaml` to customize:
 
-```yaml
+```
 commands:
   exec:
     # Note: Exec is always enabled (container-based security).
@@ -406,7 +434,14 @@ commands:
     timeout_seconds: 30
     memory_limit: "512m"
     cpu_limit: 2
-    container_image: "ubuntu:22.04"
+    container_image: "python-go"
+
+  # I/O Containerization settings (optional - defaults work for most cases)
+  io:
+    container_image: "llm-runtime-io:latest"
+    timeout: "60s"
+    memory_limit: "256m"
+    cpu_limit: 1
 
 security:
   excluded_paths:
@@ -456,7 +491,6 @@ If a command is blocked:
 
 Planned features for future versions:
 
-- **Vector Search**: `<search query>` for semantic file search
 - **Git Integration**: `<git command>` for version control operations
 - **Enhanced Containers**: Language-specific optimized images
 - **Streaming Output**: Real-time command output streaming
@@ -476,7 +510,7 @@ Planned features for future versions:
 
 ## Contributing
 
-1. Ensure all tests pass: `make test-suite`
+1. Ensure all tests pass
 2. Add tests for new features
 3. Update documentation
 4. Follow Go best practices
