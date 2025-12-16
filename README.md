@@ -5,8 +5,10 @@ A secure tool that enables Large Language Models to autonomously explore and wor
 ## Features
 
 - **Secure Path Validation**: Prevents directory traversal and access outside repository boundaries
-- **Command Parsing**: Extracts and executes `<open filename>`, `<write filename>content</write>`, and `<exec command>` commands from LLM output
+- **Command Parsing**: Extracts and executes `<open filename>`, `<write filename>content</write>`, `<exec command>`, and `<search query>` commands from LLM output
 - **Docker-based Execution**: Secure, isolated command execution in Docker containers with no network access
+- **Containerized I/O**: All file read/write operations execute in isolated containers for enhanced security
+- **Semantic Search**: AI-powered code search using Ollama's local embedding models
 - **Audit Logging**: Tracks all operations with timestamps and results
 - **Multiple Modes**: Supports pipe, interactive, and file-based operation
 - **Configurable Security**: Exclude sensitive paths, whitelist commands, set resource limits
@@ -15,7 +17,7 @@ A secure tool that enables Large Language Models to autonomously explore and wor
 
 ### Prerequisites
 - Go 1.21 or later
-- Docker (for exec commands)
+- Docker 
 - Ollama with nomic-embed-text model (for search feature)
 
 ### Build from source
@@ -162,15 +164,25 @@ In interactive mode, the tool continuously processes input and executes commands
 - Prevents directory traversal attempts (../)
 - Ensures all accessed files are within repository bounds
 
-### Exec Command Security
+
+**Exec Command Security**:
 - **Docker Isolation**: Commands run in isolated Docker containers
 - **No Network Access**: Containers have no network connectivity (`--network none`)
 - **Read-Only Repository**: Repository mounted read-only at `/workspace`
 - **Temporary Writes**: Separate writable directory at `/tmp/workspace`
 - **Resource Limits**: Memory (512M), CPU (2 cores), and time (30s) limits
 - **Command Whitelisting**: Only pre-approved commands allowed
-- **Non-Root Execution**: Commands run as unprivileged user
+- **Non-Root Execution**: Commands run as unprivileged user (1000:1000)
 - **Security Options**: Capabilities dropped, no new privileges
+
+**I/O Containerization** :
+- **File Reads**: Execute via `cat` in minimal Alpine container
+- **File Writes**: Atomic operations via temp files in container
+- **Path Isolation**: Container provides additional layer beyond path validation
+- **Resource Limits**: Configurable memory (256M), CPU (1 core), timeout (60s)
+- **Minimal Attack Surface**: Alpine-based image with only coreutils
+
+
 
 ### Default Whitelisted Commands
 ```
@@ -240,7 +252,7 @@ Now I'll run the tests to verify functionality:
 
 <exec go test ./...>
 
-Let me also build the project to ensure it compiles:
+Let me also build the project to ensure it compiles
 
 <exec go build -o bin/app cmd/main.go>
 
@@ -385,7 +397,8 @@ Edit `llm-runtime.config.yaml` to customize:
 ```yaml
 commands:
   exec:
-    enabled: true
+    # Note: Exec is always enabled (container-based security).
+    # Access is controlled via whitelist only.
     whitelist:
       - "go test"
       - "npm build"
@@ -449,6 +462,7 @@ Planned features for future versions:
 - **Streaming Output**: Real-time command output streaming
 - **Resource Monitoring**: Container resource usage tracking
 - **Plugin System**: Custom command extensions
+- **MCP Integration**: Model Context Protocol support
 
 ## Security Considerations
 
