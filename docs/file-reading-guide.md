@@ -1,294 +1,685 @@
-# File Reading Guide - `<open>` Command
+# File Reading Guide - `<read>` Command
 
 ## Overview
 
-The `<open>` command allows LLMs to read the contents of any file within the repository. This is the foundation feature that enables LLMs to explore and understand codebases dynamically, rather than having all files loaded into context at once.
+The `<read>` command allows LLMs to read file contents from the repository in a secure, containerized manner. Files are accessed through isolated Docker containers to ensure read operations cannot compromise the host system.
+
+**Security**: All file reads are executed in minimal Alpine Linux containers with read-only access to the repository, providing defense-in-depth security even for simple read operations.
 
 ## How It Works
 
-When an LLM includes `<open filename>` in its response, the tool:
-1. **Validates the path** - Ensures the file is within repository bounds and not excluded
-2. **Checks file size** - Verifies the file isn't too large (default: 1MB limit)
-3. **Reads the content** - Loads the file contents securely
-4. **Returns formatted output** - Provides the content in a clearly marked section
+When an LLM includes a `<read>` command, the tool:
+1. **Validates the path** - Ensures path is within repository bounds
+2. **Creates I/O container** - Spins up minimal Alpine container (default: llm-runtime-io:latest)
+3. **Mounts repository read-only** - Repository mounted at `/workspace`
+4. **Reads file via cat** - Executes `cat` command in container
+5. **Returns content** - File contents returned to LLM
+6. **Cleans up** - Container automatically removed
 
 ## Basic Syntax
 
 ```
-<open filepath>
+<read path/to/file.ext>
 ```
 
 **Examples:**
-- `<open README.md>` - Read the project README
-- `<open src/main.go>` - Read a Go source file
-- `<open config/settings.json>` - Read a JSON configuration file
-- `<open docs/api/endpoints.md>` - Read nested documentation
+- `<read main.go>` - Read Go source file
+- `<read README.md>` - Read documentation
+- `<read config/settings.yaml>` - Read configuration
+- `<read .gitignore>` - Read hidden files
+- `<read src/components/Button.tsx>` - Read nested files
 
-## Use Cases
+## Common Use Cases
 
-### **Project Exploration**
+### **Understanding Codebase**
 ```
-Let me start by understanding this project structure.
+Let me examine the main entry point:
 
-<open README.md>
+<read cmd/server/main.go>
 
-Now let me check the main entry point:
+And check the configuration structure:
 
-<open src/main.go>
+<read internal/config/config.go>
 
-And examine the configuration:
+Now let me look at the API handlers:
 
-<open package.json>
-```
-
-### **Code Analysis**
-```
-I'll analyze the authentication system step by step.
-
-First, let me look at the main auth file:
-
-<open src/auth/middleware.go>
-
-Now let me check how it's used:
-
-<open src/routes/api.go>
-
-And examine the tests:
-
-<open src/auth/middleware_test.go>
+<read internal/handlers/api.go>
 ```
 
-### **Following Dependencies**
+### **Reviewing Configuration**
 ```
-Let me trace through this import chain.
+Let me check the application configuration:
 
-<open go.mod>
+<read config/app.yaml>
 
-I see it imports custom packages. Let me check them:
+And the database settings:
 
-<open internal/database/connection.go>
+<read config/database.yaml>
 
-<open internal/handlers/user.go>
-```
+Also the environment template:
 
-### **Configuration Review**
-```
-Let me examine all the configuration files to understand the setup.
-
-<open .env.example>
-
-<open config/database.yaml>
-
-<open docker-compose.yml>
+<read .env.example>
 ```
 
-## Security Features
+### **Analyzing Dependencies**
+```
+Let me check the Go module dependencies:
 
-### **Path Validation**
-- **Prevents directory traversal**: `<open ../../etc/passwd>` is blocked
-- **Repository boundaries**: Can only access files within the project
-- **Symlink resolution**: Follows symlinks but validates final destination
+<read go.mod>
 
-### **Excluded Files**
-By default, these patterns are blocked for security:
-- `.git/` - Git repository internals
-- `.env` - Environment variables with secrets
-- `*.key` - Private key files
-- `*.pem` - Certificate files
-- `secrets/` - Any secrets directories
+And see the locked versions:
 
-### **File Size Limits**
-- **Default limit**: 1MB per file
-- **Configurable**: Can be adjusted via `--max-size` flag
-- **Large file handling**: Shows clear error messages for oversized files
+<read go.sum>
+
+For Node projects:
+
+<read package.json>
+
+<read package-lock.json>
+```
+
+### **Documentation Review**
+```
+Let me read the project README:
+
+<read README.md>
+
+Check the contributing guidelines:
+
+<read CONTRIBUTING.md>
+
+And review the changelog:
+
+<read CHANGELOG.md>
+```
+
+### **Test Analysis**
+```
+Let me examine the test files:
+
+<read internal/auth/auth_test.go>
+
+<read test/integration/api_test.go>
+
+<read test/fixtures/sample_data.json>
+```
+
+### **Build & CI Configuration**
+```
+Let me check the Makefile:
+
+<read Makefile>
+
+Review the CI pipeline:
+
+<read .github/workflows/ci.yml>
+
+And Docker configuration:
+
+<read Dockerfile>
+
+<read docker-compose.yml>
+```
 
 ## Output Format
 
-When successful, the tool outputs:
+### **Successful Read**
 ```
-=== COMMAND: <open filename> ===
-=== FILE: filename ===
-[file contents here]
-=== END FILE ===
-=== END COMMAND ===
+=== READ SUCCESSFUL: config/settings.yaml ===
+server:
+  port: 8080
+  host: localhost
+  
+database:
+  connection: postgres://localhost:5432/myapp
+  max_connections: 100
+  
+logging:
+  level: info
+  format: json
+=== END READ ===
 ```
 
-When it fails:
+### **File Not Found**
 ```
-=== ERROR: FILE_NOT_FOUND ===
-Message: File not found: nonexistent.txt
-Command: <open nonexistent.txt>
+=== ERROR: READ_FAILED ===
+Message: READ_FAILED: file not found: nonexistent.txt
+Path: <read nonexistent.txt>
 === END ERROR ===
 ```
 
-## Common Error Types
+### **Path Outside Repository**
+```
+=== ERROR: READ_VALIDATION ===
+Message: READ_VALIDATION: path outside repository: ../../../etc/passwd
+Path: <read ../../../etc/passwd>
+=== END ERROR ===
+```
 
-### **FILE_NOT_FOUND**
-```
-<open missing.txt>
-```
-**Cause**: The file doesn't exist
-**Solution**: Check the file path and spelling
+## Security Model
 
-### **PATH_SECURITY**
-```
-<open ../../../etc/passwd>
-```
-**Cause**: Attempting to access files outside the repository
-**Solution**: Use paths relative to the repository root
+### **Containerized Reads**
+All file reads execute in isolated containers:
 
-### **RESOURCE_LIMIT**
-```
-<open huge-dataset.csv>
-```
-**Cause**: File is larger than the size limit
-**Solution**: Process file in chunks or increase the limit
-
-### **PERMISSION_DENIED**
-```
-<open .git/config>
-```
-**Cause**: File is in the excluded paths list
-**Solution**: Remove from excluded paths if access is needed
-
-## Configuration Options
-
-### Command Line Flags
 ```bash
-# Set custom file size limit (2MB)
-./llm-runtime --max-size 2097152
-
-# Custom repository root
-./llm-runtime --root /path/to/project
-
-# Custom excluded paths
-./llm-runtime --exclude ".git,*.secret,private/"
-
-# Verbose output for debugging
-./llm-runtime --verbose
+docker run \
+    --rm \
+    --network none \
+    --user 1000:1000 \
+    --cap-drop ALL \
+    --security-opt no-new-privileges \
+    --read-only \
+    --memory 128m \
+    --cpus 1 \
+    -v /repo:/workspace:ro \
+    llm-runtime-io:latest \
+    cat /workspace/file.txt
 ```
 
-### Configuration File (llm-runtime.config.yaml)
+**Security Features:**
+- **No network access**: Container completely isolated
+- **Read-only mount**: Cannot modify repository files
+- **Minimal image**: Alpine Linux (~5MB) reduces attack surface
+- **Resource limits**: 128MB RAM, 1 CPU core, 10-second timeout
+- **Non-root user**: Runs as unprivileged user (1000:1000)
+- **No new privileges**: Cannot escalate permissions
+
+### **Path Validation**
+```
+✅ Allowed:
+<read main.go>
+<read src/components/App.tsx>
+<read .github/workflows/ci.yml>
+<read internal/../../README.md>  # resolves to README.md
+
+❌ Blocked:
+<read ../../../etc/passwd>        # outside repository
+<read /etc/hosts>                 # absolute path outside repo
+<read ~/.ssh/id_rsa>              # home directory access
+```
+
+### **Defense in Depth**
+Even though reads are "safe" operations, containerization provides:
+- **Exploit mitigation**: Vulnerabilities in cat/shell cannot escape container
+- **Resource isolation**: Runaway reads cannot consume host resources  
+- **Audit trail**: All reads logged with container execution details
+- **Consistent security**: Same model as write/exec operations
+
+## Error Types
+
+### **READ_VALIDATION**
+```
+<read ../outside/repository.txt>
+```
+**Cause**: Path points outside repository boundaries
+**Solution**: Use paths relative to repository root
+
+### **READ_FAILED**
+```
+<read nonexistent_file.txt>
+```
+**Cause**: File does not exist at specified path
+**Solution**: Verify file path and name
+
+### **DOCKER_UNAVAILABLE**
+```
+<read config.yaml>
+```
+**Cause**: Docker not running or I/O container image missing
+**Solution**: Ensure Docker running and build I/O image
+
+### **IO_TIMEOUT**
+```
+<read very_large_file.bin>
+```
+**Cause**: Read operation exceeded timeout (default: 10 seconds)
+**Solution**: Increase timeout or avoid reading extremely large files
+
+## Configuration
+
+### **Command Line Options**
+```bash
+# Run with custom I/O settings
+./llm-runtime --io-timeout 30s \
+              --io-memory 256m \
+              --io-cpu 2
+```
+
+### **Configuration File**
 ```yaml
 commands:
-  open:
-    enabled: true
-    max_file_size: 1048576  # 1MB
-    allowed_extensions:
-      - ".go"
-      - ".py" 
-      - ".js"
-      - ".md"
-      - ".txt"
-      - ".json"
-      - ".yaml"
-
-repository:
-  excluded_paths:
-    - ".git"
-    - ".env"
-    - "*.key"
-    - "*.pem"
-    - "secrets"
+  io:
+    # I/O containerization settings for read/write operations
+    container_image: "llm-runtime-io:latest"  # Minimal Alpine image
+    timeout_seconds: 10
+    memory_limit: "128m"
+    cpu_limit: 1
+    fallback_image: "alpine:latest"  # If custom image unavailable
 ```
 
-## Best Practices for LLMs
+### **Custom I/O Container**
+```bash
+# Build the default I/O container image
+make build-io-image
 
-### **Start with Overview Files**
-```
-Let me start by understanding this project.
-
-<open README.md>
-<open package.json>
-<open go.mod>
+# Or use standard Alpine
+./llm-runtime --io-container alpine:latest
 ```
 
-### **Follow Logical Flow**
+## File Size Considerations
+
+### **Small Files (< 1MB)**
 ```
-Now let me trace through the application flow:
+<read config.yaml>
+<read main.go>
+<read package.json>
+```
+**Performance**: Instant (< 100ms including container overhead)
 
-<open cmd/main.go>
-<open internal/server/server.go>
-<open internal/handlers/api.go>
+### **Medium Files (1-10MB)**
+```
+<read data/large_config.json>
+<read logs/application.log>
+```
+**Performance**: Fast (< 1 second)
+**Consideration**: May hit LLM context limits
+
+### **Large Files (> 10MB)**
+```
+<read database/dump.sql>
+<read dist/bundle.js>
+```
+**Performance**: Slower (several seconds)
+**Consideration**: Will likely exceed LLM context window
+**Solution**: Use grep/head/tail to extract relevant sections
+
+## Best Practices
+
+### **Read Only What's Needed**
+```
+# ❌ Avoid reading entire files unnecessarily
+<read large_log_file.log>
+
+# ✅ Better: Use exec to filter first
+<exec head -n 100 large_log_file.log>
+<exec grep "ERROR" application.log>
+<exec tail -n 50 debug.log>
 ```
 
-### **Check Related Files**
+### **Check File Existence**
 ```
-I see this imports a custom package. Let me examine it:
+Let me verify the file exists first:
 
-<open internal/auth/jwt.go>
-<open internal/auth/jwt_test.go>
+<exec ls config/settings.yaml>
+
+Now read it:
+
+<read config/settings.yaml>
 ```
 
-### **Multiple Commands in Context**
+### **Progressive Reading**
 ```
-I'll examine the entire authentication system:
+Let me start with the README:
 
-<open src/auth/middleware.go>
-<open src/auth/tokens.go>
-<open src/auth/validators.go>
-<open tests/auth_test.go>
+<read README.md>
 
-Based on these files, I can see the authentication uses JWT tokens...
+Based on that, let me examine the main code:
+
+<read cmd/server/main.go>
+
+Now I'll look at specific modules mentioned:
+
+<read internal/auth/auth.go>
+```
+
+### **Combine with Search**
+```
+Let me search for authentication logic:
+
+<search authentication>
+
+Based on the results, let me read the relevant file:
+
+<read internal/auth/handler.go>
 ```
 
 ## Advanced Usage
 
-### **Conditional Reading**
+### **Reading Multiple Related Files**
 ```
-Let me check if this is a Node.js or Go project:
+Let me examine the authentication system:
 
-<open package.json>
+<read internal/auth/auth.go>
 
-Since this is a Node.js project, let me check the main entry:
+<read internal/auth/middleware.go>
 
-<open src/index.js>
-```
+<read internal/auth/token.go>
 
-### **Error Handling**
-```
-Let me try to find the configuration file:
+<read internal/auth/auth_test.go>
 
-<open config.json>
-
-If that doesn't exist, let me try:
-
-<open config.yaml>
+Now I understand the complete authentication flow.
 ```
 
-### **Pattern Discovery**
+### **Configuration Review**
 ```
-Let me examine a few source files to understand the patterns:
+Let me review all configuration files:
 
-<open src/users.js>
-<open src/posts.js>
-<open src/comments.js>
+<read config/app.yaml>
 
-I can see this follows a consistent controller pattern...
+<read config/database.yaml>
+
+<read config/logging.yaml>
+
+<read .env.example>
+
+These settings look properly configured.
 ```
 
-## Performance Tips
+### **Dependency Analysis**
+```
+For a Go project:
 
-- **Read only what you need**: Don't open large files unless necessary
-- **Use search first**: For large codebases, use `<search>` to find relevant files
-- **Check file sizes**: Be aware of the 1MB default limit
-- **Cache mentally**: Remember file contents to avoid re-reading
+<read go.mod>
+
+<read go.sum>
+
+For a Node project:
+
+<read package.json>
+
+<read package-lock.json>
+
+For a Python project:
+
+<read requirements.txt>
+
+<read setup.py>
+```
+
+### **Documentation Gathering**
+```
+<read README.md>
+
+<read docs/architecture.md>
+
+<read docs/api.md>
+
+<read CONTRIBUTING.md>
+
+<read LICENSE>
+```
+
+## Reading Special Files
+
+### **Hidden Files**
+```
+<read .gitignore>
+
+<read .env.example>
+
+<read .dockerignore>
+
+<read .github/workflows/ci.yml>
+```
+
+### **Configuration Files**
+```
+# YAML
+<read config.yaml>
+<read .gitlab-ci.yml>
+
+# JSON
+<read package.json>
+<read tsconfig.json>
+
+# TOML
+<read Cargo.toml>
+<read pyproject.toml>
+
+# INI
+<read .editorconfig>
+<read setup.cfg>
+```
+
+### **Build Files**
+```
+<read Makefile>
+
+<read Dockerfile>
+
+<read docker-compose.yml>
+
+<read CMakeLists.txt>
+```
+
+### **Test Files**
+```
+<read test/integration_test.go>
+
+<read tests/test_auth.py>
+
+<read spec/models/user_spec.rb>
+
+<read __tests__/component.test.tsx>
+```
 
 ## Troubleshooting
 
 ### **File Not Found**
-1. Verify the file exists: `ls -la filename`
-2. Check if you're in the right repository root
-3. Ensure the path is relative to repository root
+```bash
+# Check file exists
+ls -la path/to/file
 
-### **Permission Denied**
-1. Check if the file is in excluded paths
-2. Verify file permissions: `ls -la filename`
-3. Consider if the file should be accessible
+# Check exact filename (case-sensitive)
+find . -name "filename.ext"
 
-### **File Too Large**
-1. Check file size: `ls -lh filename`
-2. Use `head` or `tail` commands via `<exec>` for large files
-3. Increase size limit if appropriate
+# List directory contents
+ls -la directory/
+```
 
-The `<open>` command is the foundation of LLM repository exploration, enabling dynamic and secure file access that scales to any codebase size.
+### **Path Issues**
+```
+# ❌ Wrong
+<read /absolute/path/file.txt>
+
+# ✅ Correct - relative to repository root
+<read relative/path/file.txt>
+
+# ❌ Wrong
+<read ~/home/file.txt>
+
+# ✅ Correct
+<read file.txt>
+```
+
+### **Container Issues**
+```bash
+# Build I/O container image
+make build-io-image
+
+# Or pull Alpine fallback
+docker pull alpine:latest
+
+# Verify image exists
+docker images | grep llm-runtime-io
+
+# Test container manually
+docker run --rm llm-runtime-io:latest cat /etc/os-release
+```
+
+### **Permission Issues**
+```bash
+# Check Docker daemon
+systemctl status docker
+
+# Ensure user in docker group
+groups $USER | grep docker
+
+# Test Docker access
+docker run --rm alpine:latest echo "Hello"
+```
+
+### **Large File Issues**
+```
+# Instead of reading entire file
+<read large_file.log>
+
+# Use exec to extract relevant parts
+<exec head -n 100 large_file.log>
+
+<exec grep "ERROR" large_file.log | head -n 50>
+
+<exec tail -n 200 large_file.log>
+```
+
+## Performance Optimization
+
+### **Container Caching**
+```bash
+# Pre-pull I/O image to avoid delays
+docker pull llm-runtime-io:latest
+
+# Or build custom image
+make build-io-image
+
+# Verify image available
+docker image inspect llm-runtime-io:latest
+```
+
+### **Read Patterns**
+```
+# ❌ Inefficient - many separate reads
+<read file1.go>
+<read file2.go>
+<read file3.go>
+<read file4.go>
+<read file5.go>
+
+# ✅ Better - batch related files in context
+Let me examine the authentication module:
+
+<read internal/auth/auth.go>
+<read internal/auth/middleware.go>
+<read internal/auth/token.go>
+
+Now I'll look at the handlers...
+```
+
+### **Selective Reading**
+```
+# ❌ Reading unnecessary files
+<read vendor/third_party/huge_lib.go>
+
+# ✅ Focus on relevant project files
+<read internal/core/business_logic.go>
+```
+
+## Integration with Other Commands
+
+### **Read → Analyze → Write**
+```
+<read config/settings.yaml>
+
+I see the port is set to 8080. Let me update it:
+
+<write config/settings.yaml>
+server:
+  port: 3000
+  host: localhost
+</write>
+```
+
+### **Read → Test**
+```
+<read internal/auth/auth.go>
+
+Let me verify this works:
+
+<exec go test ./internal/auth>
+```
+
+### **Search → Read**
+```
+<search database connection>
+
+Based on the search, let me read the database config:
+
+<read internal/database/connection.go>
+```
+
+### **Read → Exec → Verify**
+```
+<read go.mod>
+
+I see you're using Go 1.21. Let me verify:
+
+<exec go version>
+
+<exec go mod verify>
+```
+
+## Audit Trail
+
+All read operations are logged:
+
+```
+2025-12-15T10:30:45Z|session:abc123|read|config/settings.yaml|success|size:1234
+2025-12-15T10:30:46Z|session:abc123|read|internal/auth/auth.go|success|size:5678
+2025-12-15T10:30:47Z|session:abc123|read|nonexistent.txt|failed|error:file_not_found
+```
+
+**Logged Information:**
+- Timestamp
+- Session ID  
+- Operation type (read)
+- File path
+- Success/failure status
+- File size (on success) or error type (on failure)
+- Container execution details
+
+## Why Containerize Reads?
+
+**Security Benefits:**
+- **Exploit mitigation**: Bugs in file reading cannot escape container
+- **Resource isolation**: Cannot consume unlimited host resources
+- **Consistent model**: Same security approach as write/exec
+- **Defense in depth**: Multiple layers prevent compromise
+- **Audit capability**: Complete visibility into file access
+
+**Trade-offs:**
+- **Slight overhead**: ~50-100ms per read (vs direct file access)
+- **Docker dependency**: Requires Docker for all operations
+- **Image requirement**: Needs I/O container image available
+
+**Why It's Worth It:**
+The minimal overhead provides significant security benefits. Even simple file reads are isolated from the host system, preventing entire classes of potential exploits.
+
+## Container Image Details
+
+### **Default Image: llm-runtime-io:latest**
+```dockerfile
+FROM alpine:latest
+RUN apk add --no-cache coreutils
+USER 1000:1000
+```
+
+**Size**: ~5MB
+**Tools**: cat, basic shell utilities
+**Purpose**: Minimal attack surface for I/O operations
+
+### **Fallback: alpine:latest**
+If custom image unavailable, falls back to standard Alpine.
+
+### **Building Custom Image**
+```bash
+# Build from Makefile
+make build-io-image
+
+# Or manually
+docker build -t llm-runtime-io:latest -f Dockerfile.io .
+
+# Verify
+docker images | grep llm-runtime-io
+```
+
+The `<read>` command provides LLMs with secure, containerized access to repository files, enabling thorough code analysis and understanding while maintaining complete isolation from the host system.

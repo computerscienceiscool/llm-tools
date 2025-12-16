@@ -39,6 +39,12 @@ commands:
     enabled: true
     vector_db_path: "./embeddings.db"
 
+# I/O containerization settings
+io_container_image: "llm-runtime-io:latest"
+io_timeout: "60s"
+io_memory_limit: "256m"
+io_cpu_limit: 1
+
 security:
   log_all_operations: true
   audit_log_path: "./audit.log"
@@ -137,10 +143,10 @@ commands:
 
 ## Exec Command Configuration
 
-**Note**: Exec is always enabled. Control access through the whitelist.
+**Note**: Exec commands are always enabled (container-based security model). Access is controlled via the whitelist only.
 
 ### `commands.exec.container_image`
-**Default**: `"ubuntu:22.04"`  
+**Default**: `"python-go"`  
 **Description**: Docker image for command execution  
 ```yaml
 commands:
@@ -213,6 +219,43 @@ commands:
       - "tail"
       - "wc"
       - "echo"
+```
+
+## I/O Containerization Configuration
+
+**Note**: All file I/O operations execute in isolated containers for enhanced security.
+
+### `io_container_image`
+**Default**: `"llm-runtime-io:latest"`  
+**Description**: Docker image for file I/O operations  
+**Options**: `"llm-runtime-io:latest"`, `"alpine:latest"`  
+```yaml
+io_container_image: "alpine:latest"
+```
+
+### `io_timeout`
+**Default**: `"60s"`  
+**Description**: Timeout for I/O operations  
+```yaml
+io_timeout: "120s"  # 2 minutes
+```
+
+### `io_memory_limit`
+**Default**: `"256m"`  
+**Description**: Memory limit for I/O containers  
+**Options**: `"128m"`, `"256m"`, `"512m"`  
+
+### `io_cpu_limit`
+**Default**: `1`  
+**Description**: CPU cores limit for I/O containers  
+
+### Complete I/O Configuration Example
+```yaml
+# I/O Containerization (optional - defaults work for most cases)
+io_container_image: "llm-runtime-io:latest"
+io_timeout: "60s"
+io_memory_limit: "256m"
+io_cpu_limit: 1
 ```
 
 ## Search Command Configuration
@@ -348,6 +391,10 @@ commands:
     enabled: true
     vector_db_path: "./embeddings.db"
 
+# I/O containerization (uses defaults)
+io_container_image: "alpine:latest"
+io_timeout: "60s"
+
 security:
   log_all_operations: true
 
@@ -379,6 +426,12 @@ commands:
     whitelist: ["go test", "go build"]
   search:
     enabled: true
+
+# I/O containerization with tighter limits for production
+io_container_image: "llm-runtime-io:latest"
+io_timeout: "30s"
+io_memory_limit: "128m"
+io_cpu_limit: 1
 
 security:
   rate_limit_per_minute: 50
@@ -419,6 +472,9 @@ All configuration options can be overridden via command line:
 # Custom exec settings
 ./llm-runtime --exec-timeout 60s --exec-memory 1g
 
+# Custom I/O container settings
+./llm-runtime --io-image alpine:latest --io-timeout 120s --io-memory 256m
+
 # Custom excluded paths
 ./llm-runtime --exclude ".git,node_modules,*.secret"
 
@@ -436,8 +492,13 @@ Test your configuration:
 # Check current configuration
 ./llm-runtime --help
 
-# Validate Docker setup (for exec)
+# Validate Docker setup (required for all operations)
 docker run --rm hello-world
+
+# Validate I/O container image
+make check-io-image
+# Or manually:
+docker image inspect llm-runtime-io:latest
 
 # Validate Ollama setup (for search)
 ollama list
@@ -450,5 +511,8 @@ curl http://localhost:11434/api/tags
 2. **Test thoroughly** - Validate each feature after enabling
 3. **Monitor logs** - Keep audit logging enabled
 4. **Secure by default** - Keep network disabled for exec
-5. **Backup configs** - Version control your configuration
-6. **Environment-specific** - Use different configs for dev/prod
+5. **Use I/O containers** - Build custom I/O image for production: `make build-io-image`
+6. **Resource limits** - Adjust I/O container limits based on file sizes
+7. **Backup configs** - Version control your configuration
+8. **Environment-specific** - Use different configs for dev/prod
+9. **Docker images** - Use minimal images (Alpine) for better security and performance

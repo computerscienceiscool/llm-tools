@@ -7,9 +7,9 @@ Complete installation guide for llm-runtime across different operating systems a
 ### Required
 - **Go 1.21 or later** - For building the tool
 - **Git** - For cloning the repository
+- **Docker** - Required for all operations (file I/O and command execution)
 
 ### Optional (for specific features)
-- **Docker** - Required for `<exec>` command execution
 - **Ollama** - Required for `<search>` semantic search functionality
 
 ## Quick Installation
@@ -22,6 +22,8 @@ make build
 ```
 
 ## Manual Installation
+
+**Important**: Docker is required for all operations (file I/O and command execution). Install Docker first before proceeding.
 
 ### 1. Install Go
 
@@ -77,7 +79,12 @@ make build
 ./llm-runtime --help
 ```
 
-### 3. Install Docker (for exec commands)
+### 3. Install Docker (required for all operations)
+
+Docker is required for:
+- Command execution (`<exec>` commands)
+- File I/O operations (containerized reads/writes)
+- Enhanced security through isolation
 
 #### Linux (Ubuntu/Debian)
 ```bash
@@ -107,6 +114,20 @@ brew install --cask docker
 # Download from https://docker.com
 # Ensure WSL2 is enabled
 ```
+
+#### Build I/O Container Image (Optional)
+
+The tool can use a minimal Alpine-based container for file operations:
+
+```bash
+# Build the I/O container image
+make build-io-image
+
+# Verify it's built
+make check-io-image
+```
+
+**Note**: If you don't build this image, the tool will use `alpine:latest` by default, which will be pulled automatically from Docker Hub.
 
 ### 4. Install Ollama (for search)
 
@@ -149,7 +170,7 @@ echo "<open README.md>" | ./llm-runtime
 
 ### 2. Test Docker Integration (if installed)
 ```bash
-echo "<exec echo 'Docker works'>" | ./llm-runtime --exec-enabled
+echo "<exec echo 'Docker works'>" | ./llm-runtime
 ```
 
 ### 3. Test Search (if Ollama installed)
@@ -164,52 +185,6 @@ echo "<search configuration>" | ./llm-runtime
 ### 4. Run Test Suite
 ```bash
 make test
-```
-
-## Configuration
-
-### Create Configuration File
-```bash
-# Copy example config or create new
-cat > llm-runtime.config.yaml << 'EOF'
-repository:
-  root: "."
-  excluded_paths:
-    - ".git"
-    - ".env"
-    - "*.key"
-
-commands:
-  open:
-    enabled: true
-    max_file_size: 1048576
-  write:
-    enabled: true
-    max_file_size: 102400
-  exec:
-    enabled: false
-  search:
-    enabled: true
-    vector_db_path: "./embeddings.db"
-EOF
-```
-
-## System Installation (Optional)
-
-### Install to /usr/local/bin
-```bash
-sudo cp llm-runtime /usr/local/bin/
-sudo chmod +x /usr/local/bin/llm-runtime
-
-# Now available globally
-llm-runtime --help
-```
-
-### Create Shell Alias
-```bash
-# Add to ~/.bashrc or ~/.zshrc
-echo 'alias llm="./llm-runtime"' >> ~/.bashrc
-source ~/.bashrc
 ```
 
 ## Troubleshooting Installation
@@ -289,16 +264,18 @@ make build
 ## Next Steps
 
 After successful installation:
-1. Read the [configuration guide](configuration.md) to customize settings
-2. Check [troubleshooting](troubleshooting.md) for common issues
-3. See [llm-runtime-overview.md](llm-runtime-overview.md) to understand all features
-4. Review [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) for LLM integration
+1. **Build I/O container** (optional): `make build-io-image`
+2. **Configure search** (optional): Install Ollama and run `./llm-runtime --reindex`
+3. Read the [configuration guide](configuration.md) to customize settings
+4. Check [troubleshooting](troubleshooting.md) for common issues
+5. See [llm-runtime-overview.md](llm-runtime-overview.md) to understand all features
+6. Review [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) for LLM integration
 
 ## Feature Summary
 
 | Feature | Requirement | Test Command |
 |---------|-------------|--------------|
-| File reading | Go (built-in) | `echo "<open README.md>" \| ./llm-runtime` |
-| File writing | Go (built-in) | `echo "<write test.txt>hello</write>" \| ./llm-runtime` |
-| Command execution | Docker | `echo "<exec ls>" \| ./llm-runtime --exec-enabled` |
+| File reading | Go + Docker (containerized I/O) | `echo "<open README.md>" \| ./llm-runtime` |
+| File writing | Go + Docker (containerized I/O) | `echo "<write test.txt>hello</write>" \| ./llm-runtime` |
+| Command execution | Docker | `echo "<exec ls>" \| ./llm-runtime` |
 | Semantic search | Ollama | `echo "<search main>" \| ./llm-runtime` |

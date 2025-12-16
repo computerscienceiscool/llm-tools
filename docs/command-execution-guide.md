@@ -4,11 +4,13 @@
 
 The `<exec>` command allows LLMs to execute shell commands in secure, isolated Docker containers. This enables LLMs to run tests, build projects, validate changes, and interact with development tools without compromising system security.
 
+**Note**: Exec commands are always enabled via the container-based security model. Access is controlled exclusively through the command whitelist.
+
 ## How It Works
 
 When an LLM includes an `<exec>` command, the tool:
 1. **Validates the command** - Checks against whitelist of allowed commands
-2. **Creates Docker container** - Spins up isolated Ubuntu container
+2. **Creates Docker container** - Spins up isolated container (default: python-go image)
 3. **Mounts repository** - Repository mounted read-only at `/workspace`
 4. **Executes command** - Runs command with strict resource limits
 5. **Captures output** - Returns stdout, stderr, and exit code
@@ -39,9 +41,9 @@ When an LLM includes an `<exec>` command, the tool:
 Only pre-approved commands are allowed:
 
 **Default Whitelist:**
-- **Go**: `go test`, `go build`, `go run`
-- **Node.js**: `npm test`, `npm run build`, `npm install`
-- **Python**: `python`, `python3`, `python -m pytest`
+- **Go**: `go test`, `go build`, `go run`, `go mod tidy`
+- **Node.js**: `npm test`, `npm run build`, `npm install`, `node`
+- **Python**: `python`, `python3`, `python -m pytest`, `pip install`
 - **Build tools**: `make`, `make test`, `make build`
 - **Rust**: `cargo build`, `cargo test`, `cargo run`
 - **System**: `ls`, `cat`, `grep`, `find`, `head`, `tail`, `wc`
@@ -58,7 +60,7 @@ docker run \
     --tmpfs /tmp \
     --memory 512m \
     --cpus 2 \
-    ubuntu:22.04
+    python-go:latest
 ```
 
 ## Use Cases
@@ -241,7 +243,9 @@ Command: <exec rm -rf />
 ```yaml
 commands:
   exec:
-    container_image: "ubuntu:22.04"
+    # Note: Exec is always enabled (container-based security).
+    # Access is controlled via whitelist only.
+    container_image: "python-go"
     timeout_seconds: 30
     memory_limit: "512m"
     cpu_limit: 2
@@ -335,16 +339,21 @@ docker --version
 docker run hello-world
 
 # Check for required image
-docker images | grep ubuntu
+docker images | grep python-go
 ```
 
 ### **Manual Image Preparation**
 ```bash
 # Pre-pull the image to avoid delays
-docker pull ubuntu:22.04
+docker pull python-go:latest
+
+# Or use alternative images
+docker pull golang:1.21
+docker pull node:18-alpine
+docker pull python:3.11
 
 # Verify image is available
-docker image inspect ubuntu:22.04
+docker image inspect python-go:latest
 ```
 
 ### **Custom Images**
@@ -363,8 +372,8 @@ commands:
 ## Performance Tips
 
 ### **Container Startup Time**
-- **Pre-pull images**: `docker pull ubuntu:22.04`
-- **Use specific tags**: Avoid `latest` tag
+- **Pre-pull images**: `docker pull python-go:latest`
+- **Use specific tags**: Avoid `latest` tag for consistency
 - **Smaller images**: Consider Alpine variants
 
 ### **Command Optimization**
@@ -448,13 +457,13 @@ systemctl status docker
 groups $USER | grep docker
 
 # Test basic Docker functionality
-docker run --rm ubuntu:22.04 echo "Hello"
+docker run --rm python-go:latest echo "Hello"
 ```
 
 ### **Command Not Found**
 1. **Check whitelist**: Command must be in allowed list
 2. **Verify spelling**: Ensure command name is exact
-3. **Check image**: Command must exist in Ubuntu 22.04
+3. **Check image**: Command must exist in the container image
 
 ### **Timeout Issues**
 1. **Optimize command**: Make operations faster
@@ -484,7 +493,7 @@ docker run --rm ubuntu:22.04 echo "Hello"
 - Network access (no internet)
 - System modification commands (`rm -rf`, `sudo`)
 - Privileged operations
-- Access to host file system
+- Access to host file system outside repository
 - Long-running services
 
 ### **Audit Trail**
@@ -493,5 +502,24 @@ All exec commands are logged with:
 - Exit code and duration  
 - Success/failure status
 - Timestamp and session ID
+
+Example audit log:
+```
+2025-12-15T10:30:46Z|session:1234567890|exec|go test|success|exit_code:0,duration:1.234s
+```
+
+## Container vs Host Execution
+
+**Why containers?**
+- **Security**: Complete isolation from host system
+- **Consistency**: Same environment regardless of host OS
+- **Resource control**: Enforced limits prevent abuse
+- **Cleanup**: Automatic removal prevents accumulation
+- **No network**: Cannot download malware or exfiltrate data
+
+**Trade-offs:**
+- **Startup time**: 1-3 seconds per command (cached images)
+- **Resource overhead**: Container management overhead
+- **Image size**: Requires pre-pulled images
 
 The `<exec>` command transforms LLMs from read-only code analyzers into active development assistants capable of testing, building, and validating their changes in real-time while maintaining complete security isolation.
