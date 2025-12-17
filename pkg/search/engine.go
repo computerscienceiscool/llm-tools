@@ -55,8 +55,8 @@ func (se *SearchEngine) Search(query string) ([]SearchResult, error) {
 		return nil, fmt.Errorf("Ollama not available: %w", err)
 	}
 
-	// Generate embedding for query
-	queryEmbedding, err := generateEmbedding(se.config.OllamaURL, query)
+	// Generate embedding for query - FIXED: Pass model from config
+	queryEmbedding, err := generateEmbedding(se.config.OllamaURL, query, se.config.EmbeddingModel)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate query embedding: %w", err)
 	}

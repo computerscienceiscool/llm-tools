@@ -214,6 +214,97 @@ func TestValidateExecCommand_EdgeCases(t *testing.T) {
 	}
 }
 
+// TestValidateExecCommand_Issue10_InputValidation tests the fixes for Issue #10
+// which adds comprehensive input validation
+func TestValidateExecCommand_Issue10_InputValidation(t *testing.T) {
+	tests := []struct {
+		name        string
+		command     string
+		whitelist   []string
+		wantErr     bool
+		errContains string
+	}{
+		// Test trimming whitespace
+		{
+			name:      "whitespace trimmed before validation",
+			command:   "  go test  ",
+			whitelist: []string{"go"},
+			wantErr:   false,
+		},
+		// Test empty string after trim
+		{
+			name:        "empty after trim",
+			command:     "   \t\n   ",
+			whitelist:   []string{"go"},
+			wantErr:     true,
+			errContains: "empty command",
+		},
+		// Test max length (1000 chars)
+		{
+			name:        "command too long",
+			command:     strings.Repeat("a", 1001),
+			whitelist:   []string{"a"},
+			wantErr:     true,
+			errContains: "too long",
+		},
+		{
+			name:      "command at max length",
+			command:   strings.Repeat("a", 1000),
+			whitelist: []string{"a"},
+			wantErr:   false,
+		},
+		// Test null bytes
+		{
+			name:        "null byte in command",
+			command:     "go test\x00malicious",
+			whitelist:   []string{"go"},
+			wantErr:     true,
+			errContains: "invalid control characters",
+		},
+		// Test control characters
+		{
+			name:        "control character in command",
+			command:     "go test\x01\x02",
+			whitelist:   []string{"go"},
+			wantErr:     true,
+			errContains: "invalid control characters",
+		},
+		// Test empty whitelist validation
+		{
+			name:        "empty whitelist caught early",
+			command:     "go test",
+			whitelist:   []string{},
+			wantErr:     true,
+			errContains: "no commands are whitelisted",
+		},
+		{
+			name:        "nil whitelist caught early",
+			command:     "go test",
+			whitelist:   nil,
+			wantErr:     true,
+			errContains: "no commands are whitelisted",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateExecCommand(tt.command, tt.whitelist)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("ValidateExecCommand() expected error containing %q, got nil", tt.errContains)
+				} else if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
+					t.Errorf("ValidateExecCommand() error = %v, want error containing %q", err, tt.errContains)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("ValidateExecCommand() unexpected error = %v", err)
+				}
+			}
+		})
+	}
+}
+
 func TestValidateExecCommand_SecurityScenarios(t *testing.T) {
 	whitelist := []string{"go test", "go build", "npm test"}
 

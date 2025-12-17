@@ -21,14 +21,14 @@ type OllamaEmbeddingResponse struct {
 }
 
 // generateEmbedding calls Ollama API to generate embedding for text
-func generateEmbedding(ollamaURL string, text string) ([]float32, error) {
+func generateEmbedding(ollamaURL string, text string, model string) ([]float32, error) {
 	if strings.TrimSpace(text) == "" {
 		return make([]float32, embeddingDimensions), nil
 	}
 
-	// Prepare request
+	// Prepare request - now uses model parameter instead of hardcoded value
 	reqBody := OllamaEmbeddingRequest{
-		Model:  "nomic-embed-text",
+		Model:  model, // FIXED: Use parameter from config
 		Prompt: text,
 	}
 
@@ -43,7 +43,6 @@ func generateEmbedding(ollamaURL string, text string) ([]float32, error) {
 		return nil, fmt.Errorf("Ollama API request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

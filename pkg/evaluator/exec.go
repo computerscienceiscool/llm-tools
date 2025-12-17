@@ -19,10 +19,11 @@ func ExecuteExec(cmd scanner.Command, cfg *config.Config, auditLog func(cmdType,
 	// Validate command
 	if err := sandbox.ValidateExecCommand(cmd.Argument, cfg.ExecWhitelist); err != nil {
 		result.Success = false
-		result.Error = fmt.Errorf("EXEC_VALIDATION: %w", err)
+		fullError := fmt.Errorf("EXEC_VALIDATION: %w", err)
+		result.Error = SanitizeError(fullError) // ← Sanitized for LLM
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("exec", cmd.Argument, false, result.Error.Error())
+			auditLog("exec", cmd.Argument, false, fullError.Error()) // ← Full error to audit
 		}
 		return result
 	}
@@ -30,10 +31,11 @@ func ExecuteExec(cmd scanner.Command, cfg *config.Config, auditLog func(cmdType,
 	// Check Docker availability
 	if err := sandbox.CheckDockerAvailability(); err != nil {
 		result.Success = false
-		result.Error = fmt.Errorf("DOCKER_UNAVAILABLE: %w", err)
+		fullError := fmt.Errorf("DOCKER_UNAVAILABLE: %w", err)
+		result.Error = SanitizeError(fullError) // ← Sanitized
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("exec", cmd.Argument, false, result.Error.Error())
+			auditLog("exec", cmd.Argument, false, fullError.Error()) // ← Full to audit
 		}
 		return result
 	}
@@ -41,10 +43,11 @@ func ExecuteExec(cmd scanner.Command, cfg *config.Config, auditLog func(cmdType,
 	// Pull Docker image if needed
 	if err := sandbox.PullDockerImage(cfg.ExecContainerImage, cfg.Verbose); err != nil {
 		result.Success = false
-		result.Error = fmt.Errorf("DOCKER_IMAGE: %w", err)
+		fullError := fmt.Errorf("DOCKER_IMAGE: %w", err)
+		result.Error = SanitizeError(fullError) // ← Sanitized
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("exec", cmd.Argument, false, result.Error.Error())
+			auditLog("exec", cmd.Argument, false, fullError.Error()) // ← Full to audit
 		}
 		return result
 	}

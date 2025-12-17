@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// Maximum buffer size to prevent memory exhaustion attacks
+const maxScannerBufferSize = 10 * 1024 * 1024 // 10MB
+
 // ScannerState represents the current parsing state
 type ScannerState int
 
@@ -53,6 +56,11 @@ type Scanner struct {
 	currentCmd  *Command
 	reader      *bufio.Reader
 	showPrompts bool
+}
+
+// checkBufferLimit returns true if buffer is within limits
+func (s *Scanner) checkBufferLimit() bool {
+	return s.buffer.Len() < maxScannerBufferSize
 }
 
 // NewScanner creates a new state-machine scanner
@@ -155,8 +163,15 @@ func (s *Scanner) Scan() *Command {
 				} else {
 					s.buffer.WriteByte(ch)
 				}
-
 			case StateWriteBody:
+				// Protect against buffer overflow
+				if !s.checkBufferLimit() {
+					// Abort this command, reset, and continue scanning
+					s.transitionTo(StateScanning)
+					s.resetCommand()
+					break // Exit switch, continue loop
+				}
+
 				// KEY STATE: accumulate everything until </write>
 				s.buffer.WriteByte(ch)
 
@@ -170,6 +185,7 @@ func (s *Scanner) Scan() *Command {
 					s.resetCommand()
 					return cmd
 				}
+
 			case StateExec:
 				if ch == '>' {
 					// Save the command argument
@@ -192,7 +208,16 @@ func (s *Scanner) Scan() *Command {
 				} else {
 					s.buffer.WriteByte(ch)
 				}
+
 			case StateExecBody:
+				// Protect against buffer overflow
+				if !s.checkBufferLimit() {
+					// Abort this command, reset, and continue scanning
+					s.transitionTo(StateScanning)
+					s.resetCommand()
+					break // Exit switch, continue loop
+				}
+
 				// Accumulate everything until </exec> or detect it's single-line
 				s.buffer.WriteByte(ch)
 				buffered := s.buffer.String()

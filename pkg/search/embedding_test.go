@@ -19,7 +19,7 @@ func TestGenerateEmbedding_EmptyText(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := generateEmbedding("http://localhost:11434", tt.input)
+			result, err := generateEmbedding("http://localhost:11434", tt.input, "nomic-embed-text")
 			if err != nil {
 				t.Fatalf("unexpected error for empty/whitespace input: %v", err)
 			}
@@ -40,7 +40,7 @@ func TestGenerateEmbedding_EmptyText(t *testing.T) {
 }
 
 func TestGenerateEmbedding_InvalidOllamaURL(t *testing.T) {
-	_, err := generateEmbedding("http://localhost:99999", "test text")
+	_, err := generateEmbedding("http://localhost:99999", "test text", "nomic-embed-text")
 	if err == nil {
 		t.Error("expected error for invalid python path, got nil")
 	}
@@ -56,7 +56,7 @@ func TestGenerateEmbedding_ValidText(t *testing.T) {
 		t.Skip("Python with sentence-transformers not available")
 	}
 
-	result, err := generateEmbedding("http://localhost:11434", "Hello world")
+	result, err := generateEmbedding("http://localhost:11434", "Hello world", "nomic-embed-text")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -84,12 +84,12 @@ func TestGenerateEmbedding_DifferentTextsDifferentEmbeddings(t *testing.T) {
 		t.Skip("Python with sentence-transformers not available")
 	}
 
-	embedding1, err := generateEmbedding("http://localhost:11434", "The cat sat on the mat")
+	embedding1, err := generateEmbedding("http://localhost:11434", "The cat sat on the mat", "nomic-embed-text")
 	if err != nil {
 		t.Fatalf("unexpected error for first text: %v", err)
 	}
 
-	embedding2, err := generateEmbedding("http://localhost:11434", "Quantum physics is complex")
+	embedding2, err := generateEmbedding("http://localhost:11434", "Quantum physics is complex", "nomic-embed-text")
 	if err != nil {
 		t.Fatalf("unexpected error for second text: %v", err)
 	}
@@ -113,12 +113,12 @@ func TestGenerateEmbedding_SimilarTextsCloseEmbeddings(t *testing.T) {
 		t.Skip("Python with sentence-transformers not available")
 	}
 
-	embedding1, err := generateEmbedding("http://localhost:11434", "The dog is happy")
+	embedding1, err := generateEmbedding("http://localhost:11434", "The dog is happy", "nomic-embed-text")
 	if err != nil {
 		t.Fatalf("unexpected error for first text: %v", err)
 	}
 
-	embedding2, err := generateEmbedding("http://localhost:11434", "The dog is joyful")
+	embedding2, err := generateEmbedding("http://localhost:11434", "The dog is joyful", "nomic-embed-text")
 	if err != nil {
 		t.Fatalf("unexpected error for second text: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestGenerateEmbedding_NormalizedOutput(t *testing.T) {
 		t.Skip("Python with sentence-transformers not available")
 	}
 
-	result, err := generateEmbedding("http://localhost:11434", "Test normalization")
+	result, err := generateEmbedding("http://localhost:11434", "Test normalization", "nomic-embed-text")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -175,7 +175,7 @@ func TestGenerateEmbedding_SpecialCharacters(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := generateEmbedding("http://localhost:11434", tt.text)
+			result, err := generateEmbedding("http://localhost:11434", tt.text, "nomic-embed-text")
 			if err != nil {
 				t.Fatalf("unexpected error for %s: %v", tt.name, err)
 			}
@@ -196,7 +196,7 @@ func TestGenerateEmbedding_LongText(t *testing.T) {
 	// Generate a long text
 	longText := strings.Repeat("This is a test sentence. ", 100)
 
-	result, err := generateEmbedding("http://localhost:11434", longText)
+	result, err := generateEmbedding("http://localhost:11434", longText, "nomic-embed-text")
 	if err != nil {
 		t.Fatalf("unexpected error for long text: %v", err)
 	}

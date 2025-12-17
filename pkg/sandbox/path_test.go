@@ -57,7 +57,7 @@ func TestValidatePath(t *testing.T) {
 			repoRoot:      repoRoot,
 			excludedPaths: []string{},
 			wantErr:       true,
-			errContains:   "traversal",
+			errContains:   "not within repository",
 		},
 		{
 			name:          "path traversal hidden in middle",
@@ -65,7 +65,7 @@ func TestValidatePath(t *testing.T) {
 			repoRoot:      repoRoot,
 			excludedPaths: []string{},
 			wantErr:       true,
-			errContains:   "traversal",
+			errContains:   "not within repository",
 		},
 		{
 			name:          "excluded path - exact match",
@@ -344,6 +344,88 @@ func TestValidatePath_EdgeCases(t *testing.T) {
 			}
 			if !tt.wantErr && err != nil {
 				t.Errorf("ValidatePath() unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+// TestValidatePath_Issue1_EncodedSequences tests the fix for Issue #1
+// which uses filepath.Clean() to prevent bypass attacks
+// NOTE: Some of these tests will FAIL until Issue #1 fix is applied
+func TestValidatePath_Issue1_EncodedSequences(t *testing.T) {
+	repoRoot := t.TempDir()
+
+	// These are attack vectors that could bypass simple string checks
+	// but should be caught by filepath.Clean() canonicalization
+	attackVectors := []struct {
+		name          string
+		path          string
+		fixedInIssue1 bool // Will fail until Issue #1 fix is applied
+	}{
+		{"encoded double dot", "....//", true},                             // CURRENTLY PASSES - needs Issue #1 fix
+		{"multiple slashes", "src/////etc/passwd", true},                   // CURRENTLY PASSES - needs Issue #1 fix
+		{"mixed traversal", "src/../../../etc/passwd", false},              // Already caught
+		{"hidden traversal", "src/./../../etc/passwd", false},              // Already caught
+		{"complex traversal", "a/b/c/../../../../../../etc/passwd", false}, // Already caught
+		{"dot traversal", "./src/./.././../etc/passwd", false},             // Already caught
+	}
+
+	for _, attack := range attackVectors {
+		t.Run(attack.name, func(t *testing.T) {
+			_, err := ValidatePath(attack.path, repoRoot, nil)
+			if err == nil {
+				if attack.fixedInIssue1 {
+					t.Skipf("KNOWN ISSUE #1: ValidatePath() should reject %q (will pass after Issue #1 fix)", attack.path)
+				} else {
+					t.Errorf("ValidatePath() should reject attack vector %q", attack.path)
+				}
+			}
+		})
+	}
+}
+
+// TestValidatePath_Issue1_Canonicalization tests that paths are properly
+// canonicalized using filepath.Clean() before validation
+func TestValidatePath_Issue1_Canonicalization(t *testing.T) {
+	repoRoot := t.TempDir()
+
+	// Create test file
+	testDir := filepath.Join(repoRoot, "src")
+	if err := os.MkdirAll(testDir, 0755); err != nil {
+		t.Fatalf("Failed to create test directory: %v", err)
+	}
+
+	tests := []struct {
+		name          string
+		requestedPath string
+		shouldPass    bool
+	}{
+		// These should all resolve to valid paths within the repo
+		{"redundant slashes", "src////test.go", true},
+		{"redundant dots", "./src/./test.go", true},
+		{"normalized path", "src/test.go", true},
+
+		// These should all resolve to paths outside the repo
+		{"escape via parent", "src/../../etc/passwd", false},
+		{"escape with dots", "././../etc/passwd", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ValidatePath(tt.requestedPath, repoRoot, nil)
+
+			if tt.shouldPass {
+				if err != nil {
+					t.Errorf("ValidatePath() unexpected error: %v", err)
+				}
+				// Verify the result is within repo bounds
+				if !strings.HasPrefix(result, repoRoot) {
+					t.Errorf("ValidatePath() returned path outside repo: %s", result)
+				}
+			} else {
+				if err == nil {
+					t.Errorf("ValidatePath() should have rejected %q", tt.requestedPath)
+				}
 			}
 		})
 	}

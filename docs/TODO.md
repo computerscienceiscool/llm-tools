@@ -1,6 +1,6 @@
 # llm-runtime Todo List & Ideas
 
-## In Progress 🔄
+## In Progress 
 
 ### Test Cleanup
 - [ ] Fix test files in `temp_tests/` for new import paths
@@ -17,7 +17,7 @@ Tests for the following packages are passing:
 
 ---
 
-## Future Ideas 💡
+## Future Ideas 
 
 ### Technical Improvements
 
@@ -62,6 +62,24 @@ Detected: Go project (go.mod found)
 Suggested config: go-developer.yaml
 Use this? [Y/n]
 ```
+
+---
+
+#### Pending Discussion
+- [ ] **Container Image Validation** - Need to decide approach with boss
+  - Currently: No validation on Docker image names (security risk)
+  - Options: Whitelist, digest pinning, private registry, or pattern-based
+  - Decision needed: Who controls config? Public/private deployment? How often add new images?
+  
+- [ ] **Command Injection in Shell Exec** - Architectural decision needed
+  - Current: Prefix-based whitelist with shell (flexible but insecure)
+  - Trade-off: Security vs Functionality
+  - Proposed: Configurable security modes (strict/flexible/unrestricted)
+  - Questions to answer:
+    * What's our primary use case? (Dev tool? CI/CD? Public API?)
+    * What's our threat model? (Trusted LLMs? Potential prompt injection?)
+    * Should we support different modes for different deployments?
+  - See: `issues-summary.md` 
 
 ---
 

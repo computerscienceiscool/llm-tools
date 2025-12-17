@@ -82,10 +82,11 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 	safePath, err := sandbox.ValidatePath(filePath, cfg.RepositoryRoot, cfg.ExcludedPaths)
 	if err != nil {
 		result.Success = false
-		result.Error = fmt.Errorf("PATH_SECURITY: %w", err)
+		fullError := fmt.Errorf("PATH_SECURITY: %w", err)
+		result.Error = SanitizeError(fullError) // Sanitized for LLM
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("write", filePath, false, result.Error.Error())
+			auditLog("write", filePath, false, fullError.Error()) // Full error to audit
 		}
 		return result
 	}
@@ -93,10 +94,11 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 	// Validate file extension
 	if err := sandbox.ValidateWriteExtension(filePath, cfg.AllowedExtensions); err != nil {
 		result.Success = false
-		result.Error = fmt.Errorf("EXTENSION_DENIED: %w", err)
+		fullError := fmt.Errorf("EXTENSION_DENIED: %w", err)
+		result.Error = SanitizeError(fullError) // Sanitized for LLM
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("write", filePath, false, result.Error.Error())
+			auditLog("write", filePath, false, fullError.Error()) // Full error to audit
 		}
 		return result
 	}
@@ -105,11 +107,12 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 	contentBytes := []byte(content)
 	if int64(len(contentBytes)) > cfg.MaxWriteSize {
 		result.Success = false
-		result.Error = fmt.Errorf("RESOURCE_LIMIT: content too large (%d bytes, max %d)",
+		fullError := fmt.Errorf("RESOURCE_LIMIT: content too large (%d bytes, max %d)",
 			len(contentBytes), cfg.MaxWriteSize)
+		result.Error = SanitizeError(fullError) // Sanitized for LLM
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("write", filePath, false, result.Error.Error())
+			auditLog("write", filePath, false, fullError.Error()) // Full error to audit
 		}
 		return result
 	}
@@ -126,10 +129,11 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 			backupPath, err = CreateBackup(safePath)
 			if err != nil {
 				result.Success = false
-				result.Error = fmt.Errorf("BACKUP_FAILED: %w", err)
+				fullError := fmt.Errorf("BACKUP_FAILED: %w", err)
+				result.Error = SanitizeError(fullError) // Sanitized for LLM
 				result.ExecutionTime = time.Since(startTime)
 				if auditLog != nil {
-					auditLog("write", filePath, false, result.Error.Error())
+					auditLog("write", filePath, false, fullError.Error()) // Full error to audit
 				}
 				return result
 			}
@@ -143,10 +147,11 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 	formattedContent, err := FormatContent(filePath, content)
 	if err != nil {
 		result.Success = false
-		result.Error = fmt.Errorf("FORMATTING_ERROR: %w", err)
+		fullError := fmt.Errorf("FORMATTING_ERROR: %w", err)
+		result.Error = SanitizeError(fullError) // Sanitized for LLM
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("write", filePath, false, result.Error.Error())
+			auditLog("write", filePath, false, fullError.Error()) // Full error to audit
 		}
 		return result
 	}
@@ -163,10 +168,11 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 	)
 	if err != nil {
 		result.Success = false
-		result.Error = fmt.Errorf("WRITE_CONTAINER: %w", err)
+		fullError := fmt.Errorf("WRITE_CONTAINER: %w", err)
+		result.Error = SanitizeError(fullError) // Sanitized for LLM
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("write", filePath, false, result.Error.Error())
+			auditLog("write", filePath, false, fullError.Error()) // Full error to audit
 		}
 		return result
 	}

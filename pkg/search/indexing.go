@@ -184,9 +184,9 @@ func indexFile(db *sql.DB, cfg *SearchConfig, repoRoot string, filePath string, 
 	// Calculate content hash
 	contentHash := fmt.Sprintf("%x", content)
 
-	// Generate embedding
+	// Generate embedding - FIXED: Pass model from config
 	truncated := truncateText(string(content), 200)
-	embedding, err := generateEmbedding(cfg.OllamaURL, truncated)
+	embedding, err := generateEmbedding(cfg.OllamaURL, truncated, cfg.EmbeddingModel)
 	if err != nil {
 		return fmt.Errorf("failed to generate embedding: %w", err)
 	}

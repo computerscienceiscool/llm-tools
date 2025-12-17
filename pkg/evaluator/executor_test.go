@@ -1,23 +1,23 @@
 package evaluator
 
 import (
-	"time"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
-	"github.com/computerscienceiscool/llm-runtime/pkg/search"
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
+	"github.com/computerscienceiscool/llm-runtime/pkg/search"
 )
 
 func TestNewExecutor(t *testing.T) {
 	cfg := &config.Config{
-		RepositoryRoot: "/tmp/test",
-		IOTimeout:         60 * time.Second,
-		IOContainerImage:    "llm-runtime-io:latest",
-		MaxFileSize:    1024,
+		RepositoryRoot:   "/tmp/test",
+		IOTimeout:        60 * time.Second,
+		IOContainerImage: "llm-runtime-io:latest",
+		MaxFileSize:      1024,
 	}
 
 	searchCfg := &search.SearchConfig{
@@ -52,9 +52,9 @@ func TestNewExecutor(t *testing.T) {
 
 func TestNewExecutor_NilSearchConfig(t *testing.T) {
 	cfg := &config.Config{
-		RepositoryRoot: "/tmp/test",
-		IOTimeout:         60 * time.Second,
-		IOContainerImage:    "llm-runtime-io:latest",
+		RepositoryRoot:   "/tmp/test",
+		IOTimeout:        60 * time.Second,
+		IOContainerImage: "llm-runtime-io:latest",
 	}
 
 	executor := NewExecutor(cfg, nil, nil)
@@ -70,9 +70,9 @@ func TestNewExecutor_NilSearchConfig(t *testing.T) {
 
 func TestNewExecutor_NilAuditLog(t *testing.T) {
 	cfg := &config.Config{
-		RepositoryRoot: "/tmp/test",
-		IOTimeout:         60 * time.Second,
-		IOContainerImage:    "llm-runtime-io:latest",
+		RepositoryRoot:   "/tmp/test",
+		IOTimeout:        60 * time.Second,
+		IOContainerImage: "llm-runtime-io:latest",
 	}
 
 	executor := NewExecutor(cfg, nil, nil)
@@ -352,11 +352,11 @@ func TestExecutor_GetCommandsRun_FailedCommandsNotCounted(t *testing.T) {
 
 func TestExecutor_GetConfig(t *testing.T) {
 	cfg := &config.Config{
-		RepositoryRoot: "/custom/path",
-		IOTimeout:         60 * time.Second,
-		IOContainerImage:    "llm-runtime-io:latest",
-		MaxFileSize:    12345,
-		Verbose:        true,
+		RepositoryRoot:   "/custom/path",
+		IOTimeout:        60 * time.Second,
+		IOContainerImage: "llm-runtime-io:latest",
+		MaxFileSize:      12345,
+		Verbose:          true,
 	}
 
 	executor := NewExecutor(cfg, nil, nil)
@@ -591,6 +591,50 @@ func TestExecutor_Execute_ExecWithEmptyCommand(t *testing.T) {
 	}
 }
 
+// TestExecutor_Issue5_ErrorSanitization tests that sensitive information
+// is removed from error messages before showing to LLM
+func TestExecutor_Issue5_ErrorSanitization(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfg := newTestConfig(tmpDir)
+
+	executor := NewExecutor(cfg, nil, nil)
+
+	// Test path traversal error doesn't leak full paths
+	cmd := scanner.Command{
+		Type:     "open",
+		Argument: "../../../etc/passwd",
+	}
+
+	result := executor.Execute(cmd)
+
+	if result.Success {
+		t.Fatal("expected failure for path traversal")
+	}
+
+	errorMsg := result.Error.Error()
+
+	// Error should NOT contain:
+	// - Absolute paths like /home/alice/repo
+	// - User directories
+	// - System paths
+	sensitivePatterns := []string{
+		tmpDir,            // Full temp directory path
+		"/home/",          // User home directories
+		os.Getenv("HOME"), // Current user's home
+	}
+
+	for _, pattern := range sensitivePatterns {
+		if pattern != "" && strings.Contains(errorMsg, pattern) {
+			t.Errorf("Error message contains sensitive info %q: %s", pattern, errorMsg)
+		}
+	}
+
+	// Error SHOULD contain generic security message
+	if !strings.Contains(errorMsg, "PATH_SECURITY") && !strings.Contains(errorMsg, "traversal") {
+		t.Errorf("Error message should contain security indicator, got: %s", errorMsg)
+	}
+}
+
 // Integration-style tests
 
 func TestExecutor_FullWorkflow(t *testing.T) {
@@ -664,9 +708,9 @@ func TestExecutor_FullWorkflow(t *testing.T) {
 
 func BenchmarkNewExecutor(b *testing.B) {
 	cfg := &config.Config{
-		RepositoryRoot: "/tmp",
-		IOTimeout:         60 * time.Second,
-		IOContainerImage:    "llm-runtime-io:latest",
+		RepositoryRoot:   "/tmp",
+		IOTimeout:        60 * time.Second,
+		IOContainerImage: "llm-runtime-io:latest",
 	}
 	searchCfg := &search.SearchConfig{}
 	auditFn := func(cmd, arg string, success bool, errMsg string) {}

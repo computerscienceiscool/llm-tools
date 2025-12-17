@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
+	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/pkg/search"
 )
 
@@ -20,10 +20,11 @@ func ExecuteSearch(query string, cfg *config.Config, searchCfg *search.SearchCon
 	// Check if search is enabled
 	if searchCfg == nil || !searchCfg.Enabled {
 		result.Success = false
-		result.Error = fmt.Errorf("SEARCH_DISABLED: search feature is not enabled")
+		fullError := fmt.Errorf("SEARCH_DISABLED: search feature is not enabled")
+		result.Error = SanitizeError(fullError) // Sanitized for LLM
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("search", query, false, result.Error.Error())
+			auditLog("search", query, false, fullError.Error()) // Full error to audit
 		}
 		return result
 	}
@@ -32,10 +33,11 @@ func ExecuteSearch(query string, cfg *config.Config, searchCfg *search.SearchCon
 	searchEngine, err := search.NewSearchEngine(searchCfg, cfg.RepositoryRoot)
 	if err != nil {
 		result.Success = false
-		result.Error = fmt.Errorf("SEARCH_INIT_FAILED: %w", err)
+		fullError := fmt.Errorf("SEARCH_INIT_FAILED: %w", err)
+		result.Error = SanitizeError(fullError) // Sanitized for LLM
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("search", query, false, result.Error.Error())
+			auditLog("search", query, false, fullError.Error()) // Full error to audit
 		}
 		return result
 	}
@@ -45,10 +47,11 @@ func ExecuteSearch(query string, cfg *config.Config, searchCfg *search.SearchCon
 	searchResults, err := searchEngine.Search(query)
 	if err != nil {
 		result.Success = false
-		result.Error = fmt.Errorf("SEARCH_FAILED: %w", err)
+		fullError := fmt.Errorf("SEARCH_FAILED: %w", err)
+		result.Error = SanitizeError(fullError) // Sanitized for LLM
 		result.ExecutionTime = time.Since(startTime)
 		if auditLog != nil {
-			auditLog("search", query, false, result.Error.Error())
+			auditLog("search", query, false, fullError.Error()) // Full error to audit
 		}
 		return result
 	}
