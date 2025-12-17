@@ -22,12 +22,13 @@ func TestGetDefaultSearchConfig(t *testing.T) {
 		{"Enabled", cfg.Enabled, false},
 		{"VectorDBPath", cfg.VectorDBPath, "./embeddings.db"},
 		{"EmbeddingModel", cfg.EmbeddingModel, "all-MiniLM-L6-v2"},
-		{"MaxResults", cfg.MaxResults, 10},
-		{"MinSimilarityScore", cfg.MinSimilarityScore, 0.5},
+		{"EmbeddingDimensions", cfg.EmbeddingDimensions, DefaultEmbeddingDims},
+		{"MaxResults", cfg.MaxResults, DefaultMaxSearchResults},
+		{"MinSimilarityScore", cfg.MinSimilarityScore, DefaultMinSimilarity},
 		{"MaxPreviewLength", cfg.MaxPreviewLength, 100},
 		{"ChunkSize", cfg.ChunkSize, 1000},
 		{"OllamaURL", cfg.OllamaURL, "http://localhost:11434"},
-		{"MaxFileSize", cfg.MaxFileSize, int64(1048576)},
+		{"MaxFileSize", cfg.MaxFileSize, int64(DefaultMaxFileSize)},
 	}
 
 	for _, tt := range tests {
@@ -97,7 +98,7 @@ func TestsetFullConfigDefaults(t *testing.T) {
 		if !cfg.Commands.Open.Enabled {
 			t.Error("expected Open.Enabled to be true")
 		}
-		if cfg.Commands.Open.MaxFileSize != 1048576 {
+		if cfg.Commands.Open.MaxFileSize != DefaultMaxFileSize {
 			t.Errorf("expected MaxFileSize 1048576, got %d", cfg.Commands.Open.MaxFileSize)
 		}
 		expectedExtensions := []string{".go", ".py", ".js", ".md", ".txt", ".json", ".yaml"}
@@ -112,7 +113,7 @@ func TestsetFullConfigDefaults(t *testing.T) {
 		if !cfg.Commands.Write.Enabled {
 			t.Error("expected Write.Enabled to be true")
 		}
-		if cfg.Commands.Write.MaxFileSize != 102400 {
+		if cfg.Commands.Write.MaxFileSize != DefaultMaxWriteSize {
 			t.Errorf("expected MaxFileSize 102400, got %d", cfg.Commands.Write.MaxFileSize)
 		}
 		if !cfg.Commands.Write.BackupBeforeWrite {
@@ -128,10 +129,10 @@ func TestsetFullConfigDefaults(t *testing.T) {
 		if cfg.Commands.Exec.ContainerImage != "ubuntu:22.04" {
 			t.Errorf("expected ContainerImage 'ubuntu:22.04', got %q", cfg.Commands.Exec.ContainerImage)
 		}
-		if cfg.Commands.Exec.TimeoutSeconds != 30 {
+		if cfg.Commands.Exec.TimeoutSeconds != int(DefaultExecTimeout.Seconds()) {
 			t.Errorf("expected TimeoutSeconds 30, got %d", cfg.Commands.Exec.TimeoutSeconds)
 		}
-		if cfg.Commands.Exec.MemoryLimit != "512m" {
+		if cfg.Commands.Exec.MemoryLimit != DefaultContainerMemory {
 			t.Errorf("expected MemoryLimit '512m', got %q", cfg.Commands.Exec.MemoryLimit)
 		}
 		if cfg.Commands.Exec.CPULimit != 2 {
@@ -155,10 +156,10 @@ func TestsetFullConfigDefaults(t *testing.T) {
 		if cfg.Commands.Search.EmbeddingModel != "all-MiniLM-L6-v2" {
 			t.Errorf("expected EmbeddingModel 'all-MiniLM-L6-v2', got %q", cfg.Commands.Search.EmbeddingModel)
 		}
-		if cfg.Commands.Search.MaxResults != 10 {
+		if cfg.Commands.Search.MaxResults != DefaultMaxSearchResults {
 			t.Errorf("expected MaxResults 10, got %d", cfg.Commands.Search.MaxResults)
 		}
-		if cfg.Commands.Search.MinSimilarityScore != 0.5 {
+		if cfg.Commands.Search.MinSimilarityScore != DefaultMinSimilarity {
 			t.Errorf("expected MinSimilarityScore 0.5, got %f", cfg.Commands.Search.MinSimilarityScore)
 		}
 		if cfg.Commands.Search.MaxPreviewLength != 100 {
@@ -170,7 +171,7 @@ func TestsetFullConfigDefaults(t *testing.T) {
 		if cfg.Commands.Search.OllamaURL != "http://localhost:11434" {
 			t.Errorf("expected OllamaURL 'python3', got %q", cfg.Commands.Search.OllamaURL)
 		}
-		if cfg.Commands.Search.MaxFileSize != 1048576 {
+		if cfg.Commands.Search.MaxFileSize != int64(DefaultMaxFileSize) {
 			t.Errorf("expected MaxFileSize 1048576, got %d", cfg.Commands.Search.MaxFileSize)
 		}
 	})
@@ -313,7 +314,7 @@ func TestSetViperDefaults(t *testing.T) {
 		t.Error("commands.open.enabled should be true by default")
 	}
 
-	if viper.GetInt("commands.open.max_file_size") != 1048576 {
+	if viper.GetInt("commands.open.max_file_size") != DefaultMaxFileSize {
 		t.Errorf("commands.open.max_file_size = %d, want 1048576", viper.GetInt("commands.open.max_file_size"))
 	}
 
@@ -322,7 +323,7 @@ func TestSetViperDefaults(t *testing.T) {
 		t.Error("commands.write.enabled should be true by default")
 	}
 
-	if viper.GetInt("commands.write.max_file_size") != 102400 {
+	if viper.GetInt("commands.write.max_file_size") != DefaultMaxWriteSize {
 		t.Errorf("commands.write.max_file_size = %d, want 102400", viper.GetInt("commands.write.max_file_size"))
 	}
 
@@ -335,7 +336,7 @@ func TestSetViperDefaults(t *testing.T) {
 		t.Error("commands.exec.enabled should be false by default")
 	}
 
-	if viper.GetInt("commands.exec.timeout_seconds") != 30 {
+	if viper.GetInt("commands.exec.timeout_seconds") != int(DefaultExecTimeout.Seconds()) {
 		t.Errorf("commands.exec.timeout_seconds = %d, want 30", viper.GetInt("commands.exec.timeout_seconds"))
 	}
 }

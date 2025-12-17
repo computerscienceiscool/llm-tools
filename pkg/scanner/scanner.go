@@ -1,12 +1,13 @@
 package scanner
 
 import (
+	"github.com/computerscienceiscool/llm-runtime/pkg/config"
 	"bufio"
 	"strings"
 )
 
 // Maximum buffer size to prevent memory exhaustion attacks
-const maxScannerBufferSize = 10 * 1024 * 1024 // 10MB
+const maxScannerBufferSize = config.DefaultScanBufferSize
 
 // ScannerState represents the current parsing state
 type ScannerState int

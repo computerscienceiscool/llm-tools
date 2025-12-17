@@ -1,6 +1,7 @@
 package sandbox
 
 import (
+	"github.com/computerscienceiscool/llm-runtime/pkg/config"
 	"fmt"
 	"strings"
 )
@@ -17,7 +18,7 @@ func ValidateExecCommand(command string, whitelist []string) error {
 	}
 
 	// Check command length (prevent abuse with extremely long commands)
-	const maxCommandLength = 1000
+	const maxCommandLength = config.MaxCommandLength
 	if len(command) > maxCommandLength {
 		return fmt.Errorf("command too long (max %d characters, got %d)", maxCommandLength, len(command))
 	}
