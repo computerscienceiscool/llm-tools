@@ -136,3 +136,4 @@ tests/
 llm-runtime
 embeddings.db
 llm-runtime
+*.old
