@@ -39,24 +39,25 @@ chmod +x setup.sh
 ```
 
 ## Project Structure
-
 ```
 llm-runtime/
 ├── cmd/llm-runtime/       # Entry point
-├── internal/              # App-specific code
+├── pkg/                   # Public API (importable)
 │   ├── app/               # Application bootstrap
 │   ├── cli/               # Command-line handling
 │   ├── config/            # Configuration loading
-│   ├── search/            # Semantic search (Ollama)
-│   └── session/           # Session management
-├── pkg/                   # Public API (importable)
 │   ├── evaluator/         # Command execution
 │   ├── sandbox/           # Security, Docker isolation
-│   └── scanner/           # Command parsing
+│   ├── scanner/           # Command parsing
+│   ├── search/            # Semantic search (Ollama)
+│   └── session/           # Session management
+├── internal/              # Internal packages
+│   └── core/              # Core internal logic
 └── docs/                  # Documentation
-    └── examples/          # Example workflows (coming soon)
-
+    ├── .index/            # Documentation index
+    └── examples/          # Example workflows
 ```
+
 
 ## Available Commands
 
@@ -417,6 +418,26 @@ make clean-io-image
 - File read (1MB): <10ms on SSD
 - Docker container startup: 1-3s (cached images)
 - Total overhead: ~1-5s per exec command
+
+
+### Container Pooling
+
+By default, each file operation creates a new Docker container. Container pooling pre-creates containers and reuses them across operations.
+
+**Performance improvement:** 5-10x faster for workflows with multiple operations (reduces per-operation overhead from 1-3 seconds to ~100-200ms).
+
+**Enable in llm-runtime.config.yaml:**
+```yaml
+container_pool:
+  enabled: true
+  size: 5
+  max_uses_per_container: 100
+  idle_timeout: 5m
+  health_check_interval: 30s
+  startup_containers: 2
+```
+
+The pool automatically handles health checks, container recycling, and cleanup.
 
 ## Configuration
 
