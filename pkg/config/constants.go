@@ -39,4 +39,11 @@ const (
 	// Session configuration
 	DefaultSessionTimeout = 24 * time.Hour // Session timeout duration
 	MaxSessionsPerUser    = 10             // Maximum concurrent sessions per user
+
+	// Container pool defaults
+	DefaultPoolSize            = 10
+	DefaultMaxUsesPerContainer = 100
+	DefaultPoolIdleTimeout     = 5 * time.Minute
+	DefaultHealthCheckInterval = 30 * time.Second
+	DefaultStartupContainers   = 3
 )

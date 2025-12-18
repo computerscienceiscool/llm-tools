@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
+	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
 	"github.com/computerscienceiscool/llm-runtime/pkg/search"
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 )
@@ -23,14 +24,16 @@ type Executor struct {
 	auditLog    func(cmd, arg string, success bool, errMsg string)
 	commandsRun int
 	mu          sync.Mutex
+	pool        *sandbox.ContainerPool
 }
 
 // NewExecutor creates a new executor instance
-func NewExecutor(cfg *config.Config, searchCfg *search.SearchConfig, auditLog func(cmd, arg string, success bool, errMsg string)) *Executor {
+func NewExecutor(cfg *config.Config, searchCfg *search.SearchConfig, auditLog func(cmd, arg string, success bool, errMsg string), pool *sandbox.ContainerPool) *Executor {
 	return &Executor{
 		config:    cfg,
 		searchCfg: searchCfg,
 		auditLog:  auditLog,
+		pool:      pool,
 	}
 }
 
@@ -40,13 +43,13 @@ func (e *Executor) Execute(cmd scanner.Command) scanner.ExecutionResult {
 
 	switch cmd.Type {
 	case "open":
-		result = ExecuteOpen(cmd.Argument, e.config, e.auditLog)
+		result = ExecuteOpen(cmd.Argument, e.config, e.auditLog, e.pool)
 	case "write":
-		result = ExecuteWrite(cmd.Argument, cmd.Content, e.config, e.auditLog)
+		result = ExecuteWrite(cmd.Argument, cmd.Content, e.config, e.auditLog, e.pool)
 	case "exec":
-		result = ExecuteExec(cmd, e.config, e.auditLog)
+		result = ExecuteExec(cmd, e.config, e.auditLog, e.pool)
 	case "search":
-		result = ExecuteSearch(cmd.Argument, e.config, e.searchCfg, e.auditLog)
+		result = ExecuteSearch(cmd.Argument, e.config, e.searchCfg, e.auditLog, e.pool)
 	default:
 		result = scanner.ExecutionResult{
 			Command: cmd,
@@ -79,4 +82,9 @@ func (e *Executor) GetConfig() *config.Config {
 // GetSearchConfig returns the executor's search configuration
 func (e *Executor) GetSearchConfig() *search.SearchConfig {
 	return e.searchCfg
+}
+
+// GetPool returns the executor's container pool
+func (e *Executor) GetPool() *sandbox.ContainerPool {
+	return e.pool
 }

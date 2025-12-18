@@ -261,3 +261,39 @@ func readDockerLogs(reader io.Reader, stdout io.Writer) error {
 		stdout.Write(payload)
 	}
 }
+
+// ReadFileInContainerPooled reads a file using a pooled container
+func ReadFileInContainerPooled(ctx context.Context, pool *ContainerPool, filePath, repoRoot string) (string, error) {
+	if pool == nil {
+		// Fallback to non-pooled version
+		return ReadFileInContainer(filePath, repoRoot, "llm-runtime-io:latest", 60*time.Second, "256m", 1)
+	}
+
+	relPath, err := filepath.Rel(repoRoot, filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to get relative path: %w", err)
+	}
+
+	command := fmt.Sprintf("cat /workspace/%s", relPath)
+	return ExecuteInPooledContainer(ctx, pool, command, repoRoot)
+}
+
+// WriteFileInContainerPooled writes a file using a pooled container
+func WriteFileInContainerPooled(ctx context.Context, pool *ContainerPool, filePath, content, repoRoot string) error {
+	if pool == nil {
+		// Fallback to non-pooled version
+		return WriteFileInContainer(filePath, content, repoRoot, "llm-runtime-io:latest", 60*time.Second, "256m", 1)
+	}
+
+	relPath, err := filepath.Rel(repoRoot, filePath)
+	if err != nil {
+		return fmt.Errorf("failed to get relative path: %w", err)
+	}
+
+	// Atomic write: write to temp file then move
+	command := fmt.Sprintf("mkdir -p $(dirname /workspace/%s) && printf '%%s' %q > /workspace/%s.tmp && mv /workspace/%s.tmp /workspace/%s",
+		relPath, content, relPath, relPath, relPath)
+
+	_, err = ExecuteInPooledContainer(ctx, pool, command, repoRoot)
+	return err
+}

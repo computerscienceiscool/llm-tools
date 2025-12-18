@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"context"
 	"go/format"
 	"os"
 	"path/filepath"
@@ -72,7 +73,7 @@ func CalculateContentHash(content string) string {
 }
 
 // ExecuteWrite handles the "write" command
-func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cmd, arg string, success bool, errMsg string)) scanner.ExecutionResult {
+func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cmd, arg string, success bool, errMsg string), pool *sandbox.ContainerPool) scanner.ExecutionResult {
 	startTime := time.Now()
 	result := scanner.ExecutionResult{
 		Command: scanner.Command{Type: "write", Argument: filePath, Content: content},
@@ -157,14 +158,12 @@ func ExecuteWrite(filePath, content string, cfg *config.Config, auditLog func(cm
 	}
 
 	// Write file using container
-	err = sandbox.WriteFileInContainer(
+	err = sandbox.WriteFileInContainerPooled(
+		context.Background(),
+		pool,
 		safePath,
 		formattedContent,
 		cfg.RepositoryRoot,
-		cfg.IOContainerImage,
-		cfg.IOTimeout,
-		cfg.IOMemoryLimit,
-		cfg.IOCPULimit,
 	)
 	if err != nil {
 		result.Success = false

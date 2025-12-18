@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"fmt"
+	"context"
 	"os"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 )
 
 // ExecuteOpen handles the "open" command
-func ExecuteOpen(filepath string, cfg *config.Config, auditLog func(cmd, arg string, success bool, errMsg string)) scanner.ExecutionResult {
+func ExecuteOpen(filepath string, cfg *config.Config, auditLog func(cmd, arg string, success bool, errMsg string), pool *sandbox.ContainerPool) scanner.ExecutionResult {
 	startTime := time.Now()
 	result := scanner.ExecutionResult{
 		Command: scanner.Command{Type: "open", Argument: filepath},
@@ -63,13 +64,11 @@ func ExecuteOpen(filepath string, cfg *config.Config, auditLog func(cmd, arg str
 	// Read the file using container
 	var content []byte
 	// Use containerized I/O
-	contentStr, err := sandbox.ReadFileInContainer(
+	contentStr, err := sandbox.ReadFileInContainerPooled(
+		context.Background(),
+		pool,
 		safePath,
 		cfg.RepositoryRoot,
-		cfg.IOContainerImage,
-		cfg.IOTimeout,
-		cfg.IOMemoryLimit,
-		cfg.IOCPULimit,
 	)
 	if err != nil {
 		result.Success = false

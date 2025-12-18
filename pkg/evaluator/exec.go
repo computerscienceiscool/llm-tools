@@ -10,7 +10,7 @@ import (
 )
 
 // ExecuteExec handles the "exec" command
-func ExecuteExec(cmd scanner.Command, cfg *config.Config, auditLog func(cmdType, arg string, success bool, errMsg string)) scanner.ExecutionResult {
+func ExecuteExec(cmd scanner.Command, cfg *config.Config, auditLog func(cmdType, arg string, success bool, errMsg string), pool *sandbox.ContainerPool) scanner.ExecutionResult {
 	startTime := time.Now()
 	result := scanner.ExecutionResult{
 		Command: cmd,

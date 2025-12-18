@@ -231,3 +231,86 @@ func demuxLogs(reader io.Reader, stdout, stderr io.Writer) error {
 		}
 	}
 }
+
+// ExecuteInPooledContainer executes a command using a container from the pool
+func ExecuteInPooledContainer(ctx context.Context, pool *ContainerPool, command string, repoRoot string) (string, error) {
+	if pool == nil {
+		// Fallback to creating a new container if pool not available
+		cfg := ContainerConfig{
+			Image:       "alpine:latest",
+			Command:     command,
+			RepoRoot:    repoRoot,
+			MemoryLimit: "256m",
+			CPULimit:    1,
+			Timeout:     60 * time.Second,
+		}
+		result, err := RunContainer(cfg)
+		if err != nil {
+			return "", err
+		}
+		return result.Stdout, nil
+	}
+
+	// Get container from pool
+	container, err := pool.Get(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get container from pool: %w", err)
+	}
+
+	// Execute command in the container
+	output, execErr := executeInExistingContainer(ctx, pool.client, container.ID, command, repoRoot)
+
+	// Always return container to pool, even if execution failed
+	returnErr := pool.Return(ctx, container)
+	if returnErr != nil {
+		// Log but don't fail - execution result is more important
+		fmt.Fprintf(os.Stderr, "Warning: failed to return container to pool: %v\n", returnErr)
+	}
+
+	if execErr != nil {
+		return "", execErr
+	}
+
+	return output, nil
+}
+
+// executeInExistingContainer runs a command in an already-running container
+func executeInExistingContainer(ctx context.Context, cli *client.Client, containerID string, command string, repoRoot string) (string, error) {
+	// Create exec instance
+	execConfig := types.ExecConfig{
+		Cmd:          []string{"sh", "-c", command},
+		AttachStdout: true,
+		AttachStderr: true,
+		WorkingDir:   "/workspace",
+	}
+
+	execID, err := cli.ContainerExecCreate(ctx, containerID, execConfig)
+	if err != nil {
+		return "", fmt.Errorf("failed to create exec: %w", err)
+	}
+
+	// Attach to exec
+	resp, err := cli.ContainerExecAttach(ctx, execID.ID, types.ExecStartCheck{})
+	if err != nil {
+		return "", fmt.Errorf("failed to attach to exec: %w", err)
+	}
+	defer resp.Close()
+
+	// Read output
+	output, err := io.ReadAll(resp.Reader)
+	if err != nil {
+		return "", fmt.Errorf("failed to read exec output: %w", err)
+	}
+
+	// Check exit code
+	inspectResp, err := cli.ContainerExecInspect(ctx, execID.ID)
+	if err != nil {
+		return string(output), fmt.Errorf("failed to inspect exec: %w", err)
+	}
+
+	if inspectResp.ExitCode != 0 {
+		return string(output), fmt.Errorf("command failed with exit code %d", inspectResp.ExitCode)
+	}
+
+	return string(output), nil
+}

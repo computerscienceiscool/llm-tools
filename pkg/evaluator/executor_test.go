@@ -27,7 +27,7 @@ func TestNewExecutor(t *testing.T) {
 
 	audit := func(cmd, arg string, success bool, errMsg string) {}
 
-	executor := NewExecutor(cfg, searchCfg, audit)
+	executor := NewExecutor(cfg, searchCfg, audit, nil)
 
 	if executor == nil {
 		t.Fatal("NewExecutor returned nil")
@@ -57,7 +57,7 @@ func TestNewExecutor_NilSearchConfig(t *testing.T) {
 		IOContainerImage: "llm-runtime-io:latest",
 	}
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	if executor == nil {
 		t.Fatal("NewExecutor returned nil")
@@ -75,7 +75,7 @@ func TestNewExecutor_NilAuditLog(t *testing.T) {
 		IOContainerImage: "llm-runtime-io:latest",
 	}
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	if executor == nil {
 		t.Fatal("NewExecutor returned nil")
@@ -97,7 +97,7 @@ func TestExecutor_Execute_OpenCommand(t *testing.T) {
 		t.Fatalf("failed to create test file: %v", err)
 	}
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "open",
@@ -124,7 +124,7 @@ func TestExecutor_Execute_WriteCommand(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 	cfg.BackupBeforeWrite = false
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	content := "new file content"
 	cmd := scanner.Command{
@@ -158,7 +158,7 @@ func TestExecutor_Execute_ExecCommand_Disabled(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "exec",
@@ -189,7 +189,7 @@ func TestExecutor_Execute_SearchCommand_Disabled(t *testing.T) {
 		Enabled: false,
 	}
 
-	executor := NewExecutor(cfg, searchCfg, nil)
+	executor := NewExecutor(cfg, searchCfg, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "search",
@@ -215,7 +215,7 @@ func TestExecutor_Execute_SearchCommand_NilConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "search",
@@ -237,7 +237,7 @@ func TestExecutor_Execute_UnknownCommand(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "unknown",
@@ -267,7 +267,7 @@ func TestExecutor_Execute_EmptyCommandType(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "",
@@ -289,7 +289,7 @@ func TestExecutor_GetCommandsRun(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	// Initial count should be 0
 	if executor.GetCommandsRun() != 0 {
@@ -325,7 +325,7 @@ func TestExecutor_GetCommandsRun_FailedCommandsNotCounted(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	// Execute failing command
 	cmd := scanner.Command{
@@ -359,7 +359,7 @@ func TestExecutor_GetConfig(t *testing.T) {
 		Verbose:          true,
 	}
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	returnedCfg := executor.GetConfig()
 
@@ -388,7 +388,7 @@ func TestExecutor_GetSearchConfig(t *testing.T) {
 		MinSimilarityScore: 0.75,
 	}
 
-	executor := NewExecutor(&config.Config{}, searchCfg, nil)
+	executor := NewExecutor(&config.Config{}, searchCfg, nil, nil)
 
 	returnedCfg := executor.GetSearchConfig()
 
@@ -410,7 +410,7 @@ func TestExecutor_GetSearchConfig(t *testing.T) {
 }
 
 func TestExecutor_GetSearchConfig_Nil(t *testing.T) {
-	executor := NewExecutor(&config.Config{}, nil, nil)
+	executor := NewExecutor(&config.Config{}, nil, nil, nil)
 
 	returnedCfg := executor.GetSearchConfig()
 
@@ -424,7 +424,7 @@ func TestExecutor_WithAuditLog(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 
 	audit := &testAuditLog{}
-	executor := NewExecutor(cfg, nil, audit.log)
+	executor := NewExecutor(cfg, nil, audit.log, nil)
 
 	// Create test file
 	testFile := filepath.Join(tmpDir, "test.txt")
@@ -455,7 +455,7 @@ func TestExecutor_MultipleCommands(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 	cfg.BackupBeforeWrite = false
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	// Write a file
 	writeCmd := scanner.Command{
@@ -492,7 +492,7 @@ func TestExecutor_Execute_PreservesCommandInResult(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "unknown",
@@ -519,7 +519,7 @@ func TestExecutor_Execute_CaseSensitiveCommandType(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	// Command types should be case-sensitive
 	tests := []string{"Open", "OPEN", "Open", "wRiTe", "EXEC", "SEARCH"}
@@ -549,7 +549,7 @@ func TestExecutor_Execute_ExecWithEmptyWhitelist(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 	cfg.ExecWhitelist = []string{} // Empty whitelist
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "exec",
@@ -573,7 +573,7 @@ func TestExecutor_Execute_ExecWithEmptyCommand(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 	cfg.ExecWhitelist = []string{"ls"}
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "exec",
@@ -597,7 +597,7 @@ func TestExecutor_Issue5_ErrorSanitization(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	// Test path traversal error doesn't leak full paths
 	cmd := scanner.Command{
@@ -643,7 +643,7 @@ func TestExecutor_FullWorkflow(t *testing.T) {
 	cfg.BackupBeforeWrite = true
 
 	audit := &testAuditLog{}
-	executor := NewExecutor(cfg, nil, audit.log)
+	executor := NewExecutor(cfg, nil, audit.log, nil)
 
 	// Step 1: Write initial file
 	writeCmd1 := scanner.Command{
@@ -717,7 +717,7 @@ func BenchmarkNewExecutor(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		NewExecutor(cfg, searchCfg, auditFn)
+		NewExecutor(cfg, searchCfg, auditFn, nil)
 	}
 }
 
@@ -728,7 +728,7 @@ func BenchmarkExecutor_Execute_Open(b *testing.B) {
 	testFile := filepath.Join(tmpDir, "test.txt")
 	os.WriteFile(testFile, []byte("benchmark content"), 0644)
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	cmd := scanner.Command{
 		Type:     "open",
@@ -746,7 +746,7 @@ func BenchmarkExecutor_Execute_Write(b *testing.B) {
 	cfg := newTestConfig(tmpDir)
 	cfg.BackupBeforeWrite = false
 
-	executor := NewExecutor(cfg, nil, nil)
+	executor := NewExecutor(cfg, nil, nil, nil)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -760,7 +760,7 @@ func BenchmarkExecutor_Execute_Write(b *testing.B) {
 }
 
 func BenchmarkExecutor_GetCommandsRun(b *testing.B) {
-	executor := NewExecutor(&config.Config{}, nil, nil)
+	executor := NewExecutor(&config.Config{}, nil, nil, nil)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

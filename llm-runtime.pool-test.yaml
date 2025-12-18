@@ -1,0 +1,7 @@
+container_pool:
+  enabled: true
+  size: 5
+  max_uses_per_container: 10
+  idle_timeout: 5m
+  health_check_interval: 30s
+  startup_containers: 2

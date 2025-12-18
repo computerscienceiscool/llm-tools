@@ -290,7 +290,7 @@ func TestExecuteWrite_CreateNewFile(t *testing.T) {
 	audit := &testAuditLog{}
 	content := "new file content"
 
-	result := ExecuteWrite("new_file.txt", content, cfg, audit.log)
+	result := ExecuteWrite("new_file.txt", content, cfg, audit.log, nil)
 
 	if !result.Success {
 		t.Fatalf("expected success, got error: %v", result.Error)
@@ -338,7 +338,7 @@ func TestExecuteWrite_UpdateExistingFile(t *testing.T) {
 	audit := &testAuditLog{}
 	newContent := "updated content"
 
-	result := ExecuteWrite("existing.txt", newContent, cfg, audit.log)
+	result := ExecuteWrite("existing.txt", newContent, cfg, audit.log, nil)
 
 	if !result.Success {
 		t.Fatalf("expected success, got error: %v", result.Error)
@@ -378,7 +378,7 @@ func TestExecuteWrite_WithBackup(t *testing.T) {
 	}
 
 	newContent := "new content"
-	result := ExecuteWrite("backup_test.txt", newContent, cfg, nil)
+	result := ExecuteWrite("backup_test.txt", newContent, cfg, nil, nil)
 
 	if !result.Success {
 		t.Fatalf("expected success, got error: %v", result.Error)
@@ -404,7 +404,7 @@ func TestExecuteWrite_NoBackupForNewFile(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 	cfg.BackupBeforeWrite = true
 
-	result := ExecuteWrite("brand_new.txt", "content", cfg, nil)
+	result := ExecuteWrite("brand_new.txt", "content", cfg, nil, nil)
 
 	if !result.Success {
 		t.Fatalf("expected success, got error: %v", result.Error)
@@ -430,7 +430,7 @@ func TestExecuteWrite_PathSecurity(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ExecuteWrite(tt.path, "malicious content", cfg, nil)
+			result := ExecuteWrite(tt.path, "malicious content", cfg, nil, nil)
 
 			if result.Success {
 				t.Error("expected failure for path traversal")
@@ -459,7 +459,7 @@ func TestExecuteWrite_ExtensionDenied(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ExecuteWrite(tt.filename, "content", cfg, nil)
+			result := ExecuteWrite(tt.filename, "content", cfg, nil, nil)
 
 			if result.Success {
 				t.Error("expected failure for disallowed extension")
@@ -478,7 +478,7 @@ func TestExecuteWrite_ContentTooLarge(t *testing.T) {
 	cfg.MaxWriteSize = 100 // Set small limit
 
 	largeContent := strings.Repeat("x", 200)
-	result := ExecuteWrite("large.txt", largeContent, cfg, nil)
+	result := ExecuteWrite("large.txt", largeContent, cfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure for content too large")
@@ -494,7 +494,7 @@ func TestExecuteWrite_CreatesDirectories(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 
 	content := "nested content"
-	result := ExecuteWrite("a/b/c/nested.txt", content, cfg, nil)
+	result := ExecuteWrite("a/b/c/nested.txt", content, cfg, nil, nil)
 
 	if !result.Success {
 		t.Fatalf("expected success, got error: %v", result.Error)
@@ -522,7 +522,7 @@ func TestExecuteWrite_GoFileFormatting(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 
 	unformattedGo := "package main\nfunc main(){fmt.Println(\"hello\")}"
-	result := ExecuteWrite("main.go", unformattedGo, cfg, nil)
+	result := ExecuteWrite("main.go", unformattedGo, cfg, nil, nil)
 
 	if !result.Success {
 		t.Fatalf("expected success, got error: %v", result.Error)
@@ -546,7 +546,7 @@ func TestExecuteWrite_JSONFileFormatting(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 
 	compactJSON := `{"name":"test","value":123}`
-	result := ExecuteWrite("config.json", compactJSON, cfg, nil)
+	result := ExecuteWrite("config.json", compactJSON, cfg, nil, nil)
 
 	if !result.Success {
 		t.Fatalf("expected success, got error: %v", result.Error)
@@ -568,7 +568,7 @@ func TestExecuteWrite_EmptyContent(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newTestConfig(tmpDir)
 
-	result := ExecuteWrite("empty.txt", "", cfg, nil)
+	result := ExecuteWrite("empty.txt", "", cfg, nil, nil)
 
 	if !result.Success {
 		t.Fatalf("expected success for empty content, got error: %v", result.Error)
@@ -605,7 +605,7 @@ func TestExecuteWrite_ExcludedPaths(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ExecuteWrite(tt.path, "content", cfg, nil)
+			result := ExecuteWrite(tt.path, "content", cfg, nil, nil)
 
 			if result.Success {
 				t.Error("expected failure for excluded path")
@@ -619,7 +619,7 @@ func TestExecuteWrite_NilAuditLog(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 
 	// Should not panic with nil audit log
-	result := ExecuteWrite("test.txt", "content", cfg, nil)
+	result := ExecuteWrite("test.txt", "content", cfg, nil, nil)
 
 	if !result.Success {
 		t.Errorf("expected success, got error: %v", result.Error)
@@ -639,7 +639,7 @@ func TestExecuteWrite_AtomicWrite(t *testing.T) {
 	}
 
 	newContent := "new content"
-	result := ExecuteWrite("atomic.txt", newContent, cfg, nil)
+	result := ExecuteWrite("atomic.txt", newContent, cfg, nil, nil)
 
 	if !result.Success {
 		t.Fatalf("expected success, got error: %v", result.Error)
@@ -684,7 +684,7 @@ func TestExecuteWrite_MaxWriteSizeBoundary(t *testing.T) {
 			content := strings.Repeat("x", tt.size)
 			filename := strings.ReplaceAll(tt.name, " ", "_") + ".txt"
 
-			result := ExecuteWrite(filename, content, cfg, nil)
+			result := ExecuteWrite(filename, content, cfg, nil, nil)
 
 			if tt.shouldPass && !result.Success {
 				t.Errorf("expected success for size %d, got error: %v", tt.size, result.Error)
@@ -705,7 +705,7 @@ func TestExecuteWrite_AuditLogContents(t *testing.T) {
 	audit := &testAuditLog{}
 
 	// Test new file
-	ExecuteWrite("new.txt", "content", cfg, audit.log)
+	ExecuteWrite("new.txt", "content", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -742,7 +742,7 @@ func TestExecuteWrite_AuditLogWithBackup(t *testing.T) {
 	}
 
 	audit := &testAuditLog{}
-	ExecuteWrite("existing.txt", "new", cfg, audit.log)
+	ExecuteWrite("existing.txt", "new", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -759,7 +759,7 @@ func TestExecuteWrite_ExecutionTimeTracking(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 
 	startTime := time.Now()
-	result := ExecuteWrite("test.txt", "content", cfg, nil)
+	result := ExecuteWrite("test.txt", "content", cfg, nil, nil)
 	elapsed := time.Since(startTime)
 
 	if result.ExecutionTime <= 0 {
@@ -776,7 +776,7 @@ func TestExecuteWrite_AllowedExtensionsEmpty(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 	cfg.AllowedExtensions = []string{} // No restrictions
 
-	result := ExecuteWrite("anything.xyz", "content", cfg, nil)
+	result := ExecuteWrite("anything.xyz", "content", cfg, nil, nil)
 
 	if !result.Success {
 		t.Errorf("expected success with no extension restrictions, got error: %v", result.Error)
@@ -792,7 +792,7 @@ func TestExecuteWrite_CaseInsensitiveExtension(t *testing.T) {
 
 	for _, filename := range tests {
 		t.Run(filename, func(t *testing.T) {
-			result := ExecuteWrite(filename, "content", cfg, nil)
+			result := ExecuteWrite(filename, "content", cfg, nil, nil)
 
 			if !result.Success {
 				t.Errorf("expected success for %s, got error: %v", filename, result.Error)
@@ -820,7 +820,7 @@ func TestExecuteWrite_SpecialCharactersInContent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			filename := strings.ReplaceAll(tt.name, " ", "_") + ".txt"
-			result := ExecuteWrite(filename, tt.content, cfg, nil)
+			result := ExecuteWrite(filename, tt.content, cfg, nil, nil)
 
 			if !result.Success {
 				t.Fatalf("expected success, got error: %v", result.Error)
@@ -882,7 +882,7 @@ func BenchmarkExecuteWrite_SmallFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ExecuteWrite(fmt.Sprintf("file%d.txt", i), "small content", cfg, nil)
+		ExecuteWrite(fmt.Sprintf("file%d.txt", i), "small content", cfg, nil, nil)
 	}
 }
 
@@ -895,7 +895,7 @@ func BenchmarkExecuteWrite_LargeFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ExecuteWrite(fmt.Sprintf("file%d.txt", i), content, cfg, nil)
+		ExecuteWrite(fmt.Sprintf("file%d.txt", i), content, cfg, nil, nil)
 	}
 }
 
@@ -904,7 +904,7 @@ func TestExecuteWrite_AuditLogOnPathSecurityFailure(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 
 	audit := &testAuditLog{}
-	ExecuteWrite("../outside.txt", "content", cfg, audit.log)
+	ExecuteWrite("../outside.txt", "content", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -925,7 +925,7 @@ func TestExecuteWrite_AuditLogOnExtensionFailure(t *testing.T) {
 	cfg.AllowedExtensions = []string{".txt"}
 
 	audit := &testAuditLog{}
-	ExecuteWrite("file.exe", "content", cfg, audit.log)
+	ExecuteWrite("file.exe", "content", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -946,7 +946,7 @@ func TestExecuteWrite_AuditLogOnResourceLimit(t *testing.T) {
 	cfg.MaxWriteSize = 10
 
 	audit := &testAuditLog{}
-	ExecuteWrite("test.txt", "this content is too large", cfg, audit.log)
+	ExecuteWrite("test.txt", "this content is too large", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -983,7 +983,7 @@ func TestExecuteWrite_WriteErrorOnReadOnlyDir(t *testing.T) {
 	}
 	defer os.Chmod(subDir, 0755) // Restore for cleanup
 
-	result := ExecuteWrite("readonly/test.txt", "content", cfg, nil)
+	result := ExecuteWrite("readonly/test.txt", "content", cfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure when directory is read-only")
@@ -1021,7 +1021,7 @@ func TestExecuteWrite_BackupFailsOnReadOnlyDir(t *testing.T) {
 	}
 	defer os.Chmod(subDir, 0755) // Restore for cleanup
 
-	result := ExecuteWrite("backuptest/existing.txt", "new content", cfg, nil)
+	result := ExecuteWrite("backuptest/existing.txt", "new content", cfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure when backup cannot be created")
@@ -1052,7 +1052,7 @@ func TestExecuteWrite_CannotCreateNestedDirectory(t *testing.T) {
 	defer os.Chmod(readonlyDir, 0755)
 
 	// Try to create a file in a subdirectory that can't be created
-	result := ExecuteWrite("readonly/newsubdir/test.txt", "content", cfg, nil)
+	result := ExecuteWrite("readonly/newsubdir/test.txt", "content", cfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure when directory cannot be created")
@@ -1090,7 +1090,7 @@ func TestExecuteWrite_AuditLogOnBackupFailure(t *testing.T) {
 	defer os.Chmod(subDir, 0755)
 
 	audit := &testAuditLog{}
-	ExecuteWrite("auditbackup/existing.txt", "new content", cfg, audit.log)
+	ExecuteWrite("auditbackup/existing.txt", "new content", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -1125,7 +1125,7 @@ func TestExecuteWrite_AuditLogOnDirectoryCreationFailure(t *testing.T) {
 	defer os.Chmod(readonlyDir, 0755)
 
 	audit := &testAuditLog{}
-	ExecuteWrite("readonly2/newsubdir/test.txt", "content", cfg, audit.log)
+	ExecuteWrite("readonly2/newsubdir/test.txt", "content", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -1203,7 +1203,7 @@ func TestExecuteWrite_AuditLogOnWriteError(t *testing.T) {
 	defer os.Chmod(subDir, 0755)
 
 	audit := &testAuditLog{}
-	ExecuteWrite("readonly_write/test.txt", "content", cfg, audit.log)
+	ExecuteWrite("readonly_write/test.txt", "content", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {

@@ -29,6 +29,7 @@ type Config struct {
 	IOTimeout           time.Duration
 	IOMemoryLimit       string
 	IOCPULimit          int
+	ContainerPool PoolConfig
 }
 
 // FullConfig represents the complete configuration structure including search
@@ -92,4 +93,14 @@ type fullConfig struct {
 		File   string `yaml:"file"`
 		Format string `yaml:"format"`
 	} `yaml:"logging"`
+}
+
+// PoolConfig holds container pool configuration
+type PoolConfig struct {
+	Enabled             bool          `yaml:"enabled"`
+	Size                int           `yaml:"size"`
+	MaxUsesPerContainer int           `yaml:"max_uses_per_container"`
+	IdleTimeout         time.Duration `yaml:"idle_timeout"`
+	HealthCheckInterval time.Duration `yaml:"health_check_interval"`
+	StartupContainers   int           `yaml:"startup_containers"`
 }

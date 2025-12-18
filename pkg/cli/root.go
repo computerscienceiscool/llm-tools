@@ -70,6 +70,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("bootstrap failed: %w", err)
 	}
+	defer app.Close()
 
 	return app.Run()
 }

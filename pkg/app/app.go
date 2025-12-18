@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
+	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
 	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/pkg/search"
@@ -21,6 +22,7 @@ type App struct {
 	session   *session.Session
 	executor  *evaluator.Executor
 	searchCfg *search.SearchConfig
+	pool      *sandbox.ContainerPool
 }
 
 // Run executes the application based on configuration
@@ -181,4 +183,12 @@ func (a *App) GetConfig() *config.Config {
 // GetSearchConfig returns the app's search configuration
 func (a *App) GetSearchConfig() *search.SearchConfig {
 	return a.searchCfg
+}
+
+// Close cleans up app resources
+func (a *App) Close() error {
+	if a.pool != nil {
+		return a.pool.Close()
+	}
+	return nil
 }

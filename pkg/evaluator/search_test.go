@@ -17,7 +17,7 @@ func TestExecuteSearch_Disabled(t *testing.T) {
 	}
 
 	audit := &testAuditLog{}
-	result := ExecuteSearch("test query", cfg, searchCfg, audit.log)
+	result := ExecuteSearch("test query", cfg, searchCfg, audit.log, nil)
 
 	if result.Success {
 		t.Error("expected failure when search is disabled")
@@ -40,7 +40,7 @@ func TestExecuteSearch_Disabled(t *testing.T) {
 func TestExecuteSearch_NilSearchConfig(t *testing.T) {
 	cfg := newTestConfig(t.TempDir())
 
-	result := ExecuteSearch("test query", cfg, nil, nil)
+	result := ExecuteSearch("test query", cfg, nil, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure when search config is nil")
@@ -54,7 +54,7 @@ func TestExecuteSearch_NilSearchConfig(t *testing.T) {
 func TestExecuteSearch_CommandType(t *testing.T) {
 	cfg := newTestConfig(t.TempDir())
 
-	result := ExecuteSearch("my query", cfg, nil, nil)
+	result := ExecuteSearch("my query", cfg, nil, nil, nil)
 
 	if result.Command.Type != "search" {
 		t.Errorf("expected command type 'search', got %q", result.Command.Type)
@@ -68,7 +68,7 @@ func TestExecuteSearch_CommandType(t *testing.T) {
 func TestExecuteSearch_ExecutionTime(t *testing.T) {
 	cfg := newTestConfig(t.TempDir())
 
-	result := ExecuteSearch("test", cfg, nil, nil)
+	result := ExecuteSearch("test", cfg, nil, nil, nil)
 
 	if result.ExecutionTime <= 0 {
 		t.Error("execution time should be positive")
@@ -83,7 +83,7 @@ func TestExecuteSearch_NilAuditLog(t *testing.T) {
 	}
 
 	// Should not panic with nil audit log
-	result := ExecuteSearch("test", cfg, searchCfg, nil)
+	result := ExecuteSearch("test", cfg, searchCfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure")
@@ -98,7 +98,7 @@ func TestExecuteSearch_AuditLogOnFailure(t *testing.T) {
 	}
 
 	audit := &testAuditLog{}
-	ExecuteSearch("test query", cfg, searchCfg, audit.log)
+	ExecuteSearch("test query", cfg, searchCfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -126,7 +126,7 @@ func TestExecuteSearch_InitFailure(t *testing.T) {
 		VectorDBPath: "/nonexistent/path/that/cannot/be/created/\x00/db.sqlite",
 	}
 
-	result := ExecuteSearch("test", cfg, searchCfg, nil)
+	result := ExecuteSearch("test", cfg, searchCfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure for invalid db path")
@@ -149,7 +149,7 @@ func TestExecuteSearch_EmptyQuery(t *testing.T) {
 		OllamaURL:          "/nonexistent/python", // Will fail at search, not init
 	}
 
-	result := ExecuteSearch("", cfg, searchCfg, nil)
+	result := ExecuteSearch("", cfg, searchCfg, nil, nil)
 
 	// Empty query should still attempt to search (and fail due to Python)
 	t.Logf("Empty query result: success=%v, error=%v", result.Success, result.Error)
@@ -177,7 +177,7 @@ func TestExecuteSearch_WithValidDB(t *testing.T) {
 		OllamaURL:          "/nonexistent/python", // Will fail at Python check
 	}
 
-	result := ExecuteSearch("test query", cfg, searchCfg, nil)
+	result := ExecuteSearch("test query", cfg, searchCfg, nil, nil)
 
 	// Should fail at Python check, not database init
 	if result.Success {
@@ -198,7 +198,7 @@ func TestExecuteSearch_ResultFormatting(t *testing.T) {
 		Enabled: false, // Disabled to avoid needing Python
 	}
 
-	result := ExecuteSearch("test query", cfg, searchCfg, nil)
+	result := ExecuteSearch("test query", cfg, searchCfg, nil, nil)
 
 	// Even on failure, command metadata should be correct
 	if result.Command.Type != "search" {
@@ -333,7 +333,7 @@ func TestExecuteSearch_VariousQueries(t *testing.T) {
 
 	for _, query := range queries {
 		t.Run(query, func(t *testing.T) {
-			result := ExecuteSearch(query, cfg, searchCfg, nil)
+			result := ExecuteSearch(query, cfg, searchCfg, nil, nil)
 
 			if result.Success {
 				t.Error("expected failure with search disabled")
@@ -384,7 +384,7 @@ func TestExecuteSearch_ConfigValues(t *testing.T) {
 
 	for _, tc := range configs {
 		t.Run(tc.name, func(t *testing.T) {
-			result := ExecuteSearch("test", cfg, tc.searchCfg, nil)
+			result := ExecuteSearch("test", cfg, tc.searchCfg, nil, nil)
 			t.Logf("Result: success=%v, error=%v", result.Success, result.Error)
 		})
 	}
@@ -400,7 +400,7 @@ func BenchmarkExecuteSearch_Disabled(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ExecuteSearch("test query", cfg, searchCfg, nil)
+		ExecuteSearch("test query", cfg, searchCfg, nil, nil)
 	}
 }
 
@@ -409,7 +409,7 @@ func BenchmarkExecuteSearch_NilConfig(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ExecuteSearch("test query", cfg, nil, nil)
+		ExecuteSearch("test query", cfg, nil, nil, nil)
 	}
 }
 

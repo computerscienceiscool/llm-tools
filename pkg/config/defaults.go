@@ -74,6 +74,14 @@ func SetViperDefaults() {
 	viper.SetDefault("logging.level", "info")
 	viper.SetDefault("logging.file", "./llm-runtime.log")
 	viper.SetDefault("logging.format", "json")
+
+	// Container pool defaults
+	viper.SetDefault("container_pool.enabled", false)
+	viper.SetDefault("container_pool.size", DefaultPoolSize)
+	viper.SetDefault("container_pool.max_uses_per_container", DefaultMaxUsesPerContainer)
+	viper.SetDefault("container_pool.idle_timeout", DefaultPoolIdleTimeout)
+	viper.SetDefault("container_pool.health_check_interval", DefaultHealthCheckInterval)
+	viper.SetDefault("container_pool.startup_containers", DefaultStartupContainers)
 }
 
 // SetFullConfigDefaults sets default values on a FullConfig struct (deprecated, use SetViperDefaults)

@@ -67,7 +67,7 @@ commands:
     timeout_seconds: 30
     memory_limit: "512m"
     cpu_limit: 1
-    network_enabled: false
+    network_enabled: true
     whitelist:
       - "go test"
       - "go build" 
@@ -144,3 +144,12 @@ logging:
   file: "./llm-runtime.log"
   format: "json"  # json or text
 
+
+# Container pool configuration (Phase 5 - Performance optimization)
+container_pool:
+  enabled: true
+  size: 5
+  max_uses_per_container: 100
+  idle_timeout: 5m
+  health_check_interval: 30s
+  startup_containers: 2

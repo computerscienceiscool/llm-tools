@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
+	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
 	"github.com/computerscienceiscool/llm-runtime/pkg/scanner"
 	"github.com/computerscienceiscool/llm-runtime/pkg/search"
 )
 
 // ExecuteSearch handles the "search" command
-func ExecuteSearch(query string, cfg *config.Config, searchCfg *search.SearchConfig, auditLog func(cmd, arg string, success bool, errMsg string)) scanner.ExecutionResult {
+func ExecuteSearch(query string, cfg *config.Config, searchCfg *search.SearchConfig, auditLog func(cmd, arg string, success bool, errMsg string), pool *sandbox.ContainerPool) scanner.ExecutionResult {
 	startTime := time.Now()
 	result := scanner.ExecutionResult{
 		Command: scanner.Command{Type: "search", Argument: query},

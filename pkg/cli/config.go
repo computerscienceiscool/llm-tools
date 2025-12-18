@@ -61,6 +61,16 @@ func buildConfig() (*config.Config, error) {
 	}
 	cfg.IOTimeout = ioTimeout
 
+	// Load container pool configuration
+	cfg.ContainerPool = config.PoolConfig{
+		Enabled:             viper.GetBool("container_pool.enabled"),
+		Size:                viper.GetInt("container_pool.size"),
+		MaxUsesPerContainer: viper.GetInt("container_pool.max_uses_per_container"),
+		IdleTimeout:         viper.GetDuration("container_pool.idle_timeout"),
+		HealthCheckInterval: viper.GetDuration("container_pool.health_check_interval"),
+		StartupContainers:   viper.GetInt("container_pool.startup_containers"),
+	}
+
 	// If exec-whitelist is empty from flags, try loading from config file
 	if len(cfg.ExecWhitelist) == 0 {
 		// Viper can read from nested config like commands.exec.whitelist

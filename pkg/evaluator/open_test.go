@@ -68,7 +68,7 @@ func TestExecuteOpen_Success(t *testing.T) {
 	}
 
 	audit := &testAuditLog{}
-	result := ExecuteOpen("test.txt", cfg, audit.log)
+	result := ExecuteOpen("test.txt", cfg, audit.log, nil)
 
 	if !result.Success {
 		t.Errorf("expected success, got error: %v", result.Error)
@@ -110,7 +110,7 @@ func TestExecuteOpen_AbsolutePath(t *testing.T) {
 		t.Fatalf("failed to create test file: %v", err)
 	}
 
-	result := ExecuteOpen(testFile, cfg, nil)
+	result := ExecuteOpen(testFile, cfg, nil, nil)
 
 	if !result.Success {
 		t.Errorf("expected success with absolute path, got error: %v", result.Error)
@@ -126,7 +126,7 @@ func TestExecuteOpen_FileNotFound(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 
 	audit := &testAuditLog{}
-	result := ExecuteOpen("nonexistent.txt", cfg, audit.log)
+	result := ExecuteOpen("nonexistent.txt", cfg, audit.log, nil)
 
 	if result.Success {
 		t.Error("expected failure for nonexistent file")
@@ -166,7 +166,7 @@ func TestExecuteOpen_PathTraversal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ExecuteOpen(tt.path, cfg, nil)
+			result := ExecuteOpen(tt.path, cfg, nil, nil)
 
 			if result.Success {
 				t.Error("expected failure for path traversal attempt")
@@ -222,7 +222,7 @@ func TestExecuteOpen_ExcludedPaths(t *testing.T) {
 				t.Fatalf("failed to create file: %v", err)
 			}
 
-			result := ExecuteOpen(tt.path, cfg, nil)
+			result := ExecuteOpen(tt.path, cfg, nil, nil)
 
 			if result.Success {
 				t.Error("expected failure for excluded path")
@@ -247,7 +247,7 @@ func TestExecuteOpen_FileTooLarge(t *testing.T) {
 		t.Fatalf("failed to create test file: %v", err)
 	}
 
-	result := ExecuteOpen("large.txt", cfg, nil)
+	result := ExecuteOpen("large.txt", cfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure for file too large")
@@ -271,7 +271,7 @@ func TestExecuteOpen_EmptyFile(t *testing.T) {
 		t.Fatalf("failed to create test file: %v", err)
 	}
 
-	result := ExecuteOpen("empty.txt", cfg, nil)
+	result := ExecuteOpen("empty.txt", cfg, nil, nil)
 
 	if !result.Success {
 		t.Errorf("expected success for empty file, got error: %v", result.Error)
@@ -294,7 +294,7 @@ func TestExecuteOpen_BinaryContent(t *testing.T) {
 		t.Fatalf("failed to create test file: %v", err)
 	}
 
-	result := ExecuteOpen("binary.txt", cfg, nil)
+	result := ExecuteOpen("binary.txt", cfg, nil, nil)
 
 	if !result.Success {
 		t.Errorf("expected success, got error: %v", result.Error)
@@ -321,7 +321,7 @@ func TestExecuteOpen_NestedDirectory(t *testing.T) {
 		t.Fatalf("failed to create test file: %v", err)
 	}
 
-	result := ExecuteOpen("a/b/c/nested.txt", cfg, nil)
+	result := ExecuteOpen("a/b/c/nested.txt", cfg, nil, nil)
 
 	if !result.Success {
 		t.Errorf("expected success for nested file, got error: %v", result.Error)
@@ -342,7 +342,7 @@ func TestExecuteOpen_NilAuditLog(t *testing.T) {
 	}
 
 	// Should not panic with nil audit log
-	result := ExecuteOpen("test.txt", cfg, nil)
+	result := ExecuteOpen("test.txt", cfg, nil, nil)
 
 	if !result.Success {
 		t.Errorf("expected success, got error: %v", result.Error)
@@ -354,7 +354,7 @@ func TestExecuteOpen_NilAuditLogOnError(t *testing.T) {
 	cfg := newTestConfig(tmpDir)
 
 	// Should not panic with nil audit log on error path
-	result := ExecuteOpen("nonexistent.txt", cfg, nil)
+	result := ExecuteOpen("nonexistent.txt", cfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure for nonexistent file")
@@ -385,7 +385,7 @@ func TestExecuteOpen_SpecialCharactersInFilename(t *testing.T) {
 				t.Fatalf("failed to create test file: %v", err)
 			}
 
-			result := ExecuteOpen(tt.filename, cfg, nil)
+			result := ExecuteOpen(tt.filename, cfg, nil, nil)
 
 			if !result.Success {
 				t.Errorf("expected success for %q, got error: %v", tt.filename, result.Error)
@@ -408,7 +408,7 @@ func TestExecuteOpen_ExecutionTimeTracking(t *testing.T) {
 	}
 
 	startTime := time.Now()
-	result := ExecuteOpen("test.txt", cfg, nil)
+	result := ExecuteOpen("test.txt", cfg, nil, nil)
 	elapsed := time.Since(startTime)
 
 	if result.ExecutionTime <= 0 {
@@ -431,7 +431,7 @@ func TestExecuteOpen_DirectoryInsteadOfFile(t *testing.T) {
 		t.Fatalf("failed to create subdirectory: %v", err)
 	}
 
-	result := ExecuteOpen("subdir", cfg, nil)
+	result := ExecuteOpen("subdir", cfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure when opening a directory")
@@ -467,7 +467,7 @@ func TestExecuteOpen_MaxFileSizeBoundary(t *testing.T) {
 				t.Fatalf("failed to create test file: %v", err)
 			}
 
-			result := ExecuteOpen(filename, cfg, nil)
+			result := ExecuteOpen(filename, cfg, nil, nil)
 
 			if tt.shouldPass && !result.Success {
 				t.Errorf("expected success for size %d, got error: %v", tt.size, result.Error)
@@ -492,7 +492,7 @@ func TestExecuteOpen_AuditLogContents(t *testing.T) {
 	audit := &testAuditLog{}
 
 	// Test successful open
-	ExecuteOpen("audit_test.txt", cfg, audit.log)
+	ExecuteOpen("audit_test.txt", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -515,7 +515,7 @@ func TestExecuteOpen_AuditLogContents(t *testing.T) {
 
 	// Test failed open
 	audit.reset()
-	ExecuteOpen("nonexistent.txt", cfg, audit.log)
+	ExecuteOpen("nonexistent.txt", cfg, audit.log, nil)
 
 	entries = audit.getEntries()
 	if len(entries) != 1 {
@@ -543,7 +543,7 @@ func BenchmarkExecuteOpen_SmallFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ExecuteOpen("small.txt", cfg, nil)
+		ExecuteOpen("small.txt", cfg, nil, nil)
 	}
 }
 
@@ -560,7 +560,7 @@ func BenchmarkExecuteOpen_LargeFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ExecuteOpen("large.txt", cfg, nil)
+		ExecuteOpen("large.txt", cfg, nil, nil)
 	}
 }
 
@@ -577,7 +577,7 @@ func TestExecuteOpen_PermissionDenied(t *testing.T) {
 	}
 	defer os.Chmod(testFile, 0644) // Restore for cleanup
 
-	result := ExecuteOpen("noperm.txt", cfg, nil)
+	result := ExecuteOpen("noperm.txt", cfg, nil, nil)
 
 	if result.Success {
 		t.Error("expected failure when file is not readable")
@@ -612,7 +612,7 @@ func TestExecuteOpen_AuditLogOnPermissionDenied(t *testing.T) {
 	defer os.Chmod(testFile, 0644)
 
 	audit := &testAuditLog{}
-	ExecuteOpen("noperm_audit.txt", cfg, audit.log)
+	ExecuteOpen("noperm_audit.txt", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -635,7 +635,7 @@ func TestExecuteOpen_AuditLogOnFileTooLarge(t *testing.T) {
 	}
 
 	audit := &testAuditLog{}
-	ExecuteOpen("large_audit.txt", cfg, audit.log)
+	ExecuteOpen("large_audit.txt", cfg, audit.log, nil)
 
 	entries := audit.getEntries()
 	if len(entries) != 1 {
@@ -662,7 +662,7 @@ func TestExecuteOpen_ReadErrorOnDirectory(t *testing.T) {
 	}
 
 	audit := &testAuditLog{}
-	result := ExecuteOpen("testdir", cfg, audit.log)
+	result := ExecuteOpen("testdir", cfg, audit.log, nil)
 
 	if result.Success {
 		t.Error("expected failure when opening a directory")
