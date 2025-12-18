@@ -21,24 +21,6 @@ Tests for the following packages are passing:
 
 ### Technical Improvements
 
-### Container Pool (Medium Priority)
-Pre-warm Docker containers to eliminate 1-3s startup latency.
-
-```go
-type ContainerPool struct {
-    containers chan *Container
-    size       int
-}
-
-func (p *ContainerPool) Get() *Container {
-    return <-p.containers
-}
-
-func (p *ContainerPool) Return(c *Container) {
-    p.containers <- c
-}
-```
-
 ### Streaming Output (Low Priority)
 Stream large command outputs instead of buffering entire result.
 

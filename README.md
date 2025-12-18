@@ -22,6 +22,13 @@ llm-runtime uses TWO separate container types for security isolation:
 - **Built from**: `Dockerfile.io` (Alpine + coreutils only)
 - **Features**: Container pooling for performance (5-10x faster)
 - **Security**: Minimal attack surface, isolated file operations
+- **Performance Optimization**: Container pooling pre-warms containers to eliminate startup overhead. Enable in config with:
+```yaml
+container_pool:
+  enabled: true
+  size: 5
+```
+See [docs/container-pooling.md](docs/container-pooling.md) for details.
 
 ### 2. Exec Container (`python-go`)
 - **Purpose**: Handles `<exec>` commands  
