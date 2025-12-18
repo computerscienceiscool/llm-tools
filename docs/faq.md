@@ -638,7 +638,7 @@ make build
 echo "<exec echo 'hello'>" | ./llm-runtime
 
 # 3. Try file reading
-echo "<read README.md>" | ./llm-runtime
+echo "<open README.md>" | ./llm-runtime
 
 # 4. Setup search (optional)
 ollama pull nomic-embed-text

@@ -415,7 +415,7 @@ make build-io-image
 ```
 Let me first check the current configuration:
 
-<read config/settings.yaml>
+<open config/settings.yaml>
 
 Now I'll update it with the new values:
 
@@ -964,7 +964,7 @@ All write operations are logged:
 
 ### **Read → Modify → Write**
 ```
-<read config/settings.yaml>
+<open config/settings.yaml>
 
 I see the port is 8080. Let me update it:
 

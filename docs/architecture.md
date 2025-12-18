@@ -15,7 +15,7 @@ llm-runtime is designed as a secure bridge between Large Language Models and cod
 └────────────────────────┬────────────────────────────────────┘
                          │
                          │ Text Commands via stdin
-                         │ <read>, <write>, <exec>, <search>
+                         │ <open>, <write>, <exec>, <search>
                          │
 ┌────────────────────────▼────────────────────────────────────┐
 │                   llm-runtime Core                          │
@@ -81,7 +81,7 @@ llm-runtime is designed as a secure bridge between Large Language Models and cod
 
 **Supported Patterns:**
 ```
-<read path/to/file>
+<open path/to/file>
 <write path/to/file>content</write>
 <exec command args>
 <search query terms>
@@ -488,7 +488,7 @@ commands:
 ```
 LLM Request
     ↓
-Command Parser → <read config.yaml>
+Command Parser → <open config.yaml>
     ↓
 Path Validator → Check: config.yaml within repo? ✓
     ↓

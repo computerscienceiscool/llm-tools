@@ -325,13 +325,13 @@ Message: path outside repository
 **Solutions:**
 ```bash
 # Use relative paths from repository root
-<read config/settings.yaml>  # ✅ Correct
+<open config/settings.yaml>  # ✅ Correct
 
 # Not absolute paths
-<read /etc/passwd>  # ❌ Wrong
+<open /etc/passwd>  # ❌ Wrong
 
 # Not paths outside repository
-<read ../../../etc/hosts>  # ❌ Wrong
+<open ../../../etc/hosts>  # ❌ Wrong
 ```
 
 ### File Not Found

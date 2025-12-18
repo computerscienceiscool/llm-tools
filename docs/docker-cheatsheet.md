@@ -778,5 +778,5 @@ docker pull python-go:latest
 docker images | grep -E "llm-runtime-io|python-go"
 
 # 4. Test
-echo "<read README.md>" | ./llm-runtime
+echo "<open README.md>" | ./llm-runtime
 ```

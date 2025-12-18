@@ -13,29 +13,56 @@ A secure tool that enables Large Language Models to autonomously explore and wor
 - **Multiple Modes**: Supports pipe, interactive, and file-based operation
 - **Configurable Security**: Exclude sensitive paths, whitelist commands, set resource limits
 
+## Container Architecture
+
+llm-runtime uses TWO separate container types for security isolation:
+
+### 1. I/O Container (`llm-runtime-io:latest`)
+- **Purpose**: Handles `<open>` and `<write>` commands
+- **Built from**: `Dockerfile.io` (Alpine + coreutils only)
+- **Features**: Container pooling for performance (5-10x faster)
+- **Security**: Minimal attack surface, isolated file operations
+
+### 2. Exec Container (`python-go`)
+- **Purpose**: Handles `<exec>` commands  
+- **Image**: Prebuilt `python-go` image (has Python and Go)
+- **How to get**: `docker pull python-go`
+- **Included**: Python, Go, and common development tools
+
 ## Installation
 
 ### Prerequisites
 - Go 1.21 or later
-- Docker 
-- Ollama with nomic-embed-text model (for search feature)
+- **Docker** (required - all I/O and exec operations are containerized)
+- Ollama with nomic-embed-text model (for search feature - optional)
 
-### Build from source
+### Quick Setup
+
 ```bash
 git clone https://github.com/computerscienceiscool/llm-runtime.git
 cd llm-runtime
+
+# STEP 1: Build the I/O container (REQUIRED for file operations)
+make build-io-image
+
+# STEP 2: Pull the exec container (has Python and Go)
+docker pull python-go
+
+# STEP 3: Build the binary
 make build
 ```
 
-Or build directly:
-```bash
-go build -o llm-runtime main.go
-```
+### Verify Installation
 
-### Quick setup
 ```bash
-chmod +x setup.sh
-./setup.sh
+# Check that I/O container exists
+make check-io-image
+
+# Check that exec container exists
+docker image inspect python-go >/dev/null 2>&1 && echo "python-go image found" || echo "Run: docker pull python-go"
+
+# Check Docker availability
+make check-docker
 ```
 
 ## Project Structure
@@ -53,6 +80,7 @@ llm-runtime/
 │   └── session/           # Session management
 ├── internal/              # Internal packages
 │   └── core/              # Core internal logic
+├── Dockerfile.io          # I/O container definition (Alpine + coreutils)
 └── docs/                  # Documentation
     ├── .index/            # Documentation index
     └── examples/          # Example workflows
@@ -84,6 +112,9 @@ func main() {
 Let me run the tests <exec go test ./...>
 Now build the project <exec make build>
 ```
+
+**Important**: The exec container (`python-go`) includes Python and Go. For other languages or tools, you may need to use a different image or build a custom one.
+
 ### 4. Semantic Search: `<search query>`
 ```
 Find files related to authentication <search user login auth>
@@ -94,6 +125,8 @@ Find database code <search database connection query>
 ```bash
 # Install and start Ollama
 curl -fsSL https://ollama.com/install.sh | sh
+
+# Pull the embedding model
 ollama pull nomic-embed-text
 
 # Build search index
@@ -112,8 +145,20 @@ echo "Let me check the main file <open main.go>" | ./llm-runtime
 
 ### With Exec Commands Enabled
 
+**The exec container (`python-go`) includes Python and Go**, so you can run these commands immediately:
+
 ```bash
-echo "Check code and run tests: <open main.go> <exec go test>" | ./llm-runtime 
+echo "Run Go tests: <exec go test ./...>" | ./llm-runtime
+echo "Run Python script: <exec python3 script.py>" | ./llm-runtime 
+```
+
+**For other languages** (Node.js, Rust, etc.), you can specify a different Docker image in the config:
+
+```yaml
+commands:
+  exec:
+    enabled: true
+    container_image: "your-custom-image"  # Replace python-go
 ```
 
 ### Interactive Mode
@@ -147,12 +192,17 @@ In interactive mode, the tool continuously processes input and executes commands
 - `--force`: Force write even if conflicts exist
 
 ### Exec Command Options
-**Note**: Exec is always enabled via containers. Access controlled by whitelist only.
 - `--exec-timeout DURATION`: Timeout for exec commands (default: 30s)
 - `--exec-memory LIMIT`: Memory limit for containers (default: 512m)
 - `--exec-cpu LIMIT`: CPU limit for containers (default: 2)
-- `--exec-image IMAGE`: Docker image 
+- `--exec-image IMAGE`: Docker image for exec commands (default: ubuntu:22.04)
 - `--exec-whitelist`: Comma-separated list of allowed commands
+
+### I/O Container Options
+- `--io-image IMAGE`: Docker image for I/O operations (default: llm-runtime-io:latest)
+- `--io-timeout DURATION`: Timeout for I/O operations (default: 60s)
+- `--io-memory LIMIT`: Memory limit for I/O containers (default: 256m)
+- `--io-cpu LIMIT`: CPU limit for I/O containers (default: 1)
 
 ### Security Options
 - `--exclude PATTERNS`: Comma-separated list of excluded paths (default: ".git,.env,*.key,*.pem")
@@ -166,7 +216,7 @@ In interactive mode, the tool continuously processes input and executes commands
 - Ensures all accessed files are within repository bounds
 
 
-**Exec Command Security**:
+### Exec Command Security:
 - **Docker Isolation**: Commands run in isolated Docker containers
 - **No Network Access**: Containers have no network connectivity (`--network none`)
 - **Read-Only Repository**: Repository mounted read-only at `/workspace`
@@ -175,8 +225,9 @@ In interactive mode, the tool continuously processes input and executes commands
 - **Command Whitelisting**: Only pre-approved commands allowed
 - **Non-Root Execution**: Commands run as unprivileged user (1000:1000)
 - **Security Options**: Capabilities dropped, no new privileges
+- **Configurable**: Control via `commands.exec.enabled` and whitelist
 
-**I/O Containerization** :
+### I/O Containerization:
 - **File Reads**: Execute via `cat` in minimal Alpine container
 - **File Writes**: Atomic operations via temp files in container
 - **Path Isolation**: Container provides additional layer beyond path validation
@@ -186,13 +237,49 @@ In interactive mode, the tool continuously processes input and executes commands
 
 
 ### Default Whitelisted Commands
+
+These commands work with the `python-go` exec container:
+
+```yaml
+whitelist:
+  # Go (included in python-go)
+  - "go test"
+  - "go build"
+  - "go run"
+  - "go mod"
+  - "go version"
+  
+  # Python (included in python-go)
+  - "python"
+  - "python3"
+  - "python -m pytest"
+  - "pip install"
+  
+  # Build tools (included in python-go)
+  - "make"
+  - "make test"
+  - "make build"
+  
+  # System utilities (included in python-go)
+  - "ls"
+  - "cat"
+  - "grep"
+  - "find"
+  - "head"
+  - "tail"
+  - "wc"
 ```
-Go:        go test, go build, go run, go mod
-Node.js:   npm test, npm run build, npm install, node
-Python:    python, python3, python -m pytest, pip install
-Build:     make, make test, make build
-Rust:      cargo build, cargo test, cargo run
-System:    ls, cat, grep, find, head, tail, wc
+
+### Additional Languages
+
+For Node.js, Rust, or other languages, use a different Docker image:
+
+```yaml
+commands:
+  exec:
+    container_image: "node:alpine"  # For Node.js
+    # or
+    container_image: "rust:alpine"  # For Rust
 ```
 
 ### Excluded Paths
@@ -232,9 +319,17 @@ and execute commands in a secure environment. You can use these commands in your
 - <open filepath> - Read file contents
 - <write filepath>content</write> - Create or update files  
 - <exec command args> - Execute commands in Docker container
+- <search query> - Search for files using semantic search
 
-All exec commands run in isolated containers with no network access and only whitelisted 
-commands are allowed. Use exec to run tests, build projects, and validate changes.
+IMPORTANT NOTES:
+- All file operations happen in isolated Docker containers
+- Exec commands run in isolated containers with no network access
+- Only whitelisted exec commands are allowed
+- The exec container must have required tools (go, node, python, etc.) installed
+- File size limits apply (1MB for reads, 100KB for writes by default)
+
+Use exec to run tests, build projects, and validate changes. Always verify the exec 
+container has the necessary tools before using language-specific commands.
 ```
 
 ### Example Session
@@ -253,7 +348,7 @@ Now I'll run the tests to verify functionality:
 
 <exec go test ./...>
 
-Let me also build the project to ensure it compiles
+Let me also build the project to ensure it compiles:
 
 <exec go build -o bin/app cmd/main.go>
 
@@ -297,26 +392,65 @@ Time elapsed: 3.45s
 === END ===
 ```
 
-## Docker Setup for Exec Commands
+## Docker Setup for Containers
 
-The tool automatically uses Docker to create secure, isolated environments for command execution. The default setup:
+### I/O Container (Required)
 
-### Container Configuration
+The I/O container is minimal and built from source:
+
 ```dockerfile
-# Based on ubuntu:22.04 with common tools pre-installed
-FROM ubuntu:22.04
+# Dockerfile.io
+FROM golang:1.22.2-alpine
 
-RUN apt-get update && apt-get install -y \
-    golang-go \
-    python3 \
-    python3-pip \
-    nodejs \
-    npm \
-    make \
-    gcc \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# Create non-root user
+RUN addgroup -g 1000 llmuser && \
+    adduser -D -u 1000 -G llmuser llmuser
+
+# Install only essential tools
+RUN apk add --no-cache coreutils
+
+# Set working directory
+WORKDIR /workspace
+
+# Switch to non-root user
+USER llmuser
+
+CMD ["/bin/sh"]
 ```
+
+Build it with:
+```bash
+make build-io-image
+```
+
+### Exec Container (python-go)
+
+The exec container is a prebuilt image that includes Python and Go:
+
+```bash
+# Pull the image
+docker pull python-go
+```
+
+This image contains:
+- Python (python3)
+- Go
+- Common development tools (git, make, etc.)
+
+**To use a different exec image:**
+
+Edit `llm-runtime.config.yaml`:
+```yaml
+commands:
+  exec:
+    enabled: true
+    container_image: "node:alpine"  # Or any other image
+```
+
+Popular alternatives:
+- `node:alpine` - For Node.js projects
+- `rust:alpine` - For Rust projects
+- `ubuntu:22.04` - Minimal Ubuntu (won't have Go/Python/Node by default)
 
 ### Runtime Security
 ```bash
@@ -333,7 +467,7 @@ docker run \
     -v /repo:/workspace:ro \
     -v /temp:/tmp/workspace:rw \
     --workdir /workspace \
-    ubuntu:22.04 \
+    <container-image> \
     sh -c "command"
 ```
 
@@ -377,12 +511,6 @@ make exec-demo
 ```bash
 ./write_demo.sh
 ```
-
-### Example Usage
-```bash
-make example
-```
-
 
 ### Example Usage
 ```bash
@@ -439,36 +567,127 @@ container_pool:
 
 The pool automatically handles health checks, container recycling, and cleanup.
 
+**Note**: Container pooling only applies to I/O operations (`<open>` and `<write>`), not `<exec>` commands.
+
 ## Configuration
 
 Edit `llm-runtime.config.yaml` to customize:
 
-```
+```yaml
+# Repository settings
+repository:
+  root: "."
+  excluded_paths:
+    - ".git"
+    - ".env"
+    - "*.key"
+    - "secrets/"
+
 commands:
+  # Open command (uses I/O container)
+  open:
+    enabled: true
+    max_file_size: 1048576  # 1MB
+    
+  # Write command (uses I/O container)
+  write:
+    enabled: true
+    max_file_size: 102400  # 100KB
+    backup_before_write: true
+    allowed_extensions:
+      - ".go"
+      - ".py"
+      - ".js"
+      - ".md"
+
+  # Exec command (uses exec container)
   exec:
-    # Note: Exec is always enabled (container-based security).
-    # Access is controlled via whitelist only.
-    whitelist:
-      - "go test"
-      - "npm build"
-      - "python3 -m pytest"
+    enabled: true
+    container_image: "python-go"  # Has Python and Go
     timeout_seconds: 30
     memory_limit: "512m"
     cpu_limit: 2
-    container_image: "python-go"
+    network_enabled: false  # Keep disabled for security
+    whitelist:
+      - "go test"
+      - "go build"
+      - "python3"
+      - "make test"
+      # Add more commands as needed
 
-  # I/O Containerization settings (optional - defaults work for most cases)
+  # I/O Containerization settings
   io:
     container_image: "llm-runtime-io:latest"
     timeout: "60s"
     memory_limit: "256m"
     cpu_limit: 1
 
+  # Search command
+  search:
+    enabled: false  # Set to true to enable
+    ollama_url: "http://localhost:11434"
+    embedding_model: "nomic-embed-text"
+    max_results: 10
+
+# Container pool (optional - for I/O operations only)
+container_pool:
+  enabled: true
+  size: 5
+  max_uses_per_container: 100
+  idle_timeout: 5m
+  health_check_interval: 30s
+  startup_containers: 2
+
 security:
   excluded_paths:
     - ".git"
     - "*.key"
     - "secrets/"
+```
+
+## Search Feature Setup
+
+### Requirements
+- Ollama installed and running
+- nomic-embed-text model
+
+### Installation Steps
+
+```bash
+# 1. Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 2. Pull the embedding model
+ollama pull nomic-embed-text
+
+# 3. Verify Ollama is running
+./llm-runtime check-ollama
+
+# 4. Update configuration
+# Edit llm-runtime.config.yaml:
+#   commands.search.enabled: true
+#   commands.search.embedding_model: "nomic-embed-text"
+#   commands.search.ollama_url: "http://localhost:11434"
+
+# 5. Build initial search index
+./llm-runtime --reindex
+```
+
+### Search Management Commands
+
+```bash
+./llm-runtime reindex              # Full reindex
+./llm-runtime search-status        # Show index stats
+./llm-runtime search-validate      # Validate index
+./llm-runtime search-cleanup       # Clean deleted files
+./llm-runtime search-update        # Incremental update
+./llm-runtime check-ollama         # Verify Ollama setup
+```
+
+### Search Usage
+
+```bash
+echo "Find authentication code <search user login auth>" | ./llm-runtime
 ```
 
 ## Documentation
@@ -488,11 +707,44 @@ For comprehensive documentation, see the [docs/](docs/) directory:
 # Check Docker availability
 make check-docker
 
-# Pull required image
+# Pull required images
 docker pull ubuntu:22.04
+
+# Build I/O container
+make build-io-image
 
 # Test Docker permissions
 docker run --rm ubuntu:22.04 echo "Docker working"
+```
+
+### I/O Container Missing
+```
+Error: I/O container image not found: llm-runtime-io:latest
+```
+
+**Solution:**
+```bash
+make build-io-image
+make check-io-image
+```
+
+### Exec Commands Failing
+```
+Error: container image not available
+```
+
+**Solution:** Pull the python-go image:
+```bash
+docker pull python-go
+
+# Verify it's available
+docker image inspect python-go
+```
+
+If you need different tools, use a different image:
+```bash
+docker pull node:alpine  # For Node.js
+# Then update config: container_image: "node:alpine"
 ```
 
 ### Permission Issues
@@ -505,8 +757,21 @@ newgrp docker
 ### Command Whitelist
 If a command is blocked:
 1. Check if it's in the whitelist
-2. Add it to `llm-runtime.config.yaml` or use `--exec-whitelist`
-3. Consider security implications
+2. Verify the exec container has that tool installed
+3. Add it to `llm-runtime.config.yaml` or use `--exec-whitelist`
+4. Consider security implications
+
+### Search/Ollama Issues
+```bash
+# Check Ollama is running
+curl http://localhost:11434/api/tags
+
+# Verify model is pulled
+ollama list
+
+# Pull the model if missing
+ollama pull nomic-embed-text
+```
 
 ## Future Enhancements
 
@@ -528,6 +793,9 @@ Planned features for future versions:
 5. **Resource limits**: Adjust limits based on your security requirements
 6. **Network isolation**: Exec commands have no network access by design
 7. **Command whitelisting**: Only allow necessary commands for your use case
+8. **Container isolation**: Both I/O and exec operations run in isolated containers
+9. **Custom exec images**: Carefully vet tools included in custom exec containers
+10. **Keep containers updated**: Regularly rebuild containers with security patches
 
 ## Contributing
 
@@ -547,4 +815,4 @@ Planned features for future versions:
 - **Discussions**: [Community discussions](https://github.com/computerscienceiscool/llm-runtime/discussions)
 - **Documentation**: [Complete docs](docs/)
 - **Quick Start Guides**: [Getting started](docs/quick-reference.md)
-- **Examples**: [Example projects](examples/) This will help users get started quickly and will be done in future updates.
+- **Examples**: [Example projects](examples/) This will help users get started quickly and will be done in future updates(coming soon).

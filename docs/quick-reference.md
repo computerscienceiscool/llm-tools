@@ -6,15 +6,15 @@ Fast reference for llm-runtime commands, configurations, and common patterns.
 
 ### File Reading
 ```
-<read path/to/file>
+<open path/to/file>
 ```
 
 **Examples:**
 ```
-<read main.go>
-<read src/components/App.tsx>
-<read config/settings.yaml>
-<read .github/workflows/ci.yml>
+<open main.go>
+<open src/components/App.tsx>
+<open config/settings.yaml>
+<open .github/workflows/ci.yml>
 ```
 
 ### File Writing
@@ -75,7 +75,7 @@ func main() {
 ./llm-runtime
 
 # Single command
-echo "<read README.md>" | ./llm-runtime
+echo "<open README.md>" | ./llm-runtime
 
 # From file
 cat commands.txt | ./llm-runtime
@@ -270,9 +270,9 @@ Let me examine the authentication system:
 
 <search authentication>
 
-<read internal/auth/auth.go>
+<open internal/auth/auth.go>
 
-<read internal/auth/middleware.go>
+<open internal/auth/middleware.go>
 
 Now I understand the structure.
 ```
@@ -281,7 +281,7 @@ Now I understand the structure.
 ```
 I'll update the configuration:
 
-<read config/settings.yaml>
+<open config/settings.yaml>
 
 <write config/settings.yaml>
 server:
@@ -309,7 +309,7 @@ Build completed successfully.
 ```
 <exec go test -v -run TestAuth>
 
-<read internal/auth/auth_test.go>
+<open internal/auth/auth_test.go>
 
 <write internal/auth/auth.go>
 // Fixed implementation
@@ -322,7 +322,7 @@ Build completed successfully.
 ```
 <search database connection>
 
-<read internal/database/connection.go>
+<open internal/database/connection.go>
 
 <write internal/database/connection.go>
 // Updated implementation
@@ -542,7 +542,7 @@ docker run --rm python-go:latest go version
 docker run --rm alpine:latest echo "test"
 
 # File operations
-echo "<read README.md>" | ./llm-runtime
+echo "<open README.md>" | ./llm-runtime
 
 # Search
 echo "<search main>" | ./llm-runtime
@@ -641,7 +641,7 @@ TIMESTAMP|SESSION_ID|OPERATION|TARGET|STATUS|METADATA
 
 ### Read → Analyze → Update
 ```
-<read config/app.yaml>
+<open config/app.yaml>
 <write config/app.yaml>
 updated: content
 </write>
@@ -651,7 +651,7 @@ updated: content
 ### Search → Read → Modify
 ```
 <search database connection>
-<read internal/db/connection.go>
+<open internal/db/connection.go>
 <write internal/db/connection.go>
 // improvements
 </write>
@@ -660,7 +660,7 @@ updated: content
 ### Test → Fix → Verify
 ```
 <exec go test -v>
-<read failed_test_file.go>
+<open failed_test_file.go>
 <write failed_test_file.go>
 // fix
 </write>
