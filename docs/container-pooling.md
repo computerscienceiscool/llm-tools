@@ -61,7 +61,6 @@ For 10 operations:
 6. **Recycling:** After 100 uses, containers are destroyed and replaced with fresh ones
 7. **Cleanup:** On shutdown, all pooled containers are destroyed
 
-**Key Point:** The repository filesystem is mounted fresh for each operation, so there's no security risk from container reuse.
 
 ## Configuration
 
