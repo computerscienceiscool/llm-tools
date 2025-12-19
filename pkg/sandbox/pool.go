@@ -6,35 +6,35 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
 
 // PooledContainer represents a container in the pool
 type PooledContainer struct {
-	ID          string
-	Image       string
-	UsageCount  int
-	MaxUses     int
-	CreatedAt   time.Time
-	LastUsedAt  time.Time
-	InUse       bool
-	Healthy     bool
-	mu          sync.Mutex
+	ID         string
+	Image      string
+	UsageCount int
+	MaxUses    int
+	CreatedAt  time.Time
+	LastUsedAt time.Time
+	InUse      bool
+	Healthy    bool
+	mu         sync.Mutex
 }
 
 // ContainerPool manages a pool of reusable Docker containers
 type ContainerPool struct {
-	client              *client.Client
-	containers          []*PooledContainer
-	available           chan *PooledContainer
-	config              PoolConfig
-	mu                  sync.RWMutex
-	closed              bool
-	wg                  sync.WaitGroup
-	healthCheckTicker   *time.Ticker
+	client                   *client.Client
+	containers               []*PooledContainer
+	available                chan *PooledContainer
+	config                   PoolConfig
+	mu                       sync.RWMutex
+	closed                   bool
+	wg                       sync.WaitGroup
+	healthCheckTicker        *time.Ticker
 	statsContainersCreated   int64
 	statsContainersDestroyed int64
 	statsPoolHits            int64
@@ -234,7 +234,7 @@ func (p *ContainerPool) createContainer(ctx context.Context) (*PooledContainer, 
 	containerConfig := &container.Config{
 		Image: p.config.Image,
 		Cmd:   []string{"sleep", "infinity"},
-		Tty:  true,
+		Tty:   true,
 		User:  "1000:1000",
 	}
 
@@ -326,12 +326,12 @@ func (p *ContainerPool) healthCheck(ctx context.Context, container *PooledContai
 	return inspect.State.Running && !inspect.State.Restarting
 }
 
-// healthCheckLoop runs periodic health checks
+// healthCheckLoop runs periodic health checks and idle cleanup
 func (p *ContainerPool) healthCheckLoop() {
 	defer p.wg.Done()
 
 	ctx := context.Background()
-	
+
 	for {
 		p.mu.RLock()
 		if p.closed {
@@ -339,7 +339,7 @@ func (p *ContainerPool) healthCheckLoop() {
 			return
 		}
 		p.mu.RUnlock()
-		
+
 		select {
 		case <-p.healthCheckTicker.C:
 			p.mu.RLock()
@@ -349,12 +349,30 @@ func (p *ContainerPool) healthCheckLoop() {
 
 			for _, c := range containers {
 				c.mu.Lock()
+
+				// Check if container is idle and should be removed
+				if !c.InUse && p.config.IdleTimeout > 0 {
+					idleTime := time.Since(c.LastUsedAt)
+					if idleTime > p.config.IdleTimeout {
+						// Container exceeded idle timeout
+						c.Healthy = false
+						c.mu.Unlock()
+
+						// Remove and destroy idle container
+						p.removeContainer(c)
+						p.destroyContainer(ctx, c)
+						continue
+					}
+				}
+
+				// Check health for non-idle containers
 				if !c.InUse {
 					healthy := p.healthCheck(ctx, c)
 					if !healthy {
 						c.Healthy = false
 					}
 				}
+
 				c.mu.Unlock()
 			}
 		}
