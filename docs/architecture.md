@@ -616,6 +616,7 @@ Layer 4: Audit & Monitoring
 - Enforces read-only mounts
 
 **Path Boundary:**
+- Default operation in temporary `/tmp/dynamic-repo/` (configurable via `--root`)
 - Restricts access to repository
 - Blocks directory traversal
 - Excludes sensitive paths
@@ -626,6 +627,37 @@ Layer 4: Audit & Monitoring
 - No arbitrary shell access
 - Controlled tool access
 - Blocked destructive commands
+
+## Dynamic Repository Isolation
+
+### Default Behavior
+
+By default, llm-runtime creates a temporary git repository in `/tmp/dynamic-repo/` for all operations:
+```bash
+# Default: creates fresh repo in /tmp/dynamic-repo/repo-XXXXXXX/
+./llm-runtime
+
+# Specify your own repository
+./llm-runtime --root /path/to/repo
+
+# Debug mode: preserve dynamic repos for inspection
+KEEP_TEST_REPOS=true ./llm-runtime
+```
+
+### Benefits
+
+- **Isolation**: Prevents accidental modification of working directories
+- **Clean State**: Each session starts with a fresh repository
+- **Safety**: Test files and backups don't pollute source directories
+- **Debugging**: Can preserve temporary repos for inspection
+
+### Repository Lifecycle
+
+1. **Creation**: Random repository created at `/tmp/dynamic-repo/repo-XXXXXXX/`
+2. **Operations**: All file I/O and exec commands operate within this repository
+3. **Cleanup**: Repository automatically removed after session (unless `KEEP_TEST_REPOS=true`)
+
+This ensures llm-runtime never pollutes your source code directories with test files or backups.
 
 ## Performance Considerations
 

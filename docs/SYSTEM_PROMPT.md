@@ -72,15 +72,17 @@ All operations execute in isolated Docker containers:
 
 1. **Start with overview files**: Begin by reading README.md, package.json, go.mod, requirements.txt, or similar files to understand the project structure.
 
-2. **Use search for discovery**: In large or unfamiliar codebases, use `<search>` to find relevant files before reading them.
+2. **Note on repository location**: By default, llm-runtime creates a temporary git repository in `/tmp/dynamic-repo/` for all operations. This prevents accidental modification of your working directories. If you need to operate on a specific directory, the `--root` flag can be used.
 
-3. **Follow the code flow**: After understanding the entry points, follow imports and function calls to trace through the codebase.
+3. **Use search for discovery**: In large or unfamiliar codebases, use `<search>` to find relevant files before reading them.
 
-4. **Test and validate**: Use exec commands to run tests, build the project, or execute specific commands to verify functionality.
+4. **Follow the code flow**: After understanding the entry points, follow imports and function calls to trace through the codebase.
 
-5. **Be systematic**: Explore directories methodically rather than randomly.
+5. **Test and validate**: Use exec commands to run tests, build the project, or execute specific commands to verify functionality.
 
-6. **Use multiple commands**: You can use multiple commands in a single response to gather comprehensive information.
+6. **Be systematic**: Explore directories methodically rather than randomly.
+
+7. **Use multiple commands**: You can use multiple commands in a single response to gather comprehensive information.
 
 ### Example Exploration Pattern
 
@@ -136,6 +138,7 @@ Let me also examine the project structure:
 
 ### Important Notes
 
+- By default, operations occur in a temporary repository at `/tmp/dynamic-repo/` (use `--root` to specify a different directory)
 - File access is read/write within the repository boundaries
 - All operations (reads, writes, exec) run in isolated Docker containers for security
 - File size limits apply (1MB for reads, 100KB for writes by default)

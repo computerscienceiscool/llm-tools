@@ -164,8 +164,14 @@ ollama pull nomic-embed-text
 ## Verification
 
 ### 1. Test Basic Functionality
+
+**Note**: By default, llm-runtime creates a temporary repository in `/tmp/dynamic-repo/`. To test with your actual project:
 ```bash
-echo "<open README.md>" | ./llm-runtime
+# Test with default dynamic repository (may not have README.md)
+echo "<exec echo 'Hello from llm-runtime'>" | ./llm-runtime
+
+# Test with specific repository
+echo "<open README.md>" | ./llm-runtime --root /path/to/your/project
 ```
 
 ### 2. Test Docker Integration (if installed)
@@ -265,11 +271,12 @@ make build
 
 After successful installation:
 1. **Build I/O container** (optional): `make build-io-image`
-2. **Configure search** (optional): Install Ollama and run `./llm-runtime --reindex`
-3. Read the [configuration guide](configuration.md) to customize settings
-4. Check [troubleshooting](troubleshooting.md) for common issues
-5. See [llm-runtime-overview.md](llm-runtime-overview.md) to understand all features
-6. Review [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) for LLM integration
+2. **Understand repository behavior**: By default, operations occur in `/tmp/dynamic-repo/`. Use `--root` to specify your project directory
+3. **Configure search** (optional): Install Ollama and run `./llm-runtime --reindex --root /path/to/project`
+4. Read the [configuration guide](configuration.md) to customize settings
+5. Check [troubleshooting](troubleshooting.md) for common issues
+6. See [llm-runtime-overview.md](llm-runtime-overview.md) to understand all features
+7. Review [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md) for LLM integration
 
 ## Feature Summary
 

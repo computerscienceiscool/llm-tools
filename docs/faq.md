@@ -15,6 +15,22 @@ Security is built on three pillars:
 
 Every operation is logged for audit purposes.
 
+### Where do file operations happen by default?
+
+By default, llm-runtime creates a temporary git repository in `/tmp/dynamic-repo/repo-XXXXXXX/` for all operations. This prevents accidental modification of your working directories.
+
+**To use a specific directory:**
+```bash
+./llm-runtime --root /path/to/your/project
+```
+
+**To preserve temporary repos for debugging:**
+```bash
+KEEP_TEST_REPOS=true ./llm-runtime
+```
+
+This design ensures llm-runtime never pollutes your source code directories with test files or backups.
+
 ### Do I need Docker for everything?
 
 Yes. Docker is required for:
@@ -257,10 +273,18 @@ Defense in depth. Even "safe" operations like reading files are containerized to
 
 ### Can I read files outside the repository?
 
-No. File paths are validated to prevent access outside the repository. This protects:
+No. File paths are validated to prevent access outside the repository boundaries. 
+
+**By default**, operations occur in a temporary repository at `/tmp/dynamic-repo/repo-XXXXXXX/`. To work with your actual project:
+```bash
+./llm-runtime --root /path/to/your/project
+```
+
+Path validation protects:
 - System files (`/etc/passwd`)
 - User files (`~/.ssh/`)
 - Other repositories (`../../other-repo`)
+- Paths outside the specified repository root
 
 ### What's the maximum file size?
 

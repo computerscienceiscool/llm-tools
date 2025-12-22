@@ -53,12 +53,28 @@ security:
 ## Repository Settings
 
 ### `repository.root`
-**Default**: `"."`  
-**Description**: Root directory of the repository to explore  
+**Default**: Creates dynamic repository in `/tmp/dynamic-repo/`  
+**Description**: Root directory of the repository to explore. By default, llm-runtime creates a temporary git repository to prevent modification of working directories.
 **Example**: 
 ```yaml
 repository:
   root: "/path/to/project"
+```
+
+
+**CLI Override**:
+```bash
+# Use specific repository
+./llm-runtime --root /path/to/project
+
+# Use default dynamic repository (default behavior)
+./llm-runtime
+```
+
+**Debug Mode**:
+```bash
+# Preserve dynamic repos for inspection
+KEEP_TEST_REPOS=true ./llm-runtime
 ```
 
 ### `repository.excluded_paths`

@@ -344,11 +344,19 @@ Message: file not found
 
 **Solutions:**
 ```bash
-# Check file exists
+# Check if using default dynamic repository (which may be empty)
+# Use --root to specify your actual project
+./llm-runtime --root /path/to/your/project
+
+# If using a specific repository, check file exists
 ls -la path/to/file
 
 # Verify case-sensitive path
 find . -name "filename"
+
+# Confirm repository root
+./llm-runtime --root $(pwd)
+```
 
 # List directory contents
 ls -la directory/
@@ -849,7 +857,6 @@ go mod tidy
 ```
 
 ### Common Debug Commands
-
 ```bash
 # Check all Docker images
 docker images
@@ -868,6 +875,13 @@ ollama --version
 
 # Environment check
 env | grep -i docker
+
+# Repository location
+echo "Default: operations in /tmp/dynamic-repo/"
+echo "Custom: use --root /path/to/project"
+
+# Check if using dynamic repository
+./llm-runtime --help | grep -A 2 "root"
 ```
 
 ## Still Having Issues?
