@@ -13,6 +13,10 @@ echo "Creating a sample Go web application..."
 # Create a sample Go web app structure
 SAMPLE_APP="/tmp/sample-go-webapp"
 rm -rf "$SAMPLE_APP"
+echo "Note: Creating demo app and using --root to specify its location"
+echo "      (Default llm-runtime behavior would use /tmp/dynamic-repo/)"
+
+
 mkdir -p "$SAMPLE_APP/cmd/server"
 mkdir -p "$SAMPLE_APP/internal/handlers"
 mkdir -p "$SAMPLE_APP/internal/models"

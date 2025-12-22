@@ -61,6 +61,8 @@ echo ""
 echo -e "${BLUE}Step 4: Setting up test environment...${NC}"
 DEMO_DIR=$(mktemp -d)
 echo "Demo directory: $DEMO_DIR"
+echo "Note: Using --root flag to operate in this specific directory"
+echo "      (Default behavior would use /tmp/dynamic-repo/)"
 
 # Create sample files
 cat > "$DEMO_DIR/sample.txt" << 'SAMPLE'

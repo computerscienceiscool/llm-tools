@@ -11,6 +11,7 @@ echo
 # Create a temporary demo repository
 DEMO_DIR=$(mktemp -d)
 echo "Creating demo repository at: $DEMO_DIR"
+echo "Note: By default, llm-runtime uses /tmp/dynamic-repo/. Using --root to specify this demo repo."
 
 # Create some sample files
 mkdir -p "$DEMO_DIR/src"

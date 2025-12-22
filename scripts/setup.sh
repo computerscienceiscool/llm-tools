@@ -74,9 +74,9 @@ build_tool() {
         
         # Make scripts executable
         chmod +x llm-runtime
-        [ -f "demo.sh" ] && chmod +x demo.sh
-        [ -f "example_usage.sh" ] && chmod +x example_usage.sh
-        [ -f "security_test.sh" ] && chmod +x security_test.sh
+        [ -f "scripts/demo.sh" ] && chmod +x scripts/demo.sh
+        [ -f "scripts/example_usage.sh" ] && chmod +x scripts/example_usage.sh
+        [ -f "scripts/security_test.sh" ] && chmod +x scripts/security_test.sh
         
         return 0
     else
@@ -129,7 +129,10 @@ run_demo() {
         TEST_DIR=$(mktemp -d)
         echo "# Test Repository" > "$TEST_DIR/README.md"
         echo "package main" > "$TEST_DIR/main.go"
-        
+        echo ""
+        echo "Note: Using --root to specify test directory"
+        echo "      (Default: /tmp/dynamic-repo/)"
+        echo
         echo "Testing the tool with a simple command:"
         echo "Input: 'Check the README <open README.md>'"
         echo "---"
@@ -165,7 +168,7 @@ print_usage() {
     echo "  make test          - Run tests"
     echo "  make demo          - Run full demo"
     echo "  make example       - Run example with sample Go app"
-    echo "  ./security_test.sh - Run security tests"
+    echo "  ./scripts/security_test.sh - Run security tests"
     echo
     echo "Configuration:"
     echo "  Edit llm-runtime.config.yaml to customize behavior"
@@ -179,8 +182,7 @@ print_usage() {
 
 # Main setup flow
 main() {
-    cd "$(dirname "$0")"
-    
+    cd "$(dirname "$0")/.."
     echo "Starting setup in: $(pwd)"
     echo
     
@@ -208,5 +210,3 @@ main() {
     print_usage
 }
 
-# Run main function
-main "$@"

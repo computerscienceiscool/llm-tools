@@ -11,6 +11,8 @@ echo
 # Create a temporary demo repository
 DEMO_DIR=$(mktemp -d)
 echo "Creating demo repository at: $DEMO_DIR"
+echo "Note: Using --root flag to operate in this specific demo directory"
+echo "      (Default behavior would create repos in /tmp/dynamic-repo/)"
 
 # Create a comprehensive test project structure
 mkdir -p "$DEMO_DIR/src"

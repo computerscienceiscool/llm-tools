@@ -18,6 +18,8 @@ fi
 # Create test environment
 TEST_DIR=$(mktemp -d)
 echo "Test directory: $TEST_DIR"
+echo "Note: Using --root flag to run security tests in this specific directory"
+echo "      (Default behavior would use /tmp/dynamic-repo/)"
 
 # Create test repository
 mkdir -p "$TEST_DIR/repo/src"
