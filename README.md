@@ -146,8 +146,13 @@ ollama pull nomic-embed-text
 
 ### Basic Usage (Pipe Mode)
 
+**Note:** By default, operations occur in an isolated temporary repository. Use `--root` to work with your actual project.
 ```bash
+# Default: operates in /tmp/dynamic-repo/ (isolated)
 echo "Let me check the main file <open main.go>" | ./llm-runtime
+
+# Specify your project directory
+echo "Let me check the main file <open main.go>" | ./llm-runtime --root /path/to/your/project
 ```
 
 ### With Exec Commands Enabled
@@ -182,10 +187,51 @@ In interactive mode, the tool continuously processes input and executes commands
 ./llm-runtime --input llm_output.txt --output results.txt 
 ```
 
+
+## Repository Isolation
+
+By default, llm-runtime operates in a temporary isolated repository to prevent accidental modification of your working directories.
+
+### Default Behavior (Isolated Mode)
+```bash
+./llm-runtime
+# Creates: /tmp/dynamic-repo/repo-XXXXXXX/
+# All file operations happen in this temporary repository
+# Repository is automatically cleaned up after session
+```
+
+**Use case:** Safe experimentation, testing, demos
+
+### Working with Your Project
+```bash
+./llm-runtime --root /path/to/your/project
+# All file operations happen in your specified directory
+# LLM can read, write, and execute within this directory
+```
+
+**Use case:** Actual development work, code analysis, testing real projects
+
+### Debug Mode
+```bash
+KEEP_TEST_REPOS=true ./llm-runtime
+# Temporary repositories are preserved for inspection
+# Useful for debugging or reviewing LLM-generated content
+```
+
+**Why this matters:**
+- **Safety**: Test files and backups don't pollute your source directories
+- **Isolation**: Each session starts with a clean state  
+- **Flexibility**: Use `--root` when you need to work with actual projects
+- **Security**: Prevents accidental modification of important files
+
+
 ## Command Line Options
 
 ### Basic Options
-- `--root PATH`: Repository root directory (default: current directory)
+- `--root PATH`: Specify repository to operate on (default: creates isolated repo in /tmp/dynamic-repo/)
+  - Without flag: Creates temporary isolated repository
+  - With flag: Operates on your specified directory
+  - See "Repository Isolation" section above for details
 - `--max-size BYTES`: Maximum file size in bytes (default: 1048576 = 1MB)
 - `--interactive`: Run in interactive mode
 - `--input FILE`: Read from file instead of stdin
