@@ -58,8 +58,6 @@ clean:
 	@rm -f audit.log
 	@rm -f llm-runtime.log
 	@echo "Clean complete"
-	@rm -f test_output.txt
-	@rm -f *.bak.*
 
 # Install binary to system
 install: build
@@ -118,17 +116,16 @@ quick-test: build
 # Test write functionality
 test-write: build
 	@echo "Testing write functionality..."
-	@echo "Creating test file: <write test_output.txt>\nThis is a test file created by the LLM tool.\nCurrent time: $$(date)\nWrite command is working!\n</write>" | $(BINARY_PATH)
-	@if [ -f test_output.txt ]; then echo "Write test successful"; echo "File contents:"; cat test_output.txt; rm test_output.txt; else echo "Write test failed"; fi
-
-# Test exec functionality (requires Docker)
-test-exec: build
-	@echo "Testing exec functionality..."
-	@if command -v docker >/dev/null 2>&1; then \
-		echo "Testing exec command: <exec echo 'Hello from Docker'>" | $(BINARY_PATH) --exec-enabled; \
+	@REPO_PATH=$$(echo "Creating test file: <write test_output.txt>\nThis is a test file created by the LLM tool.\nCurrent time: $$(date)\nWrite command is working!\n</write>" | KEEP_TEST_REPOS=true $(BINARY_PATH) 2>&1 | grep "Dynamic repo created at:" | sed 's/.*: //'); \
+	if [ -f "$$REPO_PATH/test_output.txt" ]; then \
+		echo "Write test successful"; \
+		echo "File contents:"; \
+		cat "$$REPO_PATH/test_output.txt"; \
 	else \
-		echo "Docker not available - exec test skipped"; \
+		echo "Write test failed - file not found in $$REPO_PATH"; \
+		exit 1; \
 	fi
+
 
 # Test both read and write commands
 test-both: build
@@ -141,18 +138,24 @@ test-both: build
 	@echo "This is a summary of the LLM File Access Tool." >> temp_input.txt
 	@echo "Generated at: $$(date)" >> temp_input.txt
 	@echo "</write>" >> temp_input.txt
-	@$(BINARY_PATH) --input temp_input.txt
-	@rm -f temp_input.txt README_SUMMARY.md
+	@REPO_PATH=$$(KEEP_TEST_REPOS=true $(BINARY_PATH) --input temp_input.txt 2>&1 | grep "Dynamic repo created at:" | sed 's/.*: //'); \
+	rm -f temp_input.txt; \
+	if [ -f "$$REPO_PATH/README_SUMMARY.md" ]; then \
+		echo "Test successful - README_SUMMARY.md created in dynamic repo"; \
+	else \
+		echo "Test failed - README_SUMMARY.md not found in $$REPO_PATH"; \
+		exit 1; \
+	fi
 
 # Test all command types
 test-all-commands: build
 	@echo "Testing all command types..."
 	@if command -v docker >/dev/null 2>&1; then \
-		echo "Testing read, write, and exec: <open README.md> <write test.txt>Test content</write> <exec echo 'All commands work'>" | $(BINARY_PATH) --exec-enabled; \
-		rm -f test.txt; \
+		REPO_PATH=$$(echo "Testing read, write, and exec: <open README.md> <write test.txt>Test content</write> <exec echo 'All commands work'>" | KEEP_TEST_REPOS=true $(BINARY_PATH) --exec-enabled 2>&1 | grep "Dynamic repo created at:" | sed 's/.*: //'); \
+		if [ -f "$$REPO_PATH/test.txt" ]; then echo "Test successful"; else echo "Test failed"; exit 1; fi; \
 	else \
-		echo "Testing read and write only: <open README.md> <write test.txt>Test content</write>" | $(BINARY_PATH); \
-		rm -f test.txt; \
+		REPO_PATH=$$(echo "Testing read and write only: <open README.md> <write test.txt>Test content</write>" | KEEP_TEST_REPOS=true $(BINARY_PATH) 2>&1 | grep "Dynamic repo created at:" | sed 's/.*: //'); \
+		if [ -f "$$REPO_PATH/test.txt" ]; then echo "Test successful"; else echo "Test failed"; exit 1; fi; \
 	fi
 
 # Development mode - rebuild and run on file changes (requires entr)
@@ -223,12 +226,6 @@ test-suite: build check-docker
 	@$(MAKE) test-write
 	@echo "3. Security tests..."
 	@chmod +x scripts/security_test.sh && ./scripts/security_test.sh
-	@if command -v docker >/dev/null 2>&1; then \
-		echo "4. Exec functionality..."; \
-		$(MAKE) test-exec; \
-	else \
-		echo "4. Exec functionality... SKIPPED (Docker not available)"; \
-	fi
 	@echo "Test suite complete!"
 
 # Show help
@@ -250,7 +247,6 @@ help:
 	@echo "  make exec-demo     - Run the exec command demo"
 	@echo "  make quick-test    - Quick test with README"
 	@echo "  make test-write    - Test write functionality"
-	@echo "  make test-exec     - Test exec functionality (requires Docker)"
 	@echo "  make test-both     - Test both read and write commands"
 	@echo "  make test-all-commands - Test all command types"
 	@echo "  make test-suite    - Run comprehensive test suite"
@@ -321,17 +317,18 @@ check-io-image:
 # Test containerized I/O operations
 test-io-container: build check-io-image
 	@echo "Testing containerized I/O operations..."
-	@echo "Test: <open README.md>" | $(BINARY_PATH) --io-containerized
+	@REPO_PATH=$$(echo "Test: <open README.md>" | KEEP_TEST_REPOS=true $(BINARY_PATH) --io-containerized 2>&1 | grep "Dynamic repo created at:" | sed 's/.*: //'); \
+	echo "Dynamic repo: $$REPO_PATH"
 	@echo ""
 	@echo "Testing containerized write..."
-	@echo "Test: <write test_io_output.txt>This file was created using containerized I/O (Phase 5)\nTimestamp: $$(date)</write>" | $(BINARY_PATH) --io-containerized
-	@if [ -f test_io_output.txt ]; then \
+	@REPO_PATH=$$(echo "Test: <write test_io_output.txt>This file was created using containerized I/O (Phase 5)\nTimestamp: $$(date)</write>" | KEEP_TEST_REPOS=true $(BINARY_PATH) --io-containerized 2>&1 | grep "Dynamic repo created at:" | sed 's/.*: //'); \
+	if [ -f "$$REPO_PATH/test_io_output.txt" ]; then \
 		echo "Containerized write successful"; \
 		echo "File contents:"; \
-		cat test_io_output.txt; \
-		rm test_io_output.txt; \
+		cat "$$REPO_PATH/test_io_output.txt"; \
 	else \
-		echo "Containerized write failed"; \
+		echo "Containerized write failed - file not found in $$REPO_PATH"; \
+		exit 1; \
 	fi
 
 # Clean Docker images for IO

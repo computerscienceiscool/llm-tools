@@ -6,6 +6,7 @@ import (
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/app"
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
+	"github.com/computerscienceiscool/llm-runtime/pkg/dynrepo"
 	"github.com/spf13/viper"
 )
 
@@ -22,6 +23,17 @@ func initConfig() {
 
 // buildConfig constructs a config.Config from Viper values
 func buildConfig() (*config.Config, error) {
+	// Determine repository root
+	rootPath := viper.GetString("root")
+	if rootPath == "." {
+		// Default: create a dynamic repo
+		dir, _, err := dynrepo.CreateRepo()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create dynamic repo: %w", err)
+		}
+		viper.Set("root", dir)
+	}
+
 	cfg := &config.Config{
 		RepositoryRoot:      viper.GetString("root"),
 		MaxFileSize:         viper.GetInt64("max-size"),
@@ -78,6 +90,7 @@ func buildConfig() (*config.Config, error) {
 			cfg.ExecWhitelist = viper.GetStringSlice("commands.exec.whitelist")
 		}
 	}
+	//fmt.Printf("DEBUG buildConfig: RepositoryRoot = %s\n", cfg.RepositoryRoot)
 
 	return cfg, nil
 }

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/computerscienceiscool/llm-runtime/pkg/config"
-	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
 	"github.com/computerscienceiscool/llm-runtime/pkg/evaluator"
+	"github.com/computerscienceiscool/llm-runtime/pkg/sandbox"
 	"github.com/computerscienceiscool/llm-runtime/pkg/session"
 )
 
@@ -20,6 +20,7 @@ func Bootstrap(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("cannot resolve repository root: %w", err)
 	}
 	cfg.RepositoryRoot = absRoot
+	//	fmt.Printf("DEBUG bootstrap: RepositoryRoot = %s\n", cfg.RepositoryRoot)
 
 	// Verify repository root exists
 	if _, err := os.Stat(cfg.RepositoryRoot); err != nil {
@@ -53,7 +54,6 @@ func Bootstrap(cfg *config.Config) (*App, error) {
 		}
 	}
 
-	
 	// Create executor with audit logging
 	exec := evaluator.NewExecutor(cfg, searchCfg, sess.LogAudit, pool)
 
